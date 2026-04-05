@@ -1,0 +1,27 @@
+﻿node_modules/
+**/node_modules/
+.next/
+**/.next/
+.env
+.env.local
+**/.env
+**/.env.local
+.DS_Store
+dist/
+build/
+# Ignorar carpetas pesadas en todo el proyecto
+node_modules/
+**/node_modules/
+.next/
+**/.next/
+
+# SEGURIDAD CRÍTICA: Ignorar archivos de llaves en cualquier subcarpeta
+.env
+.env.local
+**/.env
+**/.env.local
+
+# Archivos de sistema
+.DS_Store
+dist/
+build/
