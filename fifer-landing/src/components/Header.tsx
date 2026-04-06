@@ -84,9 +84,9 @@ const Header: React.FC = () => {
                             </li>
                         ))}
                         <li>
-                            <Link href="/api/tiktok/auth" className="text-white bg-black hover:bg-neutral-800 px-5 py-2 rounded-full block w-fit" onClick={toggleMenu}>
+                            <a href="/api/tiktok/auth" className="text-white bg-black hover:bg-neutral-800 px-5 py-2 rounded-full block w-fit" onClick={toggleMenu}>
                                 Conectar con TikTok
-                            </Link>
+                            </a>
                         </li>
                     </ul>
                 </div>
