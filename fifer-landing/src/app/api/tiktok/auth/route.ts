@@ -1,8 +1,15 @@
 const TIKTOK_AUTH_BASE = "https://www.tiktok.com/v2/auth/authorize/";
 
 export async function GET() {
-  const clientKey = process.env.NEXT_PUBLIC_TIKTOK_CLIENT_KEY || "";
+  const clientKey =
+    process.env.NEXT_PUBLIC_TIKTOK_CLIENT_KEY ||
+    process.env.TIKTOK_CLIENT_KEY ||
+    "";
   const scope = "user.info.basic,video.upload,video.publish";
+
+  if (!clientKey) {
+    return new Response("Missing TikTok client key", { status: 500 });
+  }
 
   const params = new URLSearchParams({
     client_key: clientKey,
