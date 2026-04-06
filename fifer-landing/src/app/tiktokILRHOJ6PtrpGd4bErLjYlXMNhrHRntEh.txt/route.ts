@@ -1,6 +1,5 @@
 export async function GET() {
-  const content = "tiktok-developers-site-verification=ILRHOJ6PtrpGd4bErLjYlXMNhrHRntEh";
-  return new Response(content, {
-    headers: { "Content-Type": "text/plain" },
+  return new Response('tiktok-developers-site-verification=ILRHOJ6PtrpGd4bErLjYlXMNhrHRntEh', {
+    headers: { 'Content-Type': 'text/plain' },
   });
 }
