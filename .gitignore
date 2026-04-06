@@ -45,3 +45,5 @@ Thumbs.db
 # --- OTROS ---
 *.log
 .DS_Store
+.vercel
+.env*.local
