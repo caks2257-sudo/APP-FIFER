@@ -1,21 +1,20 @@
-﻿# --- SEGURIDAD (Archivos sensibles en cualquier carpeta) ---
+﻿# --- SEGURIDAD (Ignorar llaves en cualquier carpeta) ---
 .env
+.env.local
 .env.*
 **/.env
 **/.env.*
 
-# --- NODE.JS / NEXT.JS (Librerías y compilados) ---
+# --- NODE / NEXT.JS (Librerías y carpetas de Vercel) ---
 node_modules/
 **/node_modules/
 .next/
 **/.next/
-out/
-build/
+.vercel/
 dist/
-.vercel
-.turbo
+build/
 
-# --- PYTHON (Entornos virtuales y caché) ---
+# --- PYTHON (Entornos virtuales pesados) ---
 .venv/
 venv/
 env/
@@ -24,8 +23,6 @@ env/
 **/.venv/
 __pycache__/
 **/__pycache__/
-*.py[cod]
-*$py.class
 
 # --- LOGS Y TEMPORALES ---
 *.log
@@ -39,3 +36,7 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+
+# --- OTROS ---
+*.log
+.DS_Store
