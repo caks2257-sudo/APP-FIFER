@@ -1,11 +1,13 @@
 ﻿import sys
 import os
 
-# Forzar a Python a reconocer la carpeta raíz (para shared_libs) y la carpeta actual (para app)
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+# Forzar a Python a reconocer la carpeta raíz (para shared-libs) y la carpeta actual (para app)
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../../'))
+shared_libs_python = os.path.join(root_dir, 'shared-libs', 'python')
+sys.path.insert(0, shared_libs_python)
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
 
-from shared_libs.python.database import engine, Base
+from database import engine, Base
 from sqlalchemy import text
 from app.models.user import User
 

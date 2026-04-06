@@ -1,6 +1,6 @@
 ﻿from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
-from shared_libs.python.config import settings
+from config import settings
 
 # Crear el motor de conexion a Postgres (Tildes removidas por seguridad en comentarios)
 engine = create_engine(settings.DATABASE_URL, pool_pre_ping=True)

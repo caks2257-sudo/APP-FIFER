@@ -3,10 +3,12 @@ from sqlalchemy.orm import Session
 import sys
 import os
 
-# Asegurar que reconozca shared_libs
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../../')))
+# Asegurar que reconozca shared-libs en la raíz del monorepo
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../../../../'))
+shared_libs_python = os.path.join(root_dir, 'shared-libs', 'python')
+sys.path.insert(0, shared_libs_python)
 
-from shared_libs.python.database import get_db
+from database import get_db
 from app.models.user import User
 from app.schemas.user import UserSyncRequest
 

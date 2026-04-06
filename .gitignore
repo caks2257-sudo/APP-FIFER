@@ -8,24 +8,29 @@
 # --- NODE / NEXT.JS (Librerías y carpetas de Vercel) ---
 node_modules/
 **/node_modules/
+**/node_modules
 .next/
 **/.next/
 .vercel/
 dist/
 build/
+data/
 
 # --- PYTHON (Entornos virtuales pesados) ---
 .venv/
+saas-fifer/.venv/
 venv/
 env/
 **/venv/
 **/env/
 **/.venv/
+**/.venv
 __pycache__/
 **/__pycache__/
 
 # --- LOGS Y TEMPORALES ---
 *.log
+**/*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
