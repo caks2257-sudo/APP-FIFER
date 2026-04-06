@@ -1,0 +1,9 @@
+{
+    "public": true,
+    "rewrites": [
+      {
+        "source": "/(.*)",
+        "destination": "/fifer-landing/public/$1"
+      }
+    ]
+  }
