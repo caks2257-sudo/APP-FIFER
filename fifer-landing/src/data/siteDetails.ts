@@ -1,9 +1,9 @@
 export const siteDetails = {
-    siteName: 'Finwise',
-    siteUrl: 'https://finwise-omega.vercel.app/',
+    siteName: 'FIFER',
+    siteUrl: 'https://fifer-landing.vercel.app/',
     metadata: {
-        title: 'Finwise - Next.js and Tailwind CSS Landing Page Template',
-        description: 'Finwise empowers businesses with cutting-edge technology solutions to drive success and efficiency.',
+        title: 'FIFER | Automatizacion de contenido deportivo con IA',
+        description: 'FIFER impulsa la automatizacion de contenido deportivo con IA y la gestion inteligente de afiliados para futbol.',
     },
     language: 'en-us',
     locale: 'en-US',

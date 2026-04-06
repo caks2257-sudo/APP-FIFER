@@ -19,16 +19,16 @@ const HomePage: React.FC = () => {
 
         <Section
           id="pricing"
-          title="Pricing"
-          description="Simple, transparent pricing. No surprises."
+          title="Planes FIFER"
+          description="Escala automatizacion deportiva y afiliados con planes claros."
         >
           <Pricing />
         </Section>
 
         <Section
           id="testimonials"
-          title="What Our Clients Say"
-          description="Hear from those who have partnered with us."
+          title="Equipos que ya operan con FIFER"
+          description="Resultados reales en operaciones de contenido y afiliacion."
         >
           <Testimonials />
         </Section>

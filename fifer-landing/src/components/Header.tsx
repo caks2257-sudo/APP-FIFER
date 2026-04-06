@@ -7,6 +7,7 @@ import { HiOutlineXMark, HiBars3 } from 'react-icons/hi2';
 import { FaFingerprint } from 'react-icons/fa';
 
 import Container from './Container';
+import TikTokConnectButton from './TikTokConnectButton';
 import { siteDetails } from '@/data/siteDetails';
 import { menuItems } from '@/data/menuItems';
 
@@ -39,9 +40,7 @@ const Header: React.FC = () => {
                             </li>
                         ))}
                         <li>
-                            <Link href="#cta" className="text-black bg-primary hover:bg-primary-accent px-8 py-3 rounded-full transition-colors">
-                                Download
-                            </Link>
+                            <TikTokConnectButton compact />
                         </li>
                     </ul>
 
@@ -85,8 +84,8 @@ const Header: React.FC = () => {
                             </li>
                         ))}
                         <li>
-                            <Link href="#cta" className="text-black bg-primary hover:bg-primary-accent px-5 py-2 rounded-full block w-fit" onClick={toggleMenu}>
-                                Get Started
+                            <Link href="/api/tiktok/auth" className="text-white bg-black hover:bg-neutral-800 px-5 py-2 rounded-full block w-fit" onClick={toggleMenu}>
+                                Conectar con TikTok
                             </Link>
                         </li>
                     </ul>

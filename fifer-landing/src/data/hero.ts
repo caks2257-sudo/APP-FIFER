@@ -1,5 +1,5 @@
 export const heroDetails = {
-    heading: 'Smart, Secure, Simple Financial Management',
-    subheading: 'From effortless budgeting to real-time investment insights, Finwise puts you in control of your money like never before',
+    heading: 'Automatizacion de contenido deportivo con IA',
+    subheading: 'FIFER conecta ligas de futbol, creadores y marcas con flujos inteligentes de publicacion y gestion de afiliados.',
     centerImageSrc: '/images/hero-mockup.webp',
 }

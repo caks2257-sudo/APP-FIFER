@@ -7,7 +7,7 @@ export const footerDetails: {
     telephone: string;
     socials: ISocials;
 } = {
-    subheading: "Empowering businesses with cutting-edge financial technology solutions.",
+    subheading: "Plataforma oficial para automatizacion de contenido deportivo y gestion de afiliados en futbol.",
     quickLinks: [
         {
             text: "Features",
@@ -20,10 +20,18 @@ export const footerDetails: {
         {
             text: "Testimonials",
             url: "#testimonials"
+        },
+        {
+            text: "Privacy",
+            url: "/privacy"
+        },
+        {
+            text: "Terms",
+            url: "/terms"
         }
     ],
-    email: 'address@yoursite.com',
-    telephone: '+1 (123) 456-7890',
+    email: 'legal@fifer.app',
+    telephone: '+1 (555) 010-2026',
     socials: {
         // github: 'https://github.com',
         // x: 'https://twitter.com/x',
