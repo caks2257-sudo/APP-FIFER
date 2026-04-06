@@ -21,7 +21,7 @@ const TermsPage = () => {
 
       <h2 className="mt-8 text-2xl font-semibold">Limitacion de responsabilidad</h2>
       <p className="mt-3 text-foreground-accent">
-        FIFER proporciona la plataforma "tal cual", sin garantizar resultados comerciales especificos. La disponibilidad
+        FIFER proporciona la plataforma &quot;tal cual&quot;, sin garantizar resultados comerciales especificos. La disponibilidad
         puede depender de terceros como TikTok, proveedores cloud y redes de afiliacion.
       </p>
 
