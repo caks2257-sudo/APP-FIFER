@@ -13,8 +13,8 @@ export async function GET(request: Request) {
   }
 
   const clientKey =
-    process.env.NEXT_PUBLIC_TIKTOK_CLIENT_KEY ||
     process.env.TIKTOK_CLIENT_KEY ||
+    process.env.NEXT_PUBLIC_TIKTOK_CLIENT_KEY ||
     "";
   const clientSecret = process.env.TIKTOK_CLIENT_SECRET || "";
   const redirectUri = `${APP_BASE_URL}${CALLBACK_PATH}`;

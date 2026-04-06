@@ -30,6 +30,41 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
 const genAI = new GoogleGenerativeAI(GOOGLE_AI_KEY);
 const supabaseStorage = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+// --- SISTEMA DE RESPALDO DE MODELOS IA ---
+const MODELOS_RESPALDO = [
+    "gemini-2.5-flash",
+    "gemini-2.0-flash",
+    "gemini-2.0-flash-lite-001",
+    "gemini-2.5-flash-lite"
+];
+
+async function generarContenidoConRespaldo(promptTexto, genAILocal) {
+    for (const nombreModelo of MODELOS_RESPALDO) {
+        try {
+            console.log(`🧠 Intentando generar guion con: ${nombreModelo}...`);
+            const model = genAILocal.getGenerativeModel(
+                { model: nombreModelo },
+                { apiVersion: 'v1' }
+            );
+            
+            const result = await model.generateContent(promptTexto);
+            return result.response.text(); 
+            
+        } catch (error) {
+            // Detectar si el error es por límite de cuota (429)
+            if (error.status === 429 || (error.message && error.message.includes("429")) || (error.message && error.message.includes("Quota"))) {
+                console.log(`⚠️ Cuota agotada para ${nombreModelo}. Cambiando al siguiente modelo en la lista...`);
+                continue; // Pasa al siguiente modelo del array
+            } else {
+                // Si es otro error grave, lo lanzamos
+                throw error;
+            }
+        }
+    }
+    throw new Error("❌ CRÍTICO: Todos los modelos gratuitos han agotado su cuota diaria.");
+}
+// -----------------------------------------
+
 function parseGeminiJson(rawText) {
     if (!rawText) return null;
     
@@ -79,7 +114,7 @@ async function uploadToSupabase(localFilePath, productId) {
 }
 
 async function procesarSiguiente() {
-    console.log("🚀 [FIFER-ENGINE] Iniciando producción con Gemini 2.5...");
+    console.log("🚀 [FIFER-ENGINE] Iniciando producción IA...");
 
     const { data: producto, error } = await supabase
         .from('products')
@@ -96,11 +131,6 @@ async function procesarSiguiente() {
     try {
         await supabase.from('products').update({ ai_status: 'processing' }).eq('id', producto.id);
 
-        const model = genAI.getGenerativeModel(
-            { model: "gemini-2.5-flash" },
-            { apiVersion: 'v1' }
-        );
-
         const prompt = `
             Actúa como un experto en TikTok Ads. 
             Crea un guion de 15 segundos para el producto: ${producto.name}.
@@ -111,9 +141,8 @@ async function procesarSiguiente() {
             }
         `;
 
-        console.log("🧠 1. Consultando a Gemini 2.5 Flash (Canal Estable)...");
-        const result = await model.generateContent(prompt);
-        const aiResponse = result.response.text();
+        // Llamamos a la nueva función blindada
+        const aiResponse = await generarContenidoConRespaldo(prompt, genAI);
 
         const scriptData = parseGeminiJson(aiResponse);
         if (!scriptData || !scriptData.script) throw new Error("Guion malformado o JSON inválido.");
@@ -126,7 +155,6 @@ async function procesarSiguiente() {
         
         console.log(`🎞️ 3. Renderizando Video 9:16 con FFmpeg...`);
         
-        // CORRECCIÓN CLAVE: Leer 'image_url' de Supabase y convertirlo en arreglo
         let imagenesParaVideo = [];
         if (producto.image_url) {
             imagenesParaVideo.push(producto.image_url);
@@ -214,12 +242,10 @@ async function getPreferredVoiceId(producto) {
 
     const dbVoice = userRow?.voice_id;
 
-    // ✅ REGLA DE ORO: Si hay una voz y NO es la rota, la usamos.
     if (dbVoice && dbVoice !== 'pNInz6obpg8ndEao7m8D') {
         return dbVoice; 
     }
 
-    // Si está vacía o es explícitamente la rota, salvamos el proceso con la segura
     console.log("⚠️ Voz no configurada o ID roto. Usando voz de respaldo...");
     return SAFE_VOICE_ID;
 }
