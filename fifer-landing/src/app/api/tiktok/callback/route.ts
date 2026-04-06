@@ -12,7 +12,7 @@ export async function GET(request: Request) {
     return Response.redirect(`${APP_BASE_URL}/auth/success?status=missing_code`);
   }
 
-  const clientKey = process.env.TIKTOK_CLIENT_KEY || "awg9kjvmfmp4arrb";
+  const clientKey = process.env.NEXT_PUBLIC_TIKTOK_CLIENT_KEY || "";
   const clientSecret = process.env.TIKTOK_CLIENT_SECRET || "";
   const redirectUri = `${APP_BASE_URL}${CALLBACK_PATH}`;
 
