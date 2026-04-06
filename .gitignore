@@ -1,27 +1,41 @@
-﻿node_modules/
-**/node_modules/
-.next/
-**/.next/
+﻿# --- SEGURIDAD (Archivos sensibles en cualquier carpeta) ---
 .env
-.env.local
+.env.*
 **/.env
-**/.env.local
-.DS_Store
-dist/
-build/
-# Ignorar carpetas pesadas en todo el proyecto
+**/.env.*
+
+# --- NODE.JS / NEXT.JS (Librerías y compilados) ---
 node_modules/
 **/node_modules/
 .next/
 **/.next/
-
-# SEGURIDAD CRÍTICA: Ignorar archivos de llaves en cualquier subcarpeta
-.env
-.env.local
-**/.env
-**/.env.local
-
-# Archivos de sistema
-.DS_Store
-dist/
+out/
 build/
+dist/
+.vercel
+.turbo
+
+# --- PYTHON (Entornos virtuales y caché) ---
+.venv/
+venv/
+env/
+**/venv/
+**/env/
+**/.venv/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+
+# --- LOGS Y TEMPORALES ---
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+Thumbs.db
+
+# --- CONFIGURACIONES DE EDITOR ---
+.vscode/
+.idea/
+*.swp
