@@ -1,0 +1,733 @@
+openapi: 3.0.3
+info:
+  title: FIFER TAG-CENTER & App Marketing API
+  description: |
+    REST contract for TAG-CENTER (tags, associations, credits estimate, product ranking, audit) and App Marketing (campaigns).
+    Implementations may live behind a gateway (Next.js Route Handlers, Edge Functions, or FastAPI). All routes are additive:
+    they MUST NOT replace or shadow existing FIFER landing routes (`/api/tiktok/*`, etc.).
+
+    **Feature flags** (process env): `FEATURE_TAG_CENTER`, `FEATURE_APP_MARKETING`, `FEATURE_CREDIT_SIMULATOR`, `FEATURE_SCORING_ENGINE`.
+  version: 1.0.0
+  contact:
+    name: FIFER Platform
+
+servers:
+  - url: https://{host}/api/v1
+    variables:
+      host:
+        default: api.fifer.example
+        description: API host (or same-origin Next.js app with `/api/v1` prefix)
+
+tags:
+  - name: Tags
+  - name: Associations
+  - name: Credits
+  - name: Ranking
+  - name: Audit
+  - name: AppMarketing
+
+security:
+  - bearerAuth: []
+
+paths:
+  /tag-center/tags:
+    get:
+      tags: [Tags]
+      summary: List tags with filters
+      operationId: listTags
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: type
+          in: query
+          schema: { type: string }
+        - name: name
+          in: query
+          schema: { type: string }
+        - name: provider_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+        - name: cursor
+          in: query
+          description: Opaque pagination cursor
+          schema: { type: string }
+      responses:
+        "200":
+          description: Paginated tags
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TagListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "503":
+          $ref: "#/components/responses/FeatureDisabled"
+
+    post:
+      tags: [Tags]
+      summary: Create tag
+      operationId: createTag
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TagCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tag"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          description: Conflict (duplicate name+type)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorBody"
+
+  /tag-center/tags/{tagId}:
+    parameters:
+      - $ref: "#/components/parameters/tagId"
+    get:
+      tags: [Tags]
+      summary: Get tag by ID
+      operationId: getTag
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tag"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    patch:
+      tags: [Tags]
+      summary: Update tag
+      operationId: updateTag
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TagPatch"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tag"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    delete:
+      tags: [Tags]
+      summary: Delete tag
+      operationId: deleteTag
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /tag-center/associations:
+    get:
+      tags: [Associations]
+      summary: List associations by entity or tag
+      operationId: listAssociations
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tag_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: entity_type
+          in: query
+          schema:
+            type: string
+            enum: [product, campaign, engine]
+        - name: entity_id
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 50, maximum: 200 }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssociationListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    post:
+      tags: [Associations]
+      summary: Create association (tag ↔ product/campaign/engine)
+      operationId: createAssociation
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssociationCreate"
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Association"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /tag-center/associations/{associationId}:
+    parameters:
+      - name: associationId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    delete:
+      tags: [Associations]
+      summary: Remove association
+      operationId: deleteAssociation
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Removed
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /tag-center/estimate-credits:
+    post:
+      tags: [Credits]
+      summary: Estimate credit consumption for a bundle of engine usages
+      operationId: estimateCredits
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EstimateCreditsRequest"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EstimateCreditsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/FeatureDisabled"
+
+  /tag-center/rank-products:
+    post:
+      tags: [Ranking]
+      summary: Rank products using declarative scoring profile
+      operationId: rankProducts
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RankProductsRequest"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RankProductsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/FeatureDisabled"
+
+  /tag-center/audit-logs:
+    get:
+      tags: [Audit]
+      summary: Query tag audit trail (tag_history + optional filters)
+      operationId: listAuditLogs
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tag_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: from
+          in: query
+          description: ISO8601 lower bound
+          schema: { type: string, format: date-time }
+        - name: to
+          in: query
+          schema: { type: string, format: date-time }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 50, maximum: 500 }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditLogListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /app-marketing/campaigns:
+    post:
+      tags: [AppMarketing]
+      summary: Create marketing campaign draft (linked to affiliate availability)
+      operationId: createCampaign
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CampaignCreate"
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/FeatureDisabled"
+
+  /app-marketing/campaigns/{campaignId}/simulate:
+    post:
+      tags: [AppMarketing]
+      summary: Simulate campaign outcomes (no external side effects)
+      operationId: simulateCampaign
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: campaignId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CampaignSimulateRequest"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CampaignSimulateResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/FeatureDisabled"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Supabase JWT (`Authorization: Bearer <access_token>`). Recommended custom claims / RLS:
+        - `tag_center:read` — GET list/detail, audit read, estimate/rank read-only usage as configured
+        - `tag_center:write` — POST/PATCH/DELETE tags, associations
+        - `app_marketing:write` — create/simulate campaigns
+
+  parameters:
+    tagId:
+      name: tagId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid bearer token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+          examples:
+            unauthorized:
+              value:
+                error:
+                  code: UNAUTHORIZED
+                  message: Invalid or expired token
+
+    Forbidden:
+      description: Authenticated but insufficient scope
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+          examples:
+            forbidden:
+              value:
+                error:
+                  code: FORBIDDEN
+                  message: Missing scope tag_center:write
+
+    BadRequest:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+
+    Conflict:
+      description: Unique constraint violation
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+
+    FeatureDisabled:
+      description: Feature flag off or module not provisioned
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+          examples:
+            feature:
+              value:
+                error:
+                  code: FEATURE_DISABLED
+                  message: FEATURE_TAG_CENTER is not enabled
+
+  schemas:
+    ErrorBody:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              enum:
+                - UNAUTHORIZED
+                - FORBIDDEN
+                - VALIDATION_ERROR
+                - NOT_FOUND
+                - CONFLICT
+                - FEATURE_DISABLED
+                - RATE_LIMITED
+                - INTERNAL_ERROR
+            message: { type: string }
+            details:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+
+    Tag:
+      type: object
+      required:
+        - id
+        - name
+        - type
+        - description
+        - metrics
+        - virtues
+        - limitations
+        - cost_unit
+        - cost_value
+        - provider_id
+        - version
+        - created_by
+        - created_at
+        - history
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        type: { type: string }
+        description: { type: string }
+        metrics:
+          type: array
+          items: { type: object, additionalProperties: true }
+        virtues:
+          type: array
+          items: { type: object, additionalProperties: true }
+        limitations:
+          type: array
+          items: { type: object, additionalProperties: true }
+        cost_unit: { type: string }
+        cost_value: { type: number }
+        provider_id: { type: string, format: uuid, nullable: true }
+        version: { type: integer }
+        created_by: { type: string, format: uuid }
+        created_at: { type: string, format: date-time }
+        history:
+          type: array
+          items: { type: object, additionalProperties: true }
+        extra:
+          type: object
+          additionalProperties: true
+
+    TagCreate:
+      type: object
+      required: [name, type, created_by]
+      properties:
+        name: { type: string }
+        type: { type: string }
+        description: { type: string }
+        metrics: { type: array, items: { type: object } }
+        virtues: { type: array, items: { type: object } }
+        limitations: { type: array, items: { type: object } }
+        cost_unit: { type: string, default: credit }
+        cost_value: { type: number, default: 0 }
+        provider_id: { type: string, format: uuid, nullable: true }
+        extra: { type: object }
+
+    TagPatch:
+      type: object
+      properties:
+        description: { type: string }
+        metrics: { type: array, items: { type: object } }
+        virtues: { type: array, items: { type: object } }
+        limitations: { type: array, items: { type: object } }
+        cost_unit: { type: string }
+        cost_value: { type: number }
+        provider_id: { type: string, format: uuid, nullable: true }
+        extra: { type: object }
+
+    TagListResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Tag"
+        next_cursor:
+          type: string
+          nullable: true
+
+    Association:
+      type: object
+      required: [id, tag_id, entity_type, entity_id, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        tag_id: { type: string, format: uuid }
+        entity_type:
+          type: string
+          enum: [product, campaign, engine]
+        entity_id: { type: string }
+        role: { type: string, nullable: true }
+        weight: { type: number, nullable: true }
+        meta: { type: object, additionalProperties: true }
+        created_at: { type: string, format: date-time }
+
+    AssociationCreate:
+      type: object
+      required: [tag_id, entity_type, entity_id]
+      properties:
+        tag_id: { type: string, format: uuid }
+        entity_type:
+          type: string
+          enum: [product, campaign, engine]
+        entity_id: { type: string }
+        role: { type: string }
+        weight: { type: number }
+        meta: { type: object }
+
+    AssociationListResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Association"
+
+    EstimateCreditsRequest:
+      type: object
+      required: [lines]
+      properties:
+        lines:
+          type: array
+          items:
+            type: object
+            required: [engineId, unit, qty]
+            properties:
+              engineId: { type: string }
+              unit: { type: string }
+              qty: { type: number, minimum: 0 }
+
+    EstimateCreditsResponse:
+      type: object
+      required: [total, breakdown, currency]
+      properties:
+        total: { type: number }
+        currency: { type: string, example: credits }
+        breakdown:
+          type: array
+          items:
+            type: object
+            properties:
+              engineId: { type: string }
+              unit: { type: string }
+              qty: { type: number }
+              costPerUnit: { type: number, nullable: true }
+              subtotal: { type: number, nullable: true }
+              error:
+                type: string
+                nullable: true
+                description: Machine-readable reason when subtotal is null
+                enum: [unknown_engine, unit_mismatch]
+
+    RankProductsRequest:
+      type: object
+      required: [profile, products]
+      properties:
+        profile:
+          type: object
+          description: Declarative scoring profile (see fifer-platform scoring example)
+        products:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+
+    RankProductsResponse:
+      type: object
+      required: [ranked]
+      properties:
+        ranked:
+          type: array
+          items:
+            type: object
+            required: [product_id, score]
+            properties:
+              product_id: { type: string }
+              score: { type: number, minimum: 0, maximum: 100 }
+              explain: { type: object, additionalProperties: true }
+
+    AuditLogListResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required: [id, tag_id, version, action, changed_at]
+            properties:
+              id: { type: string, format: uuid }
+              tag_id: { type: string, format: uuid }
+              version: { type: integer }
+              action: { type: string }
+              changed_by: { type: string, format: uuid, nullable: true }
+              changed_at: { type: string, format: date-time }
+              payload: { type: object }
+              diff: { type: object }
+
+    CampaignCreate:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        objective: { type: string }
+        channels: { type: array, items: { type: string } }
+        tag_ids:
+          type: array
+          items: { type: string, format: uuid }
+        meta: { type: object }
+
+    Campaign:
+      type: object
+      required: [id, status]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        status:
+          type: string
+          enum: [draft, scheduled, active, paused, archived]
+        affiliate_networks:
+          type: object
+          additionalProperties: { type: boolean }
+        notes: { type: string }
+        created_at: { type: string, format: date-time }
+
+    CampaignSimulateRequest:
+      type: object
+      properties:
+        audience_size: { type: integer, minimum: 0 }
+        budget_credits: { type: number }
+        assumptions: { type: object }
+
+    CampaignSimulateResponse:
+      type: object
+      required: [campaign_id, projections]
+      properties:
+        campaign_id: { type: string, format: uuid }
+        projections:
+          type: object
+          additionalProperties: true
+        warnings:
+          type: array
+          items: { type: string }

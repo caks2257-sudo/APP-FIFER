@@ -1,0 +1,72 @@
+[
+  {
+    "id": "77777777-7777-4777-8777-777777777701",
+    "provider_id": "22222222-2222-4222-8222-222222222201",
+    "external_sku": "runway-render-std",
+    "name": "Runway — standard render slot",
+    "description": "Short clip generation with standard realism preset.",
+    "capabilities": ["video", "720p", "15s"],
+    "pricing": { "unit": "1s_render", "cost": 2.5, "currency": "credit" },
+    "availability": { "regions": ["us", "eu"] },
+    "meta": { "video_realism_level": 3 },
+    "is_active": true,
+    "created_at": "2026-04-07T12:00:00.000Z",
+    "updated_at": "2026-04-07T12:00:00.000Z"
+  },
+  {
+    "id": "77777777-7777-4777-8777-777777777702",
+    "provider_id": "22222222-2222-4222-8222-222222222202",
+    "external_sku": "eleven-tts-multilingual-v2",
+    "name": "ElevenLabs — multilingual v2",
+    "description": "High-quality TTS with studio clarity preset.",
+    "capabilities": ["tts", "multilingual"],
+    "pricing": { "unit": "1k_chars", "cost": 0.8, "currency": "credit" },
+    "availability": { "plan": "scale" },
+    "meta": { "tts_voice_quality": "studio" },
+    "is_active": true,
+    "created_at": "2026-04-07T12:00:00.000Z",
+    "updated_at": "2026-04-07T12:00:00.000Z"
+  },
+  {
+    "id": "77777777-7777-4777-8777-777777777703",
+    "provider_id": "22222222-2222-4222-8222-222222222203",
+    "external_sku": "gemini-2.5-flash",
+    "name": "Gemini 2.5 Flash",
+    "description": "Primary JSON/script generation.",
+    "capabilities": ["text", "json"],
+    "pricing": { "unit": "1k_tokens", "cost": 0.12, "currency": "credit" },
+    "availability": {},
+    "meta": {},
+    "is_active": true,
+    "created_at": "2026-04-07T12:00:00.000Z",
+    "updated_at": "2026-04-07T12:00:00.000Z"
+  },
+  {
+    "id": "77777777-7777-4777-8777-777777777704",
+    "provider_id": "22222222-2222-4222-8222-222222222204",
+    "external_sku": "leonardo-motion-15",
+    "name": "Leonardo — motion preset 15",
+    "description": "Image-to-motion for social clips.",
+    "capabilities": ["image", "motion"],
+    "pricing": { "unit": "1_render", "cost": 1.0, "currency": "credit" },
+    "availability": {},
+    "meta": {},
+    "is_active": true,
+    "created_at": "2026-04-07T12:00:00.000Z",
+    "updated_at": "2026-04-07T12:00:00.000Z"
+  },
+  {
+    "id": "77777777-7777-4777-8777-777777777705",
+    "provider_id": "22222222-2222-4222-8222-222222222205",
+    "external_sku": "fifer-orchestrator",
+    "name": "FIFER orchestrator bundle",
+    "description": "Internal routing and fallback coordination.",
+    "capabilities": ["orchestration"],
+    "pricing": { "unit": "credit", "cost": 0, "currency": "credit" },
+    "availability": { "internal": true },
+    "meta": {},
+    "is_active": true,
+    "created_at": "2026-04-07T12:00:00.000Z",
+    "updated_at": "2026-04-07T12:00:00.000Z"
+  }
+]

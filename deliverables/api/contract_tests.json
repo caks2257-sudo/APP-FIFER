@@ -1,0 +1,31 @@
+{
+  "suite": "fifer_contract_tests",
+  "version": "1.0.0",
+  "runner": "node --test tests/contract/phase2_contract.test.mjs",
+  "npm_script": "npm run test:contract",
+  "cases": [
+    {
+      "id": "legacy_tiktok_auth_no_key",
+      "route": "GET /api/tiktok/auth",
+      "preconditions": ["TIKTOK_CLIENT_KEY unset"],
+      "assertions": [{ "field": "status", "expect": 500 }, { "body_contains": "Missing TikTok client key" }]
+    },
+    {
+      "id": "legacy_tiktok_verification_txt",
+      "route": "GET /tiktokILRHOJ6PtrpGd4bErLjYlXMNhrHRntEh.txt",
+      "assertions": [{ "field": "status", "expect": 200 }, { "body_prefix": "tiktok-developers-site-verification=" }]
+    },
+    {
+      "id": "legacy_tiktok_callback_no_code",
+      "route": "GET /api/tiktok/callback",
+      "assertions": [{ "field": "status", "expect": 307 }, { "header_location_contains": "status=missing_code" }]
+    },
+    {
+      "id": "optional_api_v1_tags_unauth",
+      "route": "GET {API_V1_BASE}/tag-center/tags",
+      "preconditions": ["API_V1_BASE set"],
+      "assertions": [{ "field": "status", "one_of": [401, 404, 503] }]
+    }
+  ],
+  "notes": "When FIFER_LANDING_URL unreachable, legacy tests skip (ECONNREFUSED) without failing CI."
+}

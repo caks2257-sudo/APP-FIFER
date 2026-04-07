@@ -1,0 +1,472 @@
+{
+  "schema": "fifer.scoring.worked_example_v1",
+  "normalization_reference": {
+    "W": "sum of factor weights in the profile",
+    "share_i": "weight_i / W",
+    "norm_i": "factor-specific normalized score in [0,1]",
+    "contrib_i": "share_i * norm_i * 100",
+    "score": "clamp( round_half_up( sum_i contrib_i, 3 ), 0, 100 )"
+  },
+  "examples": [
+    {
+      "example_id": 1,
+      "objective": "sales_explosive",
+      "profile": {
+        "id": "sales_explosive",
+        "version": "1.0.0",
+        "objective": "Maximize impulse + discount fit with sales velocity",
+        "tag_weight_map": {
+          "intent_impulse": 0.4,
+          "discount_flash": 0.35,
+          "publish_ig": 0.25
+        },
+        "factors": [
+          {
+            "id": "impulse_tag_fit",
+            "weight": 0.5,
+            "fn": "tagWeightCoverage",
+            "tag_weights": {
+              "intent_impulse": 0.4,
+              "discount_flash": 0.35,
+              "publish_ig": 0.25
+            }
+          },
+          {
+            "id": "sales_velocity",
+            "weight": 0.3,
+            "path": "metrics.sales_velocity_index",
+            "normalize": {
+              "min": 0,
+              "max": 100
+            }
+          },
+          {
+            "id": "urgency_overlap",
+            "weight": 0.2,
+            "fn": "tagOverlap",
+            "tags": [
+              "limited_stock",
+              "flash_window"
+            ]
+          }
+        ],
+        "tie_break": {
+          "primary_factor_id": "impulse_tag_fit",
+          "secondary": "product_id_asc"
+        }
+      },
+      "input": {
+        "product_id": "SKU-9001",
+        "tags": [
+          "intent_impulse",
+          "publish_ig",
+          "limited_stock"
+        ],
+        "metrics": {
+          "sales_velocity_index": 72
+        }
+      },
+      "calculation_trace": {
+        "W": 1,
+        "steps": [
+          {
+            "factor_id": "impulse_tag_fit",
+            "w_i": 0.5,
+            "share_i": 0.5,
+            "raw_detail": {
+              "matched_weight": 0.65,
+              "total_weight_in_map": 1,
+              "tags_matched": [
+                "intent_impulse",
+                "publish_ig"
+              ]
+            },
+            "norm_i": 0.65,
+            "contrib_i": 32.5
+          },
+          {
+            "factor_id": "sales_velocity",
+            "w_i": 0.3,
+            "share_i": 0.3,
+            "raw": 72,
+            "norm_i": 0.72,
+            "contrib_i": 21.6
+          },
+          {
+            "factor_id": "urgency_overlap",
+            "w_i": 0.2,
+            "share_i": 0.2,
+            "raw": 0.5,
+            "norm_i": 0.5,
+            "contrib_i": 10
+          }
+        ],
+        "S_raw": 64.1,
+        "score_after_round_clamp": 64.1
+      },
+      "explain_excerpt": {
+        "factors": [
+          {
+            "id": "impulse_tag_fit",
+            "weightShare": 0.5,
+            "normalized": 0.65,
+            "contribution": 32.5
+          },
+          {
+            "id": "sales_velocity",
+            "weightShare": 0.3,
+            "normalized": 0.72,
+            "contribution": 21.6
+          },
+          {
+            "id": "urgency_overlap",
+            "weightShare": 0.2,
+            "normalized": 0.5,
+            "contribution": 10
+          }
+        ]
+      },
+      "final_score": 64.1
+    },
+    {
+      "example_id": 2,
+      "objective": "high_commission",
+      "profile": {
+        "id": "high_commission",
+        "version": "1.0.0",
+        "objective": "Prioritize affiliate commission and category fit",
+        "factors": [
+          {
+            "id": "commission_rate",
+            "weight": 0.55,
+            "path": "metrics.commission_rate",
+            "normalize": {
+              "min": 0.05,
+              "max": 0.25
+            }
+          },
+          {
+            "id": "affiliate_tag_fit",
+            "weight": 0.25,
+            "fn": "tagOverlap",
+            "tags": [
+              "high_commission",
+              "tier_premium"
+            ]
+          },
+          {
+            "id": "aov_support",
+            "weight": 0.2,
+            "path": "metrics.avg_order_value_usd",
+            "normalize": {
+              "min": 20,
+              "max": 120
+            }
+          }
+        ]
+      },
+      "input": {
+        "product_id": "SKU-4410",
+        "tags": [
+          "high_commission"
+        ],
+        "metrics": {
+          "commission_rate": 0.18,
+          "avg_order_value_usd": 85
+        }
+      },
+      "calculation_trace": {
+        "W": 1,
+        "steps": [
+          {
+            "factor_id": "commission_rate",
+            "share_i": 0.55,
+            "raw": 0.18,
+            "norm_i": 0.65,
+            "contrib_i": 35.75
+          },
+          {
+            "factor_id": "affiliate_tag_fit",
+            "share_i": 0.25,
+            "raw": 0.5,
+            "norm_i": 0.5,
+            "contrib_i": 12.5
+          },
+          {
+            "factor_id": "aov_support",
+            "share_i": 0.2,
+            "raw": 85,
+            "norm_i": 0.65,
+            "contrib_i": 13
+          }
+        ],
+        "S_raw": 61.25,
+        "score_after_round_clamp": 61.25
+      },
+      "explain_excerpt": {
+        "factors": [
+          {
+            "id": "commission_rate",
+            "contribution": 35.75
+          },
+          {
+            "id": "affiliate_tag_fit",
+            "contribution": 12.5
+          },
+          {
+            "id": "aov_support",
+            "contribution": 13
+          }
+        ]
+      },
+      "final_score": 61.25
+    },
+    {
+      "example_id": 3,
+      "objective": "viral_reach",
+      "profile": {
+        "id": "viral_reach",
+        "version": "1.0.0",
+        "objective": "Surface items with viral hooks and platform reach",
+        "factors": [
+          {
+            "id": "engagement",
+            "weight": 0.4,
+            "path": "metrics.engagement_rate",
+            "normalize": {
+              "min": 0,
+              "max": 0.12
+            }
+          },
+          {
+            "id": "viral_tags",
+            "weight": 0.35,
+            "fn": "tagOverlap",
+            "tags": [
+              "hook_strong",
+              "trending_audio",
+              "publish_ig"
+            ]
+          },
+          {
+            "id": "share_velocity",
+            "weight": 0.25,
+            "path": "metrics.shares_per_hour",
+            "normalize": {
+              "min": 0,
+              "max": 500,
+              "invert": false
+            }
+          }
+        ]
+      },
+      "input": {
+        "product_id": "SKU-2200",
+        "tags": [
+          "hook_strong",
+          "publish_ig"
+        ],
+        "metrics": {
+          "engagement_rate": 0.09,
+          "shares_per_hour": 210
+        }
+      },
+      "calculation_trace": {
+        "W": 1,
+        "steps": [
+          {
+            "factor_id": "engagement",
+            "share_i": 0.4,
+            "norm_i": 0.75,
+            "contrib_i": 30
+          },
+          {
+            "factor_id": "viral_tags",
+            "share_i": 0.35,
+            "raw": 0.6666666667,
+            "norm_i": 0.6666666667,
+            "contrib_i": 23.3333333333
+          },
+          {
+            "factor_id": "share_velocity",
+            "share_i": 0.25,
+            "norm_i": 0.42,
+            "contrib_i": 10.5
+          }
+        ],
+        "S_raw": 63.8333333333,
+        "score_after_round_clamp": 63.833
+      },
+      "explain_excerpt": {
+        "factors": [
+          {
+            "id": "engagement",
+            "contribution": 30
+          },
+          {
+            "id": "viral_tags",
+            "contribution": 23.333
+          },
+          {
+            "id": "share_velocity",
+            "contribution": 10.5
+          }
+        ]
+      },
+      "final_score": 63.833
+    },
+    {
+      "example_id": 4,
+      "objective": "edge_sparse_tags",
+      "note": "Few tags: tagWeightCoverage still valid; missing weights contribute 0 to numerator.",
+      "profile": {
+        "id": "sales_explosive",
+        "version": "1.0.0",
+        "factors": [
+          {
+            "id": "impulse_tag_fit",
+            "weight": 0.6,
+            "fn": "tagWeightCoverage",
+            "tag_weights": {
+              "intent_impulse": 0.5,
+              "discount_flash": 0.5
+            }
+          },
+          {
+            "id": "sales_velocity",
+            "weight": 0.4,
+            "path": "metrics.sales_velocity_index",
+            "normalize": {
+              "min": 0,
+              "max": 100
+            }
+          }
+        ]
+      },
+      "input": {
+        "product_id": "SKU-0007",
+        "tags": [
+          "discount_flash"
+        ],
+        "metrics": {
+          "sales_velocity_index": 10
+        }
+      },
+      "calculation_trace": {
+        "W": 1,
+        "steps": [
+          {
+            "factor_id": "impulse_tag_fit",
+            "share_i": 0.6,
+            "norm_i": 0.5,
+            "raw_detail": {
+              "matched_weight": 0.5,
+              "total_weight_in_map": 1
+            },
+            "contrib_i": 30
+          },
+          {
+            "factor_id": "sales_velocity",
+            "share_i": 0.4,
+            "norm_i": 0.1,
+            "contrib_i": 4
+          }
+        ],
+        "S_raw": 34,
+        "score_after_round_clamp": 34
+      },
+      "final_score": 34
+    },
+    {
+      "example_id": 5,
+      "objective": "tie_break_demo",
+      "note": "Two products with same rounded score; ranking uses primary factor contribution then product_id.",
+      "profile": {
+        "id": "high_commission",
+        "version": "1.0.0",
+        "factors": [
+          {
+            "id": "commission_rate",
+            "weight": 0.7,
+            "path": "metrics.commission_rate",
+            "normalize": {
+              "min": 0.1,
+              "max": 0.2
+            }
+          },
+          {
+            "id": "aov_support",
+            "weight": 0.3,
+            "path": "metrics.avg_order_value_usd",
+            "normalize": {
+              "min": 10,
+              "max": 110
+            }
+          }
+        ],
+        "tie_break": {
+          "primary_factor_id": "commission_rate",
+          "secondary": "product_id_asc"
+        }
+      },
+      "products": [
+        {
+          "product_id": "SKU-B",
+          "tags": [],
+          "metrics": {
+            "commission_rate": 0.15,
+            "avg_order_value_usd": 60
+          }
+        },
+        {
+          "product_id": "SKU-A",
+          "tags": [],
+          "metrics": {
+            "commission_rate": 0.15,
+            "avg_order_value_usd": 60
+          }
+        }
+      ],
+      "per_product_scores": [
+        {
+          "product_id": "SKU-B",
+          "S_raw": 50,
+          "final_score": 50,
+          "explain_factors": [
+            {
+              "id": "commission_rate",
+              "contribution": 35
+            },
+            {
+              "id": "aov_support",
+              "contribution": 15
+            }
+          ]
+        },
+        {
+          "product_id": "SKU-A",
+          "S_raw": 50,
+          "final_score": 50,
+          "explain_factors": [
+            {
+              "id": "commission_rate",
+              "contribution": 35
+            },
+            {
+              "id": "aov_support",
+              "contribution": 15
+            }
+          ]
+        }
+      ],
+      "tie_break_resolution": {
+        "rule": "same score and same primary factor contribution → sort by product_id_asc",
+        "ranked_order": [
+          "SKU-A",
+          "SKU-B"
+        ],
+        "reason": "SKU-A < SKU-B lexicographically"
+      }
+    }
+  ]
+}

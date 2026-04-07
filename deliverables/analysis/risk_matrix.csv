@@ -1,0 +1,8 @@
+id,topic,impact,probability,mitigation
+R1,Tag sidecar latency on ingest,medium,medium,FEATURE_TAG_CENTER default off; async queue optional
+R2,Missing fifer_platform migration,high,low,Staging apply first; per-row error logs
+R3,products upsert shape change,high,low,PR review; no new columns without approval
+R4,Invalid TAG_CENTER_INGEST_ACTOR_ID,low,medium,Warn once; skip tag writes
+R5,App Marketing double webhook,high,low,FEATURE_APP_MARKETING off until idempotent
+R6,Gemini quota exhaustion,high,medium,Existing model fallback; no heavy scoring in ingest loop
+R7,core.users vs Supabase profiles drift,medium,low,Document two stores; explicit sync

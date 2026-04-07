@@ -1,0 +1,33 @@
+# Contract tests — legacy FIFER landing routes + optional API checks
+name: contract-tests
+
+on:
+  pull_request:
+    paths:
+      - 'fifer-landing/**'
+      - 'tests/contract/**'
+      - 'saas-fifer/modules/fifer-platform/**'
+      - 'package.json'
+  push:
+    branches: [main]
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Run contract tests
+        run: npm run test:contract
+        env:
+          FIFER_LANDING_URL: http://127.0.0.1:9
+          # No server: tests skip legacy HTTP checks without failing

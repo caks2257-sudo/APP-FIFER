@@ -1,0 +1,189 @@
+{
+  "examples": [
+    {
+      "scenario_id": "phase4_15s_reel_high_res",
+      "description": "15-second high-resolution social reel: script (Gemini Flash) + Runway render with 1.5× resolution premium, 2 render retries expected, 8% transcoding overhead on video generation.",
+      "assumptions": {
+        "duration_seconds": 15,
+        "resolution_premium": 1.5,
+        "script_tokens_k": 0.55,
+        "retry_policy": {
+          "attempts": 2,
+          "success_rate_per_attempt": 0.88
+        },
+        "transcoding_overhead_pct": 0.08,
+        "parallel_jobs": 1
+      },
+      "lines": [
+        {
+          "engineId": "runway_video",
+          "unit": "1s_render",
+          "qty": 15,
+          "notes": "Billable GPU-seconds; qty multiplied by resolutionPremium (video only)"
+        },
+        {
+          "engineId": "gemini_flash_text",
+          "unit": "1k_tokens",
+          "qty": 0.55,
+          "notes": "Hook + on-screen copy; not scaled by resolution premium"
+        }
+      ],
+      "scenario_options": {
+        "resolutionPremium": 1.5,
+        "retries": {
+          "attempts": 2,
+          "successRate": 0.88,
+          "costFractionPerAttempt": 1
+        },
+        "parallel": {
+          "jobs": 1,
+          "coordinationOverheadPerExtraJob": 0.05
+        },
+        "transcoding": {
+          "overheadPct": 0.08
+        }
+      },
+      "resource_breakdown": {
+        "base_subtotal_credits": 56.316,
+        "video_generation_credits": 56.25,
+        "text_generation_credits": 0.066,
+        "after_expected_retries_credits": 63.876,
+        "transcode_credits_added": 4.5,
+        "total_credits": 68.376
+      },
+      "optimal_engine_by_objective": {
+        "min_cost_short_reel": "runway_video @ 1s_render + gemini_flash_text — lowest $/s for iterative drafts",
+        "max_quality_motion": "runway_video_4k @ higher costPerUnit or raise resolutionPremium > 1.5",
+        "fastest_iteration": "gemini_flash_text only for copy A/B before locking render; defer Runway until script approved"
+      }
+    },
+    {
+      "scenario_id": "phase4_60s_animated_voice",
+      "description": "60-second animated-style motion clip with ElevenLabs voiceover (~1.2k chars) and Gemini Flash narration/script (~2k tokens). Two parallel render lanes (e.g. picture-in-picture + main), 10% transcode ladder, one retry pass on fragile video+TTS.",
+      "assumptions": {
+        "duration_seconds": 60,
+        "tts_chars_thousands": 1.2,
+        "script_tokens_k": 2,
+        "parallel_render_lanes": 2,
+        "transcoding_overhead_pct": 0.1
+      },
+      "lines": [
+        {
+          "engineId": "runway_video",
+          "unit": "1s_render",
+          "qty": 60,
+          "notes": "Full timeline render"
+        },
+        {
+          "engineId": "elevenlabs_tts",
+          "unit": "1k_chars",
+          "qty": 1.2,
+          "notes": "~900–1100 chars typical for 60s VO"
+        },
+        {
+          "engineId": "gemini_flash_text",
+          "unit": "1k_tokens",
+          "qty": 2,
+          "notes": "Structured beats + captions JSON"
+        }
+      ],
+      "scenario_options": {
+        "resolutionPremium": 1,
+        "retries": {
+          "attempts": 1,
+          "successRate": 0.9,
+          "costFractionPerAttempt": 1
+        },
+        "parallel": {
+          "jobs": 2,
+          "coordinationOverheadPerExtraJob": 0.06
+        },
+        "transcoding": {
+          "overheadPct": 0.1
+        }
+      },
+      "resource_breakdown": {
+        "base_subtotal_credits": 151.2,
+        "video_generation_credits": 150,
+        "tts_credits": 0.96,
+        "text_generation_credits": 0.24,
+        "fragile_subtotal_credits": 150.96,
+        "after_expected_retries_credits": 166.296,
+        "after_parallel_coordination_credits": 176.274,
+        "transcode_credits_added": 15,
+        "total_credits": 191.274
+      },
+      "optimal_engine_by_objective": {
+        "balanced_cost_quality": "runway_video + elevenlabs_tts + gemini_flash_text — default calibration",
+        "lower_tts_cost": "shorter VO script or cheaper TTS tier (lower costPerUnit in calibration)",
+        "reduce_video_cost": "shorter motion segments + cross-fade stills (leonardo_image) instead of full 60s generative video"
+      }
+    },
+    {
+      "scenario_id": "phase4_ab_campaign_10_outputs",
+      "description": "Multi-variation A/B pack: 10 copy/image variants (Gemini + Leonardo) while sharing one 12s master video render. Five parallel workers add coordination overhead; one retry on fragile providers; 8% transcode on shared video.",
+      "assumptions": {
+        "copy_variants": 10,
+        "shared_video_seconds": 12,
+        "parallel_workers": 5,
+        "variation_multiplier": 1
+      },
+      "lines": [
+        {
+          "engineId": "gemini_flash_text",
+          "unit": "1k_tokens",
+          "qty": 1.5,
+          "subjectToVariation": true,
+          "notes": "1.5k tokens × 10 outputs = 15k token-equivalents billed"
+        },
+        {
+          "engineId": "leonardo_image",
+          "unit": "1_image",
+          "qty": 1,
+          "subjectToVariation": true,
+          "notes": "10 distinct keyframes/thumbnails"
+        },
+        {
+          "engineId": "runway_video",
+          "unit": "1s_render",
+          "qty": 12,
+          "subjectToVariation": false,
+          "notes": "Single hero clip reused across variants — not multiplied by 10"
+        }
+      ],
+      "scenario_options": {
+        "variation": {
+          "outputs": 10,
+          "multiplier": 1
+        },
+        "retries": {
+          "attempts": 1,
+          "successRate": 0.85,
+          "costFractionPerAttempt": 1
+        },
+        "parallel": {
+          "jobs": 5,
+          "coordinationOverheadPerExtraJob": 0.04
+        },
+        "transcoding": {
+          "overheadPct": 0.08
+        }
+      },
+      "resource_breakdown": {
+        "base_subtotal_credits": 41.8,
+        "text_times_outputs_credits": 1.8,
+        "image_times_outputs_credits": 10,
+        "shared_video_credits": 30,
+        "after_expected_retries_credits": 46.3,
+        "after_parallel_coordination_credits": 53.708,
+        "transcode_credits_added": 2.4,
+        "total_credits": 56.108
+      },
+      "optimal_engine_by_objective": {
+        "maximize_ctr_testing": "gemini_flash_text + leonardo_image for 10-way copy/visual A/B; keep runway_video single shared asset to avoid 10× video cost",
+        "minimize_credit_spend": "reduce leonardo_image outputs or use static template backgrounds; shorten shared runway_video seconds",
+        "faster_wall_clock": "parallel.jobs=5 lowers elapsed time; credits include coordination overhead — tune coordinationOverheadPerExtraJob from observability"
+      }
+    }
+  ]
+}

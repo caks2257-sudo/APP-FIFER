@@ -1,0 +1,57 @@
+[
+  {
+    "id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaa0001",
+    "slug": "pricing",
+    "label": "Pricing",
+    "description": "Price bands, currency context, and monetary scoring inputs.",
+    "meta": { "domain": "commerce" },
+    "is_active": true,
+    "sort_order": 10,
+    "created_at": "2026-04-07T12:00:00.000Z",
+    "updated_at": "2026-04-07T12:00:00.000Z"
+  },
+  {
+    "id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaa0002",
+    "slug": "promotion",
+    "label": "Promotion",
+    "description": "Discount depth, coupon eligibility, and urgency signals.",
+    "meta": { "domain": "commerce" },
+    "is_active": true,
+    "sort_order": 20,
+    "created_at": "2026-04-07T12:00:00.000Z",
+    "updated_at": "2026-04-07T12:00:00.000Z"
+  },
+  {
+    "id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaa0003",
+    "slug": "video",
+    "label": "Video",
+    "description": "Synthetic video realism, motion, and render fidelity.",
+    "meta": { "domain": "media" },
+    "is_active": true,
+    "sort_order": 30,
+    "created_at": "2026-04-07T12:00:00.000Z",
+    "updated_at": "2026-04-07T12:00:00.000Z"
+  },
+  {
+    "id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaa0004",
+    "slug": "audio",
+    "label": "Audio / TTS",
+    "description": "Voice synthesis quality, latency, and timbre.",
+    "meta": { "domain": "media" },
+    "is_active": true,
+    "sort_order": 40,
+    "created_at": "2026-04-07T12:00:00.000Z",
+    "updated_at": "2026-04-07T12:00:00.000Z"
+  },
+  {
+    "id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaa0005",
+    "slug": "ingest",
+    "label": "Ingest",
+    "description": "Feed provenance and ETL lineage for affiliate pipelines.",
+    "meta": { "domain": "ops" },
+    "is_active": true,
+    "sort_order": 50,
+    "created_at": "2026-04-07T12:00:00.000Z",
+    "updated_at": "2026-04-07T12:00:00.000Z"
+  }
+]

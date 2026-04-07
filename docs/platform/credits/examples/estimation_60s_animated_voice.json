@@ -1,0 +1,53 @@
+{
+  "scenario_id": "phase4_60s_animated_voice",
+  "description": "60-second animated-style motion clip with ElevenLabs voiceover (~1.2k chars) and Gemini Flash narration/script (~2k tokens). Two parallel render lanes (e.g. picture-in-picture + main), 10% transcode ladder, one retry pass on fragile video+TTS.",
+  "assumptions": {
+    "duration_seconds": 60,
+    "tts_chars_thousands": 1.2,
+    "script_tokens_k": 2,
+    "parallel_render_lanes": 2,
+    "transcoding_overhead_pct": 0.1
+  },
+  "lines": [
+    {
+      "engineId": "runway_video",
+      "unit": "1s_render",
+      "qty": 60,
+      "notes": "Full timeline render"
+    },
+    {
+      "engineId": "elevenlabs_tts",
+      "unit": "1k_chars",
+      "qty": 1.2,
+      "notes": "~900–1100 chars typical for 60s VO"
+    },
+    {
+      "engineId": "gemini_flash_text",
+      "unit": "1k_tokens",
+      "qty": 2,
+      "notes": "Structured beats + captions JSON"
+    }
+  ],
+  "scenario_options": {
+    "resolutionPremium": 1,
+    "retries": { "attempts": 1, "successRate": 0.9, "costFractionPerAttempt": 1 },
+    "parallel": { "jobs": 2, "coordinationOverheadPerExtraJob": 0.06 },
+    "transcoding": { "overheadPct": 0.1 }
+  },
+  "resource_breakdown": {
+    "base_subtotal_credits": 151.2,
+    "video_generation_credits": 150,
+    "tts_credits": 0.96,
+    "text_generation_credits": 0.24,
+    "fragile_subtotal_credits": 150.96,
+    "after_expected_retries_credits": 166.296,
+    "after_parallel_coordination_credits": 176.274,
+    "transcode_credits_added": 15,
+    "total_credits": 191.274
+  },
+  "optimal_engine_by_objective": {
+    "balanced_cost_quality": "runway_video + elevenlabs_tts + gemini_flash_text — default calibration",
+    "lower_tts_cost": "shorter VO script or cheaper TTS tier (lower costPerUnit in calibration)",
+    "reduce_video_cost": "shorter motion segments + cross-fade stills (leonardo_image) instead of full 60s generative video"
+  }
+}

@@ -1,0 +1,62 @@
+[
+  {
+    "id": "33333333-3333-4333-8333-333333333301",
+    "tag_id": "11111111-1111-4111-8111-111111111101",
+    "metric_key": "price",
+    "value_num": 49.99,
+    "value_text": null,
+    "value_json": { "band": "mid", "currency": "USD" },
+    "unit": "item",
+    "sort_order": 0,
+    "meta": { "source": "seed" },
+    "created_at": "2026-04-07T12:00:00.000Z"
+  },
+  {
+    "id": "33333333-3333-4333-8333-333333333302",
+    "tag_id": "11111111-1111-4111-8111-111111111102",
+    "metric_key": "discount",
+    "value_num": 30,
+    "value_text": null,
+    "value_json": { "pct": 30, "kind": "flash" },
+    "unit": "percent",
+    "sort_order": 0,
+    "meta": {},
+    "created_at": "2026-04-07T12:00:00.000Z"
+  },
+  {
+    "id": "33333333-3333-4333-8333-333333333303",
+    "tag_id": "11111111-1111-4111-8111-111111111103",
+    "metric_key": "video_realism_level",
+    "value_num": 3,
+    "value_text": null,
+    "value_json": { "scale_max": 5, "label": "standard" },
+    "unit": "level",
+    "sort_order": 0,
+    "meta": {},
+    "created_at": "2026-04-07T12:00:00.000Z"
+  },
+  {
+    "id": "33333333-3333-4333-8333-333333333304",
+    "tag_id": "11111111-1111-4111-8111-111111111104",
+    "metric_key": "tts_voice_quality",
+    "value_num": 0.92,
+    "value_text": null,
+    "value_json": { "scale": "0-1", "preset": "studio" },
+    "unit": "score",
+    "sort_order": 0,
+    "meta": {},
+    "created_at": "2026-04-07T12:00:00.000Z"
+  },
+  {
+    "id": "33333333-3333-4333-8333-333333333305",
+    "tag_id": "11111111-1111-4111-8111-111111111105",
+    "metric_key": "feed_template",
+    "value_num": null,
+    "value_text": "78215",
+    "value_json": { "network": "admitad" },
+    "unit": "id",
+    "sort_order": 0,
+    "meta": {},
+    "created_at": "2026-04-07T12:00:00.000Z"
+  }
+]

@@ -1,0 +1,146 @@
+{
+  "generated": "2026-04-06",
+  "scope": "FIFER monorepo — tables and HTTP surfaces most relevant to TAG-CENTER / App Marketing integration and AliExpress flow",
+  "items": [
+    {
+      "rank": 1,
+      "kind": "table",
+      "id": "public.products",
+      "role": "Central product + AI pipeline state (ingest upsert, content generators update ai_status, ai_script, video_url, etc.)",
+      "integration_risk": "high"
+    },
+    {
+      "rank": 2,
+      "kind": "table",
+      "id": "public.campaigns",
+      "role": "Seller feeds resolve campaign_id before product upsert (AliExpress, Govee, etc.)",
+      "integration_risk": "medium"
+    },
+    {
+      "rank": 3,
+      "kind": "table",
+      "id": "public.profiles",
+      "role": "voice_id and user prefs; core-service PATCH via Supabase REST",
+      "integration_risk": "medium"
+    },
+    {
+      "rank": 4,
+      "kind": "table",
+      "id": "fifer_platform.tags",
+      "role": "TAG-CENTER canonical tags (new schema; AliExpress adapter mirrors ingest rows when FEATURE_TAG_CENTER is on)",
+      "integration_risk": "medium"
+    },
+    {
+      "rank": 5,
+      "kind": "table",
+      "id": "fifer_platform.tag_providers",
+      "role": "Optional provider registry for tag.provider_id",
+      "integration_risk": "low"
+    },
+    {
+      "rank": 6,
+      "kind": "script_surface",
+      "id": "fifer-ingestor/scripts/sellers/sync_aliexpress.js",
+      "role": "Admitad CSV stream → products upsert; TAG sidecar after successful batches",
+      "integration_risk": "high"
+    },
+    {
+      "rank": 7,
+      "kind": "script_surface",
+      "id": "saas-fifer/scripts/sellers/sync_aliexpress.js",
+      "role": "Same as ingestor copy; used by saas-fifer/scripts/test_ali.js",
+      "integration_risk": "high"
+    },
+    {
+      "rank": 8,
+      "kind": "script_surface",
+      "id": "fifer-content/scripts/main_generator.js",
+      "role": "Polls pending products, Gemini, storage upload, Make publish; updates products",
+      "integration_risk": "high"
+    },
+    {
+      "rank": 9,
+      "kind": "script_surface",
+      "id": "fifer-content/scripts/main_orchestrator.js",
+      "role": "Alternate orchestrator path for product-by-id processing",
+      "integration_risk": "medium"
+    },
+    {
+      "rank": 10,
+      "kind": "module",
+      "id": "fifer-content/scripts/services/publish_service.js",
+      "role": "Outbound HTTP POST to Make.com webhook (distribution)",
+      "integration_risk": "high"
+    },
+    {
+      "rank": 11,
+      "kind": "storage",
+      "id": "Supabase Storage bucket fifer-videos",
+      "role": "Video uploads from main_generator",
+      "integration_risk": "medium"
+    },
+    {
+      "rank": 12,
+      "kind": "http_api",
+      "id": "GET https://<landing>/api/tiktok/auth",
+      "role": "OAuth redirect to TikTok",
+      "integration_risk": "low"
+    },
+    {
+      "rank": 13,
+      "kind": "http_api",
+      "id": "GET https://<landing>/api/tiktok/callback",
+      "role": "OAuth code exchange (no Supabase write in snippet)",
+      "integration_risk": "low"
+    },
+    {
+      "rank": 14,
+      "kind": "http_api",
+      "id": "POST /api/v1/core/auth/sync",
+      "role": "FastAPI core-service — sync Supabase user into core.users (SQLAlchemy DB, not Supabase Postgres)",
+      "integration_risk": "low"
+    },
+    {
+      "rank": 15,
+      "kind": "http_api",
+      "id": "GET /api/v1/core/voices",
+      "role": "Proxy ElevenLabs voice list",
+      "integration_risk": "low"
+    },
+    {
+      "rank": 16,
+      "kind": "http_api",
+      "id": "POST /api/v1/core/select-voice",
+      "role": "Updates profiles.voice_id via Supabase REST",
+      "integration_risk": "medium"
+    },
+    {
+      "rank": 17,
+      "kind": "http_api",
+      "id": "POST /api/v1/core/clone-voice",
+      "role": "ElevenLabs clone + profiles update",
+      "integration_risk": "medium"
+    },
+    {
+      "rank": 18,
+      "kind": "external",
+      "id": "Make.com webhook (MAKE_WEBHOOK_URL)",
+      "role": "Social publishing fan-out",
+      "integration_risk": "high"
+    },
+    {
+      "rank": 19,
+      "kind": "external",
+      "id": "Google Gemini API",
+      "role": "Script generation in main_generator (quota / fallback chain)",
+      "integration_risk": "high"
+    },
+    {
+      "rank": 20,
+      "kind": "feature_flags",
+      "id": "saas-fifer/modules/fifer-platform/featureFlags.js",
+      "role": "FEATURE_TAG_CENTER, FEATURE_SCORING_ENGINE, FEATURE_CREDIT_SIMULATOR, FEATURE_APP_MARKETING",
+      "integration_risk": "low"
+    }
+  ]
+}

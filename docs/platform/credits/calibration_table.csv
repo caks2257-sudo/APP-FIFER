@@ -1,0 +1,8 @@
+engine_id,provider,category,unit,cost_per_unit_credits,notes
+gemini_flash_text,Google,text,1k_tokens,0.12,Scripts and structured JSON
+gemini_pro_text,Google,text,1k_tokens,0.45,Complex prompts
+runway_video,Runway,video,1s_render,2.5,Standard reel segment
+runway_video_4k,Runway,video,1s_render,4.2,High-res time-based pricing
+leonardo_image,Leonardo,image,1_image,1.0,Keyframes / thumbs
+elevenlabs_tts,ElevenLabs,tts,1k_chars,0.8,Voice synthesis
+ffmpeg_transcode,Internal,transcode,1s_output,0.05,Optional explicit transcode line

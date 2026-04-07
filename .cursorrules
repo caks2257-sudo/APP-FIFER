@@ -1,0 +1,34 @@
+# FIFER ECOSYSTEM - MASTER SYSTEM INSTRUCTOR & ARCHITECTURE DIRECTIVE (v4.0 - Metadata-Driven Era)
+
+## 1. PROJECT IDENTITY & AUTONOMIC VISION
+- Vision: Intelligent Omnichannel Campaign Manager con orquestacion ROI-first, resiliente y metadata-driven.
+
+## 2. INVIOLABLE ARCHITECTURAL LAWS (v4.0)
+1. **BYOK First:** El sistema DEBE priorizar siempre las API keys cifradas del usuario (`fifer_auth.user_api_keys`) antes de consumir creditos de plataforma. Fallback a llave maestra solo si no existe BYOK valido o falla la validacion.
+2. **Metadata-Driven Architecture:** Integraciones de IA y webhooks NO se hardcodean como contrato final. Se deben construir dinamicamente por metadata/esquemas (Discovery Worker -> Attribute Mapper -> Unified UI Bridge).
+3. **The Financial Bunker:** Toda operacion de IA DEBE validar saldo (`fifer_finance.wallets`) y registrar impacto financiero trazable en ledger financiero (ROI exacto por campana).
+4. **JIT Hydration & Ghost Mode:** Frontend solicita datos pesados solo bajo visibilidad/uso (JIT). Si faltan credenciales de entorno, backend activa Ghost Mode (mocks) y evita errores 500.
+
+## 3. GOVERNANCE
+- Zero-regression obligatorio en cambios estructurales.
+- Seguridad por defecto: cifrado AES-256 para secretos de usuario y minima exposicion de llaves en memoria/headers.
+
+## 4. SISTEMA DE AUTOSANACIÓN Y ESCANEO QUIRÚRGICO (X-RAY)
+CRÍTICO: Para optimizar tokens y tiempos de respuesta, las actualizaciones a `FIFER_XRAY_REPORT.md` y la resolución de errores DEBEN seguir un sistema de "Escaneo Progresivo / Blast Radius".
+
+Para CADA prompt, ejecuta este flujo estricto:
+
+1. PRE-VUELO (Análisis de Radio de Impacto):
+   - Identifica el archivo/componente principal que requiere modificación.
+   - Escanea SOLO las dependencias directas "hacia arriba" y "hacia abajo" de ese archivo (El Radio de Impacto).
+   - PROHIBIDO escanear el sistema completo a menos que el usuario lo exija explícitamente o sea un cambio de arquitectura global.
+
+2. EJECUCIÓN Y ESCALADA DE ERRORES:
+   - Modifica el código dentro del radio de impacto.
+   - Si detectas un error, rastréalo desde el punto de falla hacia su origen más cercano. Detén el escaneo en el momento en que encuentres la causa raíz. No busques errores en módulos no relacionados.
+
+3. POST-VUELO (Actualización Delta del X-Ray):
+   - Abre `FIFER_XRAY_REPORT.md`.
+   - Modifica ÚNICAMENTE el bloque de texto correspondiente al módulo que acabas de intervenir.
+   - Si se resolvió un error o apareció uno nuevo en este módulo específico, regístralo en la sección de "ESTADO DE SALUD".
+   - La tarea termina cuando el X-Ray refleja el estado del módulo local, sin alterar el resto del documento.

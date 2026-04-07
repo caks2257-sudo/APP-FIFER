@@ -1,0 +1,62 @@
+[
+  {
+    "id": "44444444-4444-4444-8444-444444444401",
+    "tag_id": "11111111-1111-4111-8111-111111111101",
+    "billing_unit": "credit",
+    "cost_value": 0.05,
+    "currency": "credit",
+    "tier": "default",
+    "effective_from": "2026-04-01T00:00:00.000Z",
+    "effective_to": null,
+    "meta": { "note": "pricing tag baseline" },
+    "created_at": "2026-04-07T12:00:00.000Z"
+  },
+  {
+    "id": "44444444-4444-4444-8444-444444444402",
+    "tag_id": "11111111-1111-4111-8111-111111111102",
+    "billing_unit": "credit",
+    "cost_value": 0.02,
+    "currency": "credit",
+    "tier": "default",
+    "effective_from": "2026-04-01T00:00:00.000Z",
+    "effective_to": null,
+    "meta": {},
+    "created_at": "2026-04-07T12:00:00.000Z"
+  },
+  {
+    "id": "44444444-4444-4444-8444-444444444403",
+    "tag_id": "11111111-1111-4111-8111-111111111103",
+    "billing_unit": "1s_render",
+    "cost_value": 2.5,
+    "currency": "credit",
+    "tier": "standard_realism",
+    "effective_from": "2026-04-01T00:00:00.000Z",
+    "effective_to": null,
+    "meta": { "maps_to": "video_realism_level" },
+    "created_at": "2026-04-07T12:00:00.000Z"
+  },
+  {
+    "id": "44444444-4444-4444-8444-444444444404",
+    "tag_id": "11111111-1111-4111-8111-111111111104",
+    "billing_unit": "1k_chars",
+    "cost_value": 0.8,
+    "currency": "credit",
+    "tier": "studio_voice",
+    "effective_from": "2026-04-01T00:00:00.000Z",
+    "effective_to": null,
+    "meta": { "maps_to": "tts_voice_quality" },
+    "created_at": "2026-04-07T12:00:00.000Z"
+  },
+  {
+    "id": "44444444-4444-4444-8444-444444444405",
+    "tag_id": "11111111-1111-4111-8111-111111111105",
+    "billing_unit": "credit",
+    "cost_value": 0,
+    "currency": "credit",
+    "tier": "free",
+    "effective_from": "2026-04-01T00:00:00.000Z",
+    "effective_to": null,
+    "meta": {},
+    "created_at": "2026-04-07T12:00:00.000Z"
+  }
+]
