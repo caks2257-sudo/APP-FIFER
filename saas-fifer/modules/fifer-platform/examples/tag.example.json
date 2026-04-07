@@ -1,0 +1,12 @@
+{
+  "name": "publish_ig",
+  "type": "routing",
+  "description": "Eligible for Instagram publishing via Make.com router",
+  "metrics": [{ "k": "estimated_ctr", "v": 0.032 }],
+  "virtues": [{ "k": "reach", "v": "high" }],
+  "limitations": [{ "k": "format", "v": "carousel_only" }],
+  "cost_unit": "credit",
+  "cost_value": 0.15,
+  "provider_id": null,
+  "extra": { "ai_metadata": { "tone": "sports_hype" } }
+}
