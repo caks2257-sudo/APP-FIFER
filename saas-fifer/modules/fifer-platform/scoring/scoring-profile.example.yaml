@@ -1,0 +1,22 @@
+# Declarative scoring profile (mirror of JSON). Load via your pipeline or convert to JSON.
+id: content-readiness-v1
+factors:
+  - id: engagement_proxy
+    weight: 0.45
+    path: metrics.engagement_rate
+    normalize:
+      min: 0
+      max: 1
+  - id: intent_tags
+    weight: 0.35
+    fn: tagOverlap
+    tags:
+      - publish_ig
+      - intent_impulse
+  - id: freshness_hours
+    weight: 0.2
+    path: metrics.freshness_hours
+    normalize:
+      min: 0
+      max: 168
+      invert: true
