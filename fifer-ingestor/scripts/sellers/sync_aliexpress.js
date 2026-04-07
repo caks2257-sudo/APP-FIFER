@@ -1,5 +1,39 @@
+const path = require('path');
 const axios = require('axios');
 const csv = require('csv-parser');
+const { maybeSyncTagsAfterAliexpressBatch } = require(path.join(
+    __dirname,
+    '..',
+    '..',
+    '..',
+    'saas-fifer',
+    'scripts',
+    'adapters',
+    'tagCenterAliexpressAdapter'
+));
+const { triggerMasterAfterProductUpsert } = require(path.join(
+    __dirname,
+    '..',
+    '..',
+    '..',
+    'src',
+    'modules',
+    'affiliates',
+    'bridge_hook'
+));
+
+function scheduleAutoProcessAfterUpsert(toInsert) {
+    if (process.env.FEATURE_AUTO_PROCESS !== 'true') return;
+    setImmediate(() => {
+        triggerMasterAfterProductUpsert(toInsert, { source: 'aliexpress' })
+            .then((r) => {
+                if (!r.ok && !r.skipped) {
+                    console.warn('[BRIDGE_HOOK] Master processing no OK (sync continúa):', r.error || r.body || r);
+                }
+            })
+            .catch((e) => console.error('[BRIDGE_HOOK]', e.message || e));
+    });
+}
 
 // 🔐 Configuración Privada del Seller
 const CONFIG = {
@@ -67,8 +101,16 @@ async function sync(supabase, options, helpers) {
                 const toInsert = [...batch];
                 batch = [];
                 const { error } = await supabase.from('products').upsert(toInsert, { onConflict: 'product_id' });
-                if (!error) guardados += toInsert.length;
-                
+                if (!error) {
+                    guardados += toInsert.length;
+                    try {
+                        await maybeSyncTagsAfterAliexpressBatch(supabase, toInsert);
+                    } catch (e) {
+                        console.error(`[TAG_CENTER] batch sidecar: ${e.message || e}`);
+                    }
+                    scheduleAutoProcessAfterUpsert(toInsert);
+                }
+
                 process.stdout.write(`📦 [${CONFIG.name}] ${guardados}/${limit} items... \r`);
 
                 if (guardados >= limit) {
@@ -81,7 +123,24 @@ async function sync(supabase, options, helpers) {
             }
         });
 
-        stream.on('end', () => { if (!haTerminado) resolve(guardados); });
+        stream.on('end', async () => {
+            if (haTerminado) return;
+            if (batch.length > 0) {
+                const toInsert = [...batch];
+                batch = [];
+                const { error } = await supabase.from('products').upsert(toInsert, { onConflict: 'product_id' });
+                if (!error) {
+                    guardados += toInsert.length;
+                    try {
+                        await maybeSyncTagsAfterAliexpressBatch(supabase, toInsert);
+                    } catch (e) {
+                        console.error(`[TAG_CENTER] batch sidecar: ${e.message || e}`);
+                    }
+                    scheduleAutoProcessAfterUpsert(toInsert);
+                }
+            }
+            resolve(guardados);
+        });
         stream.on('error', (err) => reject(err));
     });
 }
