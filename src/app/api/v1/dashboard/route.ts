@@ -1,17 +1,10 @@
 import { NextResponse } from 'next/server';
-import path from 'path';
-import { pathToFileURL } from 'url';
 import type { RawDashboardPayload } from '@/utils/adapters/dashboardAdapter';
+import { fetchAffiliateData } from '../../../../../FIFER_CORE/xray_engines/xray_admitad.js';
 
 const XRAY_SOURCES = ['FIFER_CORE/xray_engines/xray_admitad.js', 'FIFER_CORE/xray_engines/xray_products.js'] as const;
 
 async function getAffiliateSummaryFromEngine() {
-  const enginePath = path.join(process.cwd(), XRAY_SOURCES[0]);
-  const engineUrl = pathToFileURL(enginePath).href;
-  const admitadModule = await import(engineUrl);
-  const fetchAffiliateData =
-    admitadModule.fetchAffiliateData ?? admitadModule.default?.fetchAffiliateData;
-
   if (typeof fetchAffiliateData !== 'function') {
     throw new Error('xray_admitad no exporta fetchAffiliateData');
   }

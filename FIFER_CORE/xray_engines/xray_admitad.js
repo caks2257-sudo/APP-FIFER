@@ -1,20 +1,25 @@
-const path = require('path');
 const axios = require('axios');
 
-require('dotenv').config({ path: path.resolve(__dirname, '../../.env'), override: false });
+const FALLBACK_AFFILIATE_DATA = {
+    raw: {
+        source: "fallback",
+    },
+    summary: {
+        title: 'Comisiones del Mes',
+        value: '$ 0 CLP',
+        caption: 'Modo local sin API keys: mostrando dataset de prueba',
+    },
+};
 
 function getAdmitadCredentials() {
     const clientId = process.env.ADMITAD_CLIENT_ID ? process.env.ADMITAD_CLIENT_ID.trim() : "";
     const clientSecret = process.env.ADMITAD_CLIENT_SECRET ? process.env.ADMITAD_CLIENT_SECRET.trim() : "";
 
-    if (!clientId) {
-        throw new Error("API Key de Admitad no encontrada: falta ADMITAD_CLIENT_ID");
-    }
-    if (!clientSecret) {
-        throw new Error("API Secret de Admitad no encontrada: falta ADMITAD_CLIENT_SECRET");
-    }
-
-    return { clientId, clientSecret };
+    return {
+        clientId,
+        clientSecret,
+        isConfigured: Boolean(clientId && clientSecret),
+    };
 }
 
 async function obtenerToken() {
@@ -56,16 +61,22 @@ function toAffiliateSummary(campaign) {
 }
 
 async function fetchAffiliateData() {
-    const token = await obtenerToken();
-
     try {
+        const { isConfigured } = getAdmitadCredentials();
+        if (!isConfigured) {
+            console.warn("[X-Ray Admitad] API Keys missing or network error. Using Fallback Data.");
+            return FALLBACK_AFFILIATE_DATA;
+        }
+
+        const token = await obtenerToken();
         const response = await axios.get('https://api.admitad.com/advcampaigns/?limit=1&language=es', {
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
         const dataCruda = response?.data?.results?.[0];
         if (!dataCruda) {
-            throw new Error('Admitad no devolvio campañas en results[0]');
+            console.warn("[X-Ray Admitad] API Keys missing or network error. Using Fallback Data.");
+            return FALLBACK_AFFILIATE_DATA;
         }
 
         return {
@@ -73,10 +84,9 @@ async function fetchAffiliateData() {
             summary: toAffiliateSummary(dataCruda),
         };
 
-    } catch (error) {
-        const status = error.response ? error.response.status : 'unknown';
-        const reason = error.response?.data ? JSON.stringify(error.response.data) : error.message;
-        throw new Error(`Error en motor xray_admitad (${status}): ${reason}`);
+    } catch (_error) {
+        console.warn("[X-Ray Admitad] API Keys missing or network error. Using Fallback Data.");
+        return FALLBACK_AFFILIATE_DATA;
     }
 }
 

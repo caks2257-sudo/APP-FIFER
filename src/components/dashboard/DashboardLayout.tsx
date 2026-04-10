@@ -15,6 +15,7 @@ interface DashboardLayoutProps {
   isRefining?: boolean;
   isLoading?: boolean;
   hasError?: boolean;
+  children?: React.ReactNode;
 }
 
 export default function DashboardLayout({
@@ -23,6 +24,7 @@ export default function DashboardLayout({
   isRefining = false,
   isLoading = false,
   hasError = false,
+  children,
 }: DashboardLayoutProps) {
   void data;
   const resolvedConfig = config ?? { widgets: [] };
@@ -33,19 +35,25 @@ export default function DashboardLayout({
       <main className="ml-64 min-h-screen bg-[#0A0F1E]">
         <Topbar />
         <section className="px-8 pb-8 pt-28">
-          <header className="mb-8">
-            <h1 className="text-3xl font-semibold tracking-tight text-[#F9FAFB]">Dashboard</h1>
-            <p className="mt-2 text-sm text-[#9CA3AF]">
-              Vista analitica de expedientes, tramites y actividad operativa.
-            </p>
-          </header>
+          {children != null ? (
+            <div className="flex min-h-[calc(100dvh-7rem)] flex-col">{children}</div>
+          ) : (
+            <>
+              <header className="mb-8">
+                <h1 className="text-3xl font-semibold tracking-tight text-[#F9FAFB]">Dashboard</h1>
+                <p className="mt-2 text-sm text-[#9CA3AF]">
+                  Vista analitica de expedientes, tramites y actividad operativa.
+                </p>
+              </header>
 
-          <PageOrchestrator
-            widgets={resolvedConfig.widgets}
-            isRefining={isRefining}
-            isLoading={isLoading}
-            hasError={hasError}
-          />
+              <PageOrchestrator
+                widgets={resolvedConfig.widgets}
+                isRefining={isRefining}
+                isLoading={isLoading}
+                hasError={hasError}
+              />
+            </>
+          )}
         </section>
       </main>
     </div>
