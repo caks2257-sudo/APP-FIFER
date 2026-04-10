@@ -1,5 +1,0 @@
-﻿# FIFER - Sniper Mode (section 4): reduce indexed context tokens.
-# See .cursorrules -> Roadmap Francotirador.
-
-**/node_modules/**
-**/*.log

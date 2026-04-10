@@ -1,3 +1,0 @@
-git add .
-git commit -m "fix: inyección de package.json y dependencias core de Next.js"
-git push

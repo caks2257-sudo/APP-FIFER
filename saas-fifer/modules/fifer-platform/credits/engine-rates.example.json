@@ -1,9 +1,0 @@
-{
-  "gemini_flash_text": { "unit": "1k_tokens", "costPerUnit": 0.12, "category": "text" },
-  "gemini_pro_text": { "unit": "1k_tokens", "costPerUnit": 0.45, "category": "text" },
-  "elevenlabs_tts": { "unit": "1k_chars", "costPerUnit": 0.8, "category": "tts" },
-  "runway_video": { "unit": "1s_render", "costPerUnit": 2.5, "category": "video" },
-  "runway_video_4k": { "unit": "1s_render", "costPerUnit": 4.2, "category": "video" },
-  "leonardo_image": { "unit": "1_image", "costPerUnit": 1.0, "category": "image" },
-  "ffmpeg_transcode": { "unit": "1s_output", "costPerUnit": 0.05, "category": "transcode" }
-}

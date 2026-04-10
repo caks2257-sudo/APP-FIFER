@@ -1,56 +1,26 @@
 {
-    "compilerOptions":  {
-                            "lib":  [
-                                        "dom",
-                                        "dom.iterable",
-                                        "esnext"
-                                    ],
-                            "allowJs":  true,
-                            "skipLibCheck":  true,
-                            "strict":  true,
-                            "noEmit":  true,
-                            "esModuleInterop":  true,
-                            "module":  "esnext",
-                            "moduleResolution":  "bundler",
-                            "resolveJsonModule":  true,
-                            "isolatedModules":  true,
-                            "jsx":  "preserve",
-                            "incremental":  true,
-                            "plugins":  [
-                                            {
-                                                "name":  "next"
-                                            }
-                                        ],
-                            "paths":  {
-                                          "@/*":  [
-                                                      "./src/*"
-                                                  ],
-                                          "@fifer/finance-engine":  [
-                                                                        "../packages/engines/finance-engine/src/index.ts"
-                                                                    ],
-                                          "@fifer/legal-rules-engine":  [
-                                                                            "../packages/engines/legal-rules-engine/src/index.ts"
-                                                                        ],
-                                          "@fifer/llm-engine":  [
-                                                                    "../packages/engines/llm-engine/src/index.ts"
-                                                                ],
-                                          "@fifer/scraping-engine":  [
-                                                                         "../packages/engines/scraping-engine/src/index.ts"
-                                                                     ],
-                                          "@fifer-user/*":  [
-                                                                "../src/modules/user/*"
-                                                            ]
-                                      },
-                            "baseUrl":  "."
-                        },
-    "include":  [
-                    "next-env.d.ts",
-                    "**/*.ts",
-                    "**/*.tsx",
-                    ".next/types/**/*.ts"
-                ],
-    "exclude":  [
-                    "node_modules",
-                    "src/_legacy_trash/**"
-                ]
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
 }
