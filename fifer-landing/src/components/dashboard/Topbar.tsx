@@ -1,6 +1,6 @@
 'use client';
 
-import { HiOutlineSearch, HiOutlineBell, HiOutlineMenu } from 'react-icons/hi';
+import { HiOutlineSearch, HiOutlineBell } from 'react-icons/hi';
 import clsx from 'clsx';
 
 interface TopbarProps {

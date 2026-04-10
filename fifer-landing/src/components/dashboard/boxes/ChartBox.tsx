@@ -52,7 +52,7 @@ export default function ChartBox() {
 
         {/* Chart Area */}
         <div className="ml-8 h-full flex items-end gap-4">
-          {chartData.map((data, index) => (
+          {chartData.map((data) => (
             <div key={data.month} className="flex-1 flex flex-col items-center gap-2">
               {/* Bars */}
               <div className="w-full flex gap-1 items-end h-40">
