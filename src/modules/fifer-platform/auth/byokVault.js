@@ -273,6 +273,16 @@ async function resolveByokRouting(options = {}) {
   };
 }
 
+/**
+ * @param {string} userId
+ * @param {string} provider — openai | anthropic | ...
+ * @returns {Promise<boolean>}
+ */
+async function hasVaultProviderKey(userId, provider) {
+  const r = await getUserProviderApiKey(userId, provider);
+  return Boolean(r && r.ok === true && String(r.api_key || "").trim().length > 0);
+}
+
 module.exports = {
   ALLOWED_PROVIDERS,
   encryptApiKey,
@@ -280,6 +290,7 @@ module.exports = {
   listUserApiKeys,
   upsertUserApiKey,
   getUserProviderApiKey,
+  hasVaultProviderKey,
   deleteUserApiKey,
   testProviderKey,
   resolveByokRouting,

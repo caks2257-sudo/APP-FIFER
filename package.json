@@ -7,10 +7,19 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "test:contract": "node --test tests/contract/phase2_contract.test.mjs",
     "boot:check": "node src/system/boot_sequence.js",
-    "dev:safe": "node src/server.js && npm run dev:all --prefix fifer-landing/temp-frontend",
+    "api": "node src/api/http_server.js",
+    "dev:safe": "node src/server.js && npm run dev --prefix fifer-landing",
     "verify:mass-extraction": "node src/scripts/mass_extraction_verify.js",
+    "simulate:sales": "node src/scripts/simulate_sales.js",
     "db:reconcile:migrations:dry": "powershell -ExecutionPolicy Bypass -File scripts/reconcile_supabase_migrations.ps1",
-    "db:reconcile:migrations": "powershell -ExecutionPolicy Bypass -File scripts/reconcile_supabase_migrations.ps1 -Execute"
+    "db:reconcile:migrations": "powershell -ExecutionPolicy Bypass -File scripts/reconcile_supabase_migrations.ps1 -Execute",
+    "db:reset:local": "powershell -ExecutionPolicy Bypass -File supabase-reset-local.ps1",
+    "fifer:env:landing": "powershell -ExecutionPolicy Bypass -File scripts/fifer-landing-env.ps1",
+    "xray:validate": "npm run xray:validate --prefix fifer-landing",
+    "module:seed": "npm run module:seed --prefix fifer-landing",
+    "v0-sync": "tsx src/utils/v0-mirror.ts",
+    "dna-janitor": "tsx src/utils/dna-distiller.ts --janitor",
+    "dna-tick": "tsx src/utils/dna-distiller.ts --tick"
   },
   "repository": {
     "type": "git",
@@ -21,25 +30,40 @@
   "license": "ISC",
   "private": true,
   "workspaces": [
+    "apps/*",
+    "packages/engines/*",
+    "fifer-landing",
+    "src",
     "fifer-content",
     "fifer-ingestor",
-    "saas-fifer",
-    "fifer-landing"
+    "saas-fifer"
   ],
   "type": "commonjs",
   "bugs": {
     "url": "https://github.com/caks2257-sudo/APP-FIFER/issues"
   },
   "homepage": "https://github.com/caks2257-sudo/APP-FIFER#readme",
+  "devDependencies": {
+    "@types/node": "^20.17.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
     "@google/generative-ai": "^0.24.1",
     "@supabase/supabase-js": "^2.101.1",
     "axios": "^1.14.0",
     "cheerio": "^1.2.0",
     "dotenv": "^17.4.1",
     "elevenlabs": "^1.59.0",
+    "express": "^5.2.1",
     "fluent-ffmpeg": "^2.1.3",
+    "framer-motion": "^12.38.0",
     "node-cron": "^4.2.1",
-    "openai": "^6.33.0"
+    "openai": "^6.33.0",
+    "stripe": "^22.0.1",
+    "zod": "^4.3.6",
+    "zustand": "^5.0.12"
   }
 }

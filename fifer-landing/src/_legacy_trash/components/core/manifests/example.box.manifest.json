@@ -1,0 +1,27 @@
+{
+  "boxId": "example-v0-box",
+  "sourceModule": "content",
+  "targetSlot": "slot-main-content",
+  "layout": {
+    "minWidth": 6,
+    "minHeight": 3,
+    "isResizable": true
+  },
+  "permissions": {
+    "requiredRole": "user",
+    "requiresActiveSubscription": false
+  },
+  "dataDependencies": [
+    {
+      "endpoint": "/api/v1/master/ai-capabilities",
+      "requiresBYOK": false,
+      "method": "GET"
+    }
+  ],
+  "fallbackStrategy": "skeleton",
+  "themeOverrides": {
+    "primary": "#0A0F1E",
+    "accent": "#EAB308",
+    "surface": "#18181B"
+  }
+}

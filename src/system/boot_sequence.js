@@ -259,6 +259,53 @@ async function runBootSequence(options = {}) {
 
   console.log("✅ 🎉 Safe Boot completado correctamente.\n");
 
+  console.log("🔭 Paso D — Discovery Worker (catálogo de capacidades IA)…");
+  try {
+    const { syncCapabilities } = require("./discovery_worker.js");
+    const dr = await syncCapabilities();
+    if (!dr.ok && dr.detail) {
+      console.warn("⚠️ Discovery Worker: advertencias —", dr.detail);
+    }
+    console.log("");
+  } catch (err) {
+    console.warn(
+      "⚠️ Discovery Worker no pudo ejecutarse (no bloquea boot):",
+      err?.message || String(err),
+      "\n"
+    );
+  }
+
+  console.log("📡 API Health Monitor — ping a proveedores de modelos…");
+  try {
+    const { runHealthCheckCycle, startApiHealthMonitorBackground } = require("./api_health_monitor.js");
+    const fromBootCli =
+      require.main === module &&
+      String(options.context || "").toLowerCase() === "cli";
+    /** Preflight (`src/server.js`) y CLI deben terminar sin `setInterval`; proceso HTTP persistente: `startApiHealthMonitor: true`. */
+    const persistentHttp =
+      options.startApiHealthMonitor === true ||
+      /^true|1$/i.test(String(process.env.FIFER_API_HEALTH_MONITOR || "").trim());
+    if (!fromBootCli) {
+      void runHealthCheckCycle().catch((e) =>
+        console.warn("[api_health_monitor] ciclo inicial:", e?.message || String(e))
+      );
+    }
+    if (persistentHttp && !fromBootCli) {
+      startApiHealthMonitorBackground();
+      console.log("   (intervalo 15 min activo — FIFER_API_HEALTH_MONITOR o startApiHealthMonitor: true)\n");
+    } else if (!fromBootCli) {
+      console.log("   (solo ciclo puntual; intervalo: define FIFER_API_HEALTH_MONITOR=1 o startApiHealthMonitor en boot)\n");
+    } else {
+      console.log("   (omitido en CLI boot_sequence)\n");
+    }
+  } catch (err) {
+    console.warn(
+      "⚠️ API Health Monitor no pudo ejecutarse (no bloquea boot):",
+      err?.message || String(err),
+      "\n"
+    );
+  }
+
   if (options.startJanitor === true) {
     try {
       const { startJanitor } = require("./cron_janitor.js");
@@ -278,6 +325,18 @@ async function runBootSequence(options = {}) {
     } catch (err) {
       console.warn(
         "⚠️ Inventory Guardian no pudo iniciarse (no bloquea boot):",
+        err?.message || String(err)
+      );
+    }
+  }
+
+  if (String(process.env.DEMO_MODE || "").trim() === "true") {
+    try {
+      const { startBackgroundSalesWorker } = require("./background_sales_worker.js");
+      startBackgroundSalesWorker();
+    } catch (err) {
+      console.warn(
+        "⚠️ Live Demo Engine (background_sales_worker) no pudo iniciarse (no bloquea boot):",
         err?.message || String(err)
       );
     }

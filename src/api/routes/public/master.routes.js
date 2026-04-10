@@ -3,13 +3,45 @@
  * - POST /automated-play → X-FIFER-INTERNAL-KEY (bot / ISC; sin JWT)
  * - POST /orchestrate → requireAuth
  * - POST /url-campaign → requireAuth (Web Ingestion Node v3.0)
- * - POST /publish-draft → requireAuth (publicar borrador → Make, v3.3)
+ * - POST /publish-draft → requireAuth (publicar borrador → Make `MAKE_PUBLISH_WEBHOOK_URL`, estado `processing_external`)
+ * - PATCH /publish-callback → header `x-fifer-secret` (`FIFER_PUBLISH_CALLBACK_SECRET`); Make acusa URL final → `published`
+ * - GET /campaign-drafts → requireAuth (historial de borradores del usuario)
+ * - GET /finance/report → requireAuth (reporte financiero + ledger / ROI)
+ * - GET /finance/platform-ranking → requireAuth (Top plataformas por sale_commission, 7 días)
+ * - GET /finance/cost-savings → requireAuth (ahorro router IA vs baseline premium, mes UTC actual)
+ * - GET /user/subscription → requireAuth (tier `fifer_auth.user_profile` + flags BYOK para UI)
  *
  * Cualquier ruta GET/POST futura de orquestación orientada a usuarios debe usar `requireAuth`.
  * Montaje: `express.Router()` + `attachPublicMasterRoutes(router)`.
+ * Webhooks: `POST /webhooks/universal` (Gateway polimórfico; ver `webhook.routes.js`).
+ * Discovery: `GET /ai-capabilities` (catálogo `fifer_platform.ai_capabilities`; ver `discovery_worker.js`).
+ * Stripe: `POST /stripe/webhook` **no** se define aquí — el cuerpo debe ser RAW; se monta en `src/api/http_server.js` **antes** de `express.json()` (ver `stripe.routes.js`).
+ * Monitor: `GET /system/api-health` (tabla `fifer_platform.api_health_status`; ver `api_health_monitor.js`).
+ * Curador: `POST /ai/recommend` (recomendaciones por producto; ver `curator_service.js`). `POST /url-campaign` incluye `data.curator` al completar.
  */
 const path = require("path");
+const express = require("express");
+
+/** TypeScript: `AIOrchestrator` (`src/lib/ai/AIOrchestrator.ts`) vía `src/api/v1/ai/proxy.ts` — requiere `tsx`. */
+function tryRegisterFiferAiProxy(router, requireAuthMiddleware) {
+  try {
+    require("tsx/cjs/api").register();
+  } catch (e) {
+    console.warn(
+      "[FIFER] tsx no disponible — omite POST /ai/proxy. Instala `tsx` o ejecuta el API con soporte TS.",
+      e?.message || e
+    );
+    return;
+  }
+  try {
+    const { createAiProxyHandler } = require(path.join(__dirname, "../../v1/ai/proxy.ts"));
+    router.post("/ai/proxy", requireAuthMiddleware, createAiProxyHandler());
+  } catch (e) {
+    console.warn("[FIFER] No se montó /ai/proxy:", e?.message || e);
+  }
+}
 const { requireAuth } = require(path.join(__dirname, "../../middlewares/auth_supabase.js"));
+const { attachPublicWebhookRoutes } = require(path.join(__dirname, "./webhook.routes.js"));
 const { internalAuth } = require(path.join(__dirname, "../../middlewares/internal_auth.js"));
 const { runAutomatedPlay } = require(path.join(__dirname, "../../master/run_automated_play.js"));
 const { MasterOrchestrator } = require(path.join(__dirname, "../../master/master_orchestrator.js"));
@@ -18,18 +50,23 @@ const { runUrlCampaignPipeline } = require(path.join(__dirname, "../../master/pi
 const { getActiveEngines } = require(path.join(__dirname, "../../../config/ai_engines.js"));
 const {
   getDraftById,
-  markDraftAsStatus,
   upsertAdMapping,
   setDraftPlatformAdId,
+  listDraftsForUser,
+  finalizeDraftExternalPublish,
 } = require(path.join(__dirname, "../../../modules/fifer-platform/campaigns/draftRepository.js"));
-const {
-  dispatchMakeWebhook,
-  buildMakeDispatchPayloadFromDraft,
-} = require(path.join(__dirname, "../../../services/publish_service.js"));
+const { dispatchToMake } = require(path.join(__dirname, "../../../services/publish_service.js"));
 const { getEarningsSummary } = require(path.join(
   __dirname,
   "../../../modules/fifer-platform/finance-bridge/finance_client.js"
 ));
+const {
+  getWeeklyIncomeFromLedger,
+  getRecentLedgerEntries,
+  getRoiForUserPublishedDrafts,
+  getPlatformProfitRanking,
+  registerManualIncome,
+} = require(path.join(__dirname, "../../../services/finance_service.js"));
 const { MercadoLibreAdapter } = require(path.join(
   __dirname,
   "../../../modules/affiliates/adapters/meli_adapter.js"
@@ -48,6 +85,21 @@ const {
   testProviderKey,
   deleteUserApiKey,
 } = require(path.join(__dirname, "../../../modules/fifer-platform/auth/byokVault.js"));
+const {
+  listAiCapabilities,
+  fetchCapabilitiesForCurator,
+} = require(path.join(__dirname, "../../../system/discovery_worker.js"));
+const { listApiHealthStatus, runHealthCheckCycle } = require(path.join(
+  __dirname,
+  "../../../system/api_health_monitor.js"
+));
+const { recommendCapabilities } = require(path.join(__dirname, "../../../services/ai/curator_service.js"));
+const { getCostSavingsCurrentMonth } = require(path.join(__dirname, "../../../services/ai/ai_task_router.js"));
+const { getUserSubscriptionProfile } = require(path.join(
+  __dirname,
+  "../../../modules/fifer-platform/auth/userProfileRepository.js"
+));
+const { hasVaultProviderKey } = require(path.join(__dirname, "../../../modules/fifer-platform/auth/byokVault.js"));
 
 /** @type {Map<string, { stock_status: "in_stock" | "out_of_stock" | "unknown", updated_price: number | null, store: string, at: string }>} */
 const STOCK_SYNC_CACHE = new Map();
@@ -82,6 +134,29 @@ function allowInternalOrAuth(req, res, next) {
   return requireAuth(req, res, next);
 }
 
+/** Webhook de retorno Make.com: solo escenarios con el mismo secreto compartido. */
+function requirePublishCallbackSecret(req, res, next) {
+  const expected = String(process.env.FIFER_PUBLISH_CALLBACK_SECRET || "").trim();
+  const incoming = String(req.headers["x-fifer-secret"] || "").trim();
+  if (!expected) {
+    return res.status(503).json(
+      errorResponse("FIFER_PUBLISH_CALLBACK_SECRET no configurado en el servidor", {
+        node: "publish_callback_gateway",
+        code: "secret_not_configured",
+      })
+    );
+  }
+  if (!incoming || incoming !== expected) {
+    return res.status(401).json(
+      errorResponse("No autorizado", {
+        node: "publish_callback_gateway",
+        code: "invalid_secret",
+      })
+    );
+  }
+  next();
+}
+
 function injectUserMetadata(result, userId) {
   if (!result || typeof result !== "object") return result;
   const meta = result.metadata && typeof result.metadata === "object" ? { ...result.metadata } : {};
@@ -93,6 +168,10 @@ function injectUserMetadata(result, userId) {
  * @param {import("express").Router} router
  */
 function attachPublicMasterRoutes(router) {
+  const webhookRouter = express.Router();
+  attachPublicWebhookRoutes(webhookRouter);
+  router.use("/webhooks", webhookRouter);
+
   router.post("/automated-play", internalAuth, async (req, res) => {
     try {
       const body = req.body && typeof req.body === "object" ? req.body : {};
@@ -187,6 +266,37 @@ function attachPublicMasterRoutes(router) {
     }
   });
 
+  router.post("/ai/recommend", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id || req.supabaseUser?.id || null;
+      const body = req.body && typeof req.body === "object" ? req.body : {};
+      const productData =
+        body.productData && typeof body.productData === "object" ? body.productData : body;
+      const caps = await fetchCapabilitiesForCurator();
+      if (!caps.length) {
+        const empty = successResponse(
+          { voices: [], text_models: [], product_signals: {} },
+          { node: "ai_curator", empty_catalog: true }
+        );
+        return res.status(200).json(injectUserMetadata(empty, userId));
+      }
+      const out = await recommendCapabilities(productData, caps, { userId });
+      const result = successResponse(out, {
+        node: "ai_curator",
+        voice_count: out.voices.length,
+        model_count: out.text_models.length,
+      });
+      return res.status(200).json(injectUserMetadata(result, userId));
+    } catch (err) {
+      return res.status(500).json(
+        errorResponse(err?.message || String(err), {
+          node: "ai_curator",
+          code: "unhandled",
+        })
+      );
+    }
+  });
+
   router.get("/engines", requireAuth, async (req, res) => {
     try {
       const userId = req.user?.id || req.supabaseUser?.id || null;
@@ -204,6 +314,134 @@ function attachPublicMasterRoutes(router) {
       return res.status(500).json(
         errorResponse(err?.message || String(err), {
           node: "engines_gateway",
+          code: "unhandled",
+        })
+      );
+    }
+  });
+
+  router.get("/system/api-health", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id || req.supabaseUser?.id || null;
+      const out = await listApiHealthStatus();
+      if (!out.ok) {
+        return res.status(503).json(
+          errorResponse(out.error || "api_health_unavailable", {
+            node: "api_health_gateway",
+            code: out.error === "supabase_not_configured" ? "supabase_not_configured" : "query_failed",
+          })
+        );
+      }
+      const result = successResponse(out.data, {
+        node: "api_health_gateway",
+        count: out.data.length,
+      });
+      const enriched = injectUserMetadata(result, userId);
+      return res.status(200).json(enriched);
+    } catch (err) {
+      return res.status(500).json(
+        errorResponse(err?.message || String(err), {
+          node: "api_health_gateway",
+          code: "unhandled",
+        })
+      );
+    }
+  });
+
+  router.post("/system/api-health/refresh", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id || req.supabaseUser?.id || null;
+      const cycle = await runHealthCheckCycle();
+      if (!cycle.ok) {
+        return res.status(503).json(
+          errorResponse(cycle.detail || "api_health_refresh_failed", {
+            node: "api_health_gateway",
+            code: cycle.detail === "supabase_not_configured" ? "supabase_not_configured" : "refresh_failed",
+          })
+        );
+      }
+      const out = await listApiHealthStatus();
+      const rows = out.ok ? out.data : [];
+      const result = successResponse(
+        { refreshed: true, upserted: cycle.upserted, providers: rows },
+        {
+          node: "api_health_gateway",
+          action: "refresh",
+          count: rows.length,
+        }
+      );
+      const enriched = injectUserMetadata(result, userId);
+      return res.status(200).json(enriched);
+    } catch (err) {
+      return res.status(500).json(
+        errorResponse(err?.message || String(err), {
+          node: "api_health_gateway",
+          code: "unhandled",
+        })
+      );
+    }
+  });
+
+  router.get("/user/subscription", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id || req.supabaseUser?.id || null;
+      if (!userId) {
+        return res.status(401).json(
+          errorResponse("Autenticación requerida", {
+            node: "user_subscription_gateway",
+            code: "unauthorized",
+          })
+        );
+      }
+      const prof = await getUserSubscriptionProfile(userId);
+      const byok_openai = await hasVaultProviderKey(userId, "openai");
+      const byok_anthropic = await hasVaultProviderKey(userId, "anthropic");
+      const result = successResponse(
+        {
+          subscription_tier: prof.tier,
+          tier_expires_at: prof.tier_expires_at ?? null,
+          expired_pro: Boolean(prof.expired_pro),
+          byok_openai,
+          byok_anthropic,
+        },
+        { node: "user_subscription_gateway" }
+      );
+      return res.status(200).json(injectUserMetadata(result, userId));
+    } catch (err) {
+      return res.status(500).json(
+        errorResponse(err?.message || String(err), {
+          node: "user_subscription_gateway",
+          code: "unhandled",
+        })
+      );
+    }
+  });
+
+  router.get("/ai-capabilities", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id || req.supabaseUser?.id || null;
+      const type = typeof req.query.type === "string" ? req.query.type.trim() : "";
+      const provider = typeof req.query.provider === "string" ? req.query.provider.trim() : "";
+      const out = await listAiCapabilities({ type, provider });
+      if (!out.ok) {
+        return res.status(503).json(
+          errorResponse(out.error || "ai_capabilities_unavailable", {
+            node: "ai_capabilities_gateway",
+            code: out.error === "supabase_not_configured" ? "supabase_not_configured" : "query_failed",
+          })
+        );
+      }
+      const result = successResponse(out.data, {
+        node: "ai_capabilities_gateway",
+        count: out.data.length,
+        filters: { type: type || null, provider: provider || null },
+      });
+      const enriched = injectUserMetadata(result, userId);
+      return res.status(200).json(enriched);
+    } catch (err) {
+      return res.status(500).json(
+        errorResponse(err?.message || String(err), {
+          node: "ai_capabilities_gateway",
           code: "unhandled",
         })
       );
@@ -450,13 +688,29 @@ function attachPublicMasterRoutes(router) {
         );
       }
 
-      const makePayload = buildMakeDispatchPayloadFromDraft(draft);
-      const makeResult = await dispatchMakeWebhook(makePayload, { force: true });
+      if (draft.status === "paused_by_inventory") {
+        return res.status(400).json(
+          errorResponse("La campaña está pausada por inventario; no se puede publicar hasta reanudar.", {
+            node: "publish_draft_gateway",
+            code: "paused_by_inventory",
+          }, { draft_id: draftId })
+        );
+      }
+
+      const makeResult = await dispatchToMake(draftId);
 
       if (!makeResult.success) {
-        return res.status(502).json(
+        const statusCode =
+          makeResult.reason === "not_found"
+            ? 404
+            : makeResult.reason === "invalid_status"
+              ? 400
+              : makeResult.reason === "missing_publish_webhook_url"
+                ? 503
+                : 502;
+        return res.status(statusCode).json(
           errorResponse(
-            makeResult.error || makeResult.reason || "Fallo al enviar la orden a Make",
+            makeResult.error || makeResult.reason || "Fallo al enviar el borrador a Make",
             {
               node: "publish_draft_gateway",
               code: "make_dispatch_failed",
@@ -467,21 +721,12 @@ function attachPublicMasterRoutes(router) {
         );
       }
 
-      const marked = await markDraftAsStatus(draftId, "published");
-      if (!marked.ok) {
-        return res.status(502).json(
-          errorResponse(marked.error || "No se pudo actualizar el estado del borrador", {
-            node: "publish_draft_gateway",
-            code: "db_update_failed",
-          })
-        );
-      }
-
       const result = successResponse(
         {
           draft_id: draftId,
-          published: true,
-          make_job_id: makeResult.job_id ?? null,
+          status: "processing_external",
+          dispatched: true,
+          http_status: makeResult.http_status ?? null,
         },
         {
           node: "publish_draft_gateway",
@@ -494,6 +739,107 @@ function attachPublicMasterRoutes(router) {
       return res.status(500).json(
         errorResponse(err?.message || String(err), {
           node: "publish_draft_gateway",
+          code: "unhandled",
+        })
+      );
+    }
+  });
+
+  router.get("/campaign-drafts", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id || req.supabaseUser?.id || null;
+      if (!userId) {
+        return res.status(401).json(
+          errorResponse("Autenticación requerida", {
+            node: "campaign_drafts_list",
+            code: "unauthorized",
+          })
+        );
+      }
+      const limit = Number(req.query.limit);
+      const listed = await listDraftsForUser(userId, Number.isFinite(limit) ? limit : 50);
+      if (!listed.ok) {
+        return res.status(502).json(
+          errorResponse(listed.error || "No se pudieron listar los borradores", {
+            node: "campaign_drafts_list",
+            code: "list_failed",
+          })
+        );
+      }
+      const result = successResponse(
+        { drafts: listed.rows },
+        { node: "campaign_drafts_list", cost_est: 0 }
+      );
+      return res.status(200).json(injectUserMetadata(result, userId));
+    } catch (err) {
+      return res.status(500).json(
+        errorResponse(err?.message || String(err), {
+          node: "campaign_drafts_list",
+          code: "unhandled",
+        })
+      );
+    }
+  });
+
+  router.patch("/publish-callback", requirePublishCallbackSecret, async (req, res) => {
+    try {
+      const body = req.body && typeof req.body === "object" ? req.body : {};
+      const draftId = typeof body.draft_id === "string" ? body.draft_id.trim() : "";
+      const publishedUrl =
+        typeof body.published_url === "string" ? body.published_url.trim() : "";
+      const platform = typeof body.platform === "string" ? body.platform.trim() : "";
+
+      if (!draftId || !isUuid(draftId)) {
+        return res.status(400).json(
+          errorResponse("Body debe incluir `draft_id` (UUID válido)", {
+            node: "publish_callback_gateway",
+            code: "invalid_draft_id",
+          })
+        );
+      }
+      if (!publishedUrl) {
+        return res.status(400).json(
+          errorResponse("Body debe incluir `published_url` (TEXT, URL http(s))", {
+            node: "publish_callback_gateway",
+            code: "missing_published_url",
+          })
+        );
+      }
+
+      const done = await finalizeDraftExternalPublish(draftId, {
+        published_url: publishedUrl,
+        platform: platform || null,
+      });
+
+      if (!done.ok) {
+        const code = done.error || "callback_failed";
+        const statusMap = {
+          not_found: 404,
+          invalid_draft_state: 409,
+          invalid_published_url: 400,
+          missing_published_url: 400,
+          missing_draft_id: 400,
+        };
+        const httpStatus = statusMap[done.error] || 502;
+        return res.status(httpStatus).json(
+          errorResponse(done.error || "Fallo al finalizar publicación", {
+            node: "publish_callback_gateway",
+            code,
+            draft_status: done.status,
+          }, { details: done.details })
+        );
+      }
+
+      return res.status(200).json(
+        successResponse(
+          { draft_id: draftId, status: "published", published_url: publishedUrl },
+          { node: "publish_callback_gateway", cost_est: 0 }
+        )
+      );
+    } catch (err) {
+      return res.status(500).json(
+        errorResponse(err?.message || String(err), {
+          node: "publish_callback_gateway",
           code: "unhandled",
         })
       );
@@ -522,6 +868,12 @@ function attachPublicMasterRoutes(router) {
         );
       }
 
+      const [weeklyIncome, ledgerRecent, campaign_rois] = await Promise.all([
+        getWeeklyIncomeFromLedger(userId, 8),
+        getRecentLedgerEntries(userId, 12),
+        getRoiForUserPublishedDrafts(userId, 12),
+      ]);
+
       const payload = {
         total_revenue: summary.data?.total_revenue || 0,
         available_balance: summary.data?.available_balance || 0,
@@ -532,11 +884,15 @@ function attachPublicMasterRoutes(router) {
         recent_transactions: Array.isArray(summary.data?.recent_transactions)
           ? summary.data.recent_transactions
           : [],
+        weekly_income_usd: weeklyIncome,
+        ledger_recent: ledgerRecent,
+        campaign_rois,
       };
 
       const result = successResponse(payload, {
         node: "finance_report_gateway",
         count_transactions: payload.recent_transactions.length,
+        ledger_entries: ledgerRecent.length,
       });
       const enriched = injectUserMetadata(result, userId);
       return res.status(200).json(enriched);
@@ -544,6 +900,112 @@ function attachPublicMasterRoutes(router) {
       return res.status(500).json(
         errorResponse(err?.message || String(err), {
           node: "finance_report_gateway",
+          code: "unhandled",
+        })
+      );
+    }
+  });
+
+  router.get("/finance/platform-ranking", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id || req.supabaseUser?.id || null;
+      if (!userId) {
+        return res.status(401).json(
+          errorResponse("Autenticación requerida", {
+            node: "finance_platform_ranking_gateway",
+            code: "unauthorized",
+          })
+        );
+      }
+
+      const payload = await getPlatformProfitRanking(userId);
+      const result = successResponse(payload, {
+        node: "finance_platform_ranking_gateway",
+        count: payload.ranking?.length ?? 0,
+      });
+      const enriched = injectUserMetadata(result, userId);
+      return res.status(200).json(enriched);
+    } catch (err) {
+      return res.status(500).json(
+        errorResponse(err?.message || String(err), {
+          node: "finance_platform_ranking_gateway",
+          code: "unhandled",
+        })
+      );
+    }
+  });
+
+  router.get("/finance/cost-savings", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id || req.supabaseUser?.id || null;
+      if (!userId) {
+        return res.status(401).json(
+          errorResponse("Autenticación requerida", {
+            node: "finance_cost_savings_gateway",
+            code: "unauthorized",
+          })
+        );
+      }
+
+      const out = await getCostSavingsCurrentMonth();
+      if (!out.ok) {
+        return res.status(503).json(
+          errorResponse(out.error || "No se pudo leer ai_usage_logs", {
+            node: "finance_cost_savings_gateway",
+            code: "cost_savings_unavailable",
+          })
+        );
+      }
+
+      const result = successResponse(out.data, {
+        node: "finance_cost_savings_gateway",
+        groups: out.data?.by_task_type?.length ?? 0,
+      });
+      const enriched = injectUserMetadata(result, userId);
+      return res.status(200).json(enriched);
+    } catch (err) {
+      return res.status(500).json(
+        errorResponse(err?.message || String(err), {
+          node: "finance_cost_savings_gateway",
+          code: "unhandled",
+        })
+      );
+    }
+  });
+
+  router.post("/finance/manual-income", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id || req.supabaseUser?.id || null;
+      if (!userId) {
+        return res.status(401).json(
+          errorResponse("Autenticación requerida", {
+            node: "finance_manual_income_gateway",
+            code: "unauthorized",
+          })
+        );
+      }
+      const body = req.body && typeof req.body === "object" ? req.body : {};
+      const amount = Number(body.amount);
+      const note = typeof body.note === "string" ? body.note : "";
+      const out = await registerManualIncome(userId, amount, note);
+      if (!out.ok) {
+        return res.status(400).json(
+          errorResponse(out.error || "manual_income_failed", {
+            node: "finance_manual_income_gateway",
+            code: "manual_income_failed",
+          })
+        );
+      }
+      return res.status(200).json(
+        successResponse(
+          { amount: out.amount, balance: out.balance },
+          { node: "finance_manual_income_gateway", persisted: true }
+        )
+      );
+    } catch (err) {
+      return res.status(500).json(
+        errorResponse(err?.message || String(err), {
+          node: "finance_manual_income_gateway",
           code: "unhandled",
         })
       );
@@ -810,6 +1272,8 @@ function attachPublicMasterRoutes(router) {
       );
     }
   });
+
+  tryRegisterFiferAiProxy(router, requireAuth);
 }
 
 module.exports = {

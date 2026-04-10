@@ -1,0 +1,6 @@
+{
+  "name": "@fifer/legacy-api",
+  "version": "1.0.0",
+  "description": "API Monolítica (En proceso de desmantelamiento hacia Engines)",
+  "private": true
+}

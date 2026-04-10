@@ -1,122 +1,223 @@
-# FIFER X-Ray Report (State of the Union)
+# FIFER — Torre de control (salud global + UI)
 
-Fecha: 2026-04-07  
-Alcance: Frontend + Backend + Base de Datos + Configuracion
+Índice de micro-frontends y **salud visual** por app. **Estado del ecosistema:** 100 % mapeado en X-Rays locales, con **Boxes + límites de error** en el frontend y **workers / API** documentados en el motor; arquitectura **resiliente** ante fallos parciales (JIT, boundaries, safe boot).
 
-## 1) Estado del Frontend
+### Protocolo IA — Post-intervención (escaneo quirúrgico documental)
 
-### Implementado
-- Landing moderna en `fifer-landing` (Next.js App Router) con home y secciones de marketing:
-  - `fifer-landing/src/app/page.tsx`
-  - `fifer-landing/src/components/Hero.tsx`
-  - `fifer-landing/src/components/Pricing/Pricing.tsx`
-  - `fifer-landing/src/components/Footer.tsx`
-- Rutas publicas de soporte legal/auth:
-  - `fifer-landing/src/app/privacy/page.tsx`
-  - `fifer-landing/src/app/terms/page.tsx`
-  - `fifer-landing/src/app/auth/success/page.tsx`
-- Modulo de ajustes BYOK en frontend temporal:
-  - `fifer-landing/temp-frontend/src/pages/AISettings.tsx`
-- Cliente API tipado para motores, finanzas, stock, Woo y vault:
-  - `fifer-landing/temp-frontend/src/services/api_client.ts`
+**Ley maestra:** **`.cursorrules` §0.2 — Protocolo de Cierre Obligatorio** (documentación + ADN Deep Navy / Electric Yellow + contrato Fifer Box).
 
-### Pendiente / Incompleto
-- Dashboard operativo unificado no visible en `temp-frontend` (no hay `Index.tsx`, `CampaignCreator.tsx`, `AffiliateFeed.tsx`, `FinanceReport.tsx` dentro de ese arbol actual).
-- Billetera/Finance UI no conectada en el frontend temporal (existe contrato API pero no pantalla activa en `temp-frontend`).
-- Selector IA dinamico (UI) no evidenciado en frontend temporal (hay `getAvailableEngines`, pero no componente de seleccion montado).
-- Integracion total "Landing Lovable -> App interna" incompleta: existe landing separada y, en paralelo, un frontend temporal reducido.
+Tras **cada** intervención **significativa** (comportamiento, rutas, contratos, integraciones, UI visible, nuevos `boxId`):
 
-## 2) Estado del Backend
+1. Actualizar el **`_xray_v0_local.md`** del paquete tocado (si existe).
+2. Si el cambio es **global** (nueva app, ruta, salud del ecosistema, dependencias cruzadas): **editar este archivo** y **actualizar obligatoriamente** la línea **«Última sincronización índice»** abajo (fecha **YYYY-MM-DD**).
+3. Si cambió el contrato shell/SDUI: actualizar **`_xray_PROTOCOL_SHELL.md`**.
+4. Si cambió integraciones o diagnóstico de conectividad: actualizar **`_xray_INTEGRATIONS.md`**.
+5. Validar UI nueva contra **`docs/styleguide.md`** y **`_xray_v0_MASTER.md`** (ADN **Deep Navy** + **Electric Yellow**, contrato Box).
+6. **Sincronización externa (v0_pack / Drive):** Actualizar **`v0_pack/99_SYNC_REPORT.md`** y **`v0_pack/DNA_RULES_SNAPSHOT.md`** antes de finalizar la tarea (bitácora de sync; el snapshot obligatorio si se editó **`.cursorrules`** — **§0.12**).
 
-### Endpoints existentes (gateway)
-Archivo: `src/api/routes/public/master.routes.js`
-- `POST /automated-play`
-- `POST /orchestrate`
-- `POST /url-campaign`
-- `GET /engines`
-- `GET /ai-settings/keys`
-- `POST /ai-settings/test-key`
-- `POST /ai-settings/keys`
-- `DELETE /ads/vault/:provider`
-- `POST /publish-draft`
-- `GET /finance/report`
-- `POST /affiliates/sync-stock`
-- `POST /affiliates/woocommerce/top-products`
-- `POST /ads/register-id`
+**Protocolo de escaneo de código (referencia):** carpeta `fifer-landing/temp-frontend` **comprobada ausente en disco**; no forma parte del ecosistema. Aislamiento por módulo vía **`_xray_v0_local.md`** (+ HYBRID_BRIDGE / MASTER cuando toque). **Frontend productivo único:** **`fifer-landing/src/app/`** (Next.js 14).
 
-### Adaptadores de afiliados vivos
-Ruta base: `src/modules/affiliates/adapters`
-- **AliExpress:** `aliexpress_adapter.js` (firma MD5 + modo mock/ghost)
-- **Mercado Libre:** `meli_adapter.js` (API items + batch stock + conversion USD)
-- **Amazon:** `amazon_adapter.js` (PA-API SigV4 + fallback)
-- **WooCommerce:** `woocommerce_adapter.js` (REST + auth + top products + batch stock)
-- **Shopify:** `shopify_adapter.js` (normalizacion y modo mock)
-- **Web Scraper:** `web_scraper_adapter.js`
+**Chasis UI maestro:** [`_xray_v0_MASTER.md`](_xray_v0_MASTER.md)  
+**Contrato shell:** [`_xray_PROTOCOL_SHELL.md`](_xray_PROTOCOL_SHELL.md) · *En `v0_pack/`, espejo:* `03_PROTOCOL_SHELL.md`  
+**Manual IAs externas (v0 + Lovable):** [`_xray_HYBRID_BRIDGE.md`](_xray_HYBRID_BRIDGE.md)
 
-### Servicios de IA
-- **Groq:** implementado en `src/services/ai/groq_adapter.js`
-- **OpenAI:** presencia parcial (BYOK test y catalogo de proveedor), sin adaptador dedicado de generacion en `src/services/ai`
-- **ElevenLabs:** no hay adaptador backend dedicado (solo referencias de mock no productivas)
+**Última sincronización índice:** **2026-04-09**
 
-### ESTADO DE SALUD (Delta local - servicios de contenido fifer-content)
-- **Saneado:** `fifer-content/scripts/src/services/carousel_generator.js` tenia texto no-codigo inyectado al final del archivo; fue removido para restaurar parseo JS.
-- **Verificado:** chequeo de sintaxis OK en `carousel_generator.js`, `reels_generator.js`, `post_generator.js` y en todos los `*.js` dentro de `fifer-content/scripts/src/services`.
+**Esquema reciente (suscripción / router):** `fifer_auth.user_profile` (`user_id` PK → `auth.users`, `subscription_tier` `free`|`pro`, `tier_expires_at`); `fifer_platform.ai_capabilities.requires_pro` (boolean, catálogo PRO para UI). API: `GET /api/v1/master/user/subscription` (tier + `byok_openai` / `byok_anthropic`). Smart Task Router: `src/services/ai/ai_task_router.js` — contexto `{ userId, userTier }`, degradación free→DeepSeek / fal video, excepción BYOK. UI: `fifer-landing/src/app/(dashboard)/campaigns/page.tsx` (listas voces/modelos + modal PRO).
 
-## 3) Esquema actual de Base de Datos (Supabase)
+**Pagos (Stripe Revenue Engine):** `npm run api` arranca `src/api/http_server.js` — **antes** de `express.json()` se monta `POST /api/v1/master/stripe/webhook` con **`express.raw({ type: "application/json" })`** + `stripe.webhooks.constructEvent` (`STRIPE_WEBHOOK_SECRET`). Evento `checkout.session.completed` → `user_profile.subscription_tier = pro` y fila opcional en `fifer_finance.ledger` (`type = subscription_revenue`). Crear Checkout con `client_reference_id = <uuid usuario Supabase>`. Variables: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` (`.env.example`).
 
-### Auth / Vault
-- `fifer_auth.user_api_keys`
-  - Migracion: `supabase/migrations/20260412150000_user_api_keys_vault.sql`
+**Motores jerárquicos (API v2):** Tras `express.json()`, `GET /api/v2/engines/finance/cashflow/snapshot` exige header `x-fifer-api-key`; validación vía `src/api/gateway/apiKeyValidator.js` (scope `finance.cashflow`, permiso `read`); controlador en `src/engines/finance/sub-engines/cashflow/`.
 
-### Finance
-- `fifer_finance.wallets`
-- `fifer_finance.transactions`
-- Funcion atomica: `finance_apply_ai_spend`
-  - Migracion: `supabase/migrations/20260411120000_financial_bunker_wallets.sql`
-- `fifer_finance.exchange_rates`
-  - Migracion: `supabase/migrations/20260412120000_exchange_rates.sql`
+**Fase 4 — puente Next → motor (cerrado en código):** `fifer-landing/src/lib/fifer-api-client.ts` (`fetchFiferEngine`, base `NEXT_PUBLIC_FIFER_API_BASE_URL` por defecto `http://127.0.0.1:3999`) + `src/lib/finance-snapshot-data.ts` (`getFinanceSnapshotData`). La ruta `fifer-landing/src/app/(dashboard)/finance/page.tsx` hidrata el snapshot vía el engine; **401/403** del Gateway se mapean a `isLocked` y el box muestra **`BoxLockedOverlay`** (candado amarillo sobre panel Deep Navy). *Verificación runtime:* con `PORT=3999 npm run api` en la raíz, `GET` sin header devuelve **401** y el HTML de `/finance` incluye **«Acceso Restringido»** cuando Next alcanza el motor.
 
-### Plataforma / Campanas / Mappings
-- `fifer_platform.campaign_drafts`
-  - Migracion: `supabase/migrations/20260410120000_campaign_drafts.sql`
-  - Ext status inventario: `supabase/migrations/20260407190000_campaign_drafts_add_paused_status.sql`
-- `fifer_platform.ad_mappings`
-  - Migraciones:  
-    - `supabase/migrations/20260407213000_ad_mapping.sql`  
-    - `supabase/migrations/20260407224500_ad_mapping_system.sql`
-- `fifer_platform.master_pipeline_publish_log`
-  - Migracion: `supabase/migrations/20260409120000_master_pipeline_publish_log.sql`
+---
 
-### Tag-Center / Catalogos
-- Esquema Tag-Center y catalogo fase 1:
-  - `supabase/migrations/20260406120000_tag_center_schema.sql`
-  - `supabase/migrations/20260407120000_tag_center_phase1_catalog.sql`
+## 🌐 Topología del Ecosistema FIFER
 
-## 4) Brechas Criticas (Gaps) para v4.0 completa
+Mapa **solo de primer nivel** del monorepo (el detalle por app vive en cada `_xray_v0_local.md`):
 
-1. **Metadata-Driven Architecture incompleta**
-- No existe evidencia de Discovery Worker + Attribute Mapper + Unified UI Bridge como pipeline declarativo central.
-- El enrutamiento actual sigue mayormente hardcodeado por endpoint y logica procedural.
+```text
+APP FIFER/   (raíz monorepo)
+├── fifer-landing/          # Next.js 14 — UI productiva, Boxes, dashboard
+├── src/                    # Motor Node/Express — API master, servicios, workers
+├── fifer-content/          # Scripts Node — generación editorial (audio/video/posts)
+├── fifer-ingestor/         # Scripts Node — sync masivo / afiliados
+├── supabase/               # Migraciones SQL / esquemas
+├── saas-fifer/             # Paquete legacy / gateway Python y módulos históricos
+├── docs/                   # Documentación de plataforma
+├── deliverables/           # Artefactos governance, OpenAPI, seeds
+├── tests/                  # Contratos / pruebas repo
+├── package.json            # Scripts raíz (p. ej. dev:safe)
+├── FIFER_XRAY_REPORT.md    # (este índice maestro)
+├── _xray_v0_MASTER.md
+└── _xray_HYBRID_BRIDGE.md
+```
 
-2. **Financial Bunker v4.0 incompleto (ledger)**
-- Existe `wallets` + `transactions`, pero no una tabla `fifer_finance.ledger` formal para trazabilidad contable avanzada y ROI exacto por campana con modelo de ledger.
+**X-Ray v0 local — paquete legacy (enlace directo):** [`saas-fifer/_xray_v0_local.md`](saas-fifer/_xray_v0_local.md) — gateway Python, scripts Node y módulo `fifer-platform`; mapa desacoplado del resto del monorepo.
 
-3. **Paridad de servicios IA parcial**
-- Groq esta operativo.
-- OpenAI aparece en validacion BYOK/catalogo, pero no como adaptador de generacion dedicado.
-- ElevenLabs no aparece integrado como servicio vivo backend.
+| Sub-app / carpeta | Dominio (2 líneas) | X-Ray local |
+|-------------------|--------------------|-------------|
+| **fifer-landing** | Shell Next con marketing + panel `(dashboard)`: campañas, finanzas, afiliados y logística, Boxes con JIT y `BoxErrorBoundary`. Consume el API master vía `NEXT_PUBLIC_FIFER_API_BASE_URL`. | [`fifer-landing/_xray_v0_local.md`](fifer-landing/_xray_v0_local.md) |
+| **src/** (motor) | Servidor Node (`server.js`), rutas `/api/v1/master/*` y **`/api/v2/engines/*`** (sub-engines por dominio), finanzas, campañas, afiliados, pipelines IA y workers en background. Fuente de verdad de negocio para el landing. | [`src/_xray_v0_local.md`](src/_xray_v0_local.md) |
+| **fifer-content** | Paquete de **scripts** de generación de contenido (orquestadores, Gemini helpers, audio/video/post); no es una app web desplegada en este árbol. | [`fifer-content/_xray_v0_local.md`](fifer-content/_xray_v0_local.md) |
+| **fifer-ingestor** | Scripts de **ingesta/sync** (p. ej. AliExpress); complementa el motor; sin UI Next propia aquí. | [`fifer-ingestor/_xray_v0_local.md`](fifer-ingestor/_xray_v0_local.md) |
+| **saas-fifer** | Ecosistema **legacy**: FastAPI gateway/core-service, scripts Node (afiliados, sync, plays), módulo `fifer-platform`; sin UI Next en el árbol. | [`saas-fifer/_xray_v0_local.md`](saas-fifer/_xray_v0_local.md) |
 
-4. **Frontend fragmentado**
-- Landing principal (`fifer-landing`) y app temporal (`fifer-landing/temp-frontend`) no se ven consolidadas en una sola experiencia de dashboard/operacion.
-- Varias capacidades (finanzas, selector IA, feed) existen como contrato API, pero no evidenciadas como UI montada en el frontend temporal actual.
+**Regla:** no duplicar árboles internos de cada aplicación en este archivo; profundizar solo en el `_xray_v0_local.md` correspondiente.
 
-5. **Riesgo de orden de migraciones**
-- Hay migraciones de `ad_mappings` y alteraciones de `campaign_drafts` con timestamp anterior a la creacion base de `campaign_drafts`, lo que puede romper despliegues desde cero si no se controla el orden efectivo.
+---
 
-## 5) Conclusión Ejecutiva
+## Salud de Arquitectura
 
-FIFER ya tiene una base fuerte (BYOK cifrado, adaptadores afiliados multiproveedor, endpoints principales, wallet/transactions y exchange rates).  
-Para entrar plenamente en la **v4.0 Metadata-Driven Era**, faltan tres consolidaciones clave:
-- formalizar el **router/pipeline metadata-driven**,
-- materializar el **ledger financiero** para ROI exacto auditable,
-- unificar el **frontend operativo** en una sola superficie de producto.
+| Área | Estado |
+|------|--------|
+| **Frontend activo** | **`fifer-landing/src/app/`** — rutas, layouts `(marketing)` / `(dashboard)`, API bajo `src/app/api/`. No hay segundo frontend ni `main.tsx` / `index.html` en landing. |
+| **Migración** | **Cerrada.** Cualquier export temporal fuera de Next fue retirado del repo; la UI productiva vive solo bajo `fifer-landing/src/`. |
+| **TypeScript / tooling** | **`fifer-landing/tsconfig.json`** — plugin Next, alias `@/*` → `./src/*`. No existe `tsconfig.app.json` ni configuración Vitest en este paquete. |
+| **Script raíz** | `npm run dev:safe` (monorepo) → pre-flight `src/server.js` + **`npm run dev` en `fifer-landing`**. |
+| **Build** | `npm run build` en `fifer-landing` es la verificación de rutas y tipos del frontend. |
+
+### Fifer Boxes — anclaje exclusivo a Next.js
+
+Todo el sistema de Boxes opera **solo** dentro del stack Next de `fifer-landing`:
+
+| Rol | Ruta |
+|-----|------|
+| Orquestador | `fifer-landing/src/components/core/BoxLoader.tsx` |
+| Manifiestos (`IFiferBoxManifest`) | `fifer-landing/src/components/core/manifests/` (+ tipo en `src/types/fifer-box.ts` raíz monorepo) |
+| Ingesta de piezas v0 | `fifer-landing/src/components/v0-ingestion/` |
+| Lienzo / páginas que componen slots | `fifer-landing/src/app/` (p. ej. `(dashboard)/*`, componentes de dashboard) |
+
+**No** se referencian rutas de exportaciones externas ni carpetas eliminadas para inyectar Boxes.
+
+---
+
+## Salud visual por app
+
+| Módulo | Estado | Paleta activa (resumen) | X-Ray local UI |
+|--------|--------|-------------------------|----------------|
+| **Landing / Frontend** | 🟢 Estable | Navy `#0A0F1E` + Yellow `#EAB308` + Blue `#2563EB` | [`fifer-landing/_xray_v0_local.md`](fifer-landing/_xray_v0_local.md) |
+| **Content** | 🟢 Estable | Azul `#1E3A5F` + Negro + acento Blue/Cian | [`fifer-content/_xray_v0_local.md`](fifer-content/_xray_v0_local.md) |
+| **Ingestor** | 🟢 Estable · **JIT Activo** | Ámbar `#F59E0B` + carbón + esmeralda | [`fifer-ingestor/_xray_v0_local.md`](fifer-ingestor/_xray_v0_local.md) |
+| **Finance** (motor `src/`) | 🟢 Estable | Verde `#059669` + Oro `#D97706` | [`src/_xray_v0_local.md`](src/_xray_v0_local.md) |
+| **Afiliados** (UI en landing) | 🟢 Estable | Misma base que Landing (ver local landing + rutas `/affiliates`) | [`fifer-landing/_xray_v0_local.md`](fifer-landing/_xray_v0_local.md) |
+| **Logistics** (UI en landing) | 🟢 En Desarrollo | Azul Cobalto `#1D4ED8` + Acero `#64748B` | [`fifer-landing/src/modules/logistics/_xray_v0_local.md`](fifer-landing/src/modules/logistics/_xray_v0_local.md) |
+| **saas-fifer** (legacy) | 🟡 Legacy / scripts | Sin capa visual web; alinear copy futura con MASTER (Navy/Yellow) | [`saas-fifer/_xray_v0_local.md`](saas-fifer/_xray_v0_local.md) |
+
+Marcar **🔴** si el X-Ray local documenta fallo o bloqueo activo.
+
+---
+
+## Destacado — Puente híbrido (v0 + Lovable)
+
+| Campo | Valor |
+|--------|--------|
+| **Manual para IAs externas** | **[`_xray_HYBRID_BRIDGE.md`](_xray_HYBRID_BRIDGE.md)** — ADN, Boxes, v0, Lovable, **USER CUSTOM** al inicio |
+| **Chasis global** | [`_xray_v0_MASTER.md`](_xray_v0_MASTER.md) |
+| **Estado** | **🟢 Estable** — artefactos externos se integran en **`fifer-landing/src/`** (App Router + Boxes); HYBRID_BRIDGE + MASTER + local por app para prompts Cursor |
+
+---
+
+## Otros enlaces Micro-X-Ray (operativos)
+
+| Recurso | Ruta |
+|---------|------|
+| Frontend (detalle técnico) | [`fifer-landing/_xray_frontend.md`](fifer-landing/_xray_frontend.md) |
+| Finance (legacy nombre) | [`src/_xray_finance.md`](src/_xray_finance.md) |
+| Content (legacy) | [`fifer-content/_xray_content.md`](fifer-content/_xray_content.md) |
+| Ingestor (legacy) | [`fifer-ingestor/_xray_ingestor.md`](fifer-ingestor/_xray_ingestor.md) |
+| **saas-fifer** (v0 local — topología legacy) | [`saas-fifer/_xray_v0_local.md`](saas-fifer/_xray_v0_local.md) |
+| Puente v0 | [`_xray_frontend_v0_bridge.md`](_xray_frontend_v0_bridge.md) |
+| **Puente híbrido (IAs externas)** | [`_xray_HYBRID_BRIDGE.md`](_xray_HYBRID_BRIDGE.md) |
+
+---
+
+## Gobernanza
+
+1. **Escaneo escalonado / aislamiento total:** Para briefing a v0/Lovable (y para Cursor), **`_xray_HYBRID_BRIDGE.md`** + **`_xray_v0_MASTER.md`** + **únicamente** el **`_xray_v0_local.md`** del módulo en curso (`.cursorrules` — Protocolo Francotirador, sección 9). Los **cinco** módulos principales (Landing, `src/`, Content, Ingestor, saas-fifer) tienen X-Ray local propio; no mezclar árboles entre prompts salvo que el alcance lo exija explícitamente.  
+2. **Frontend:** Solo **`fifer-landing/src/app/`** y **`fifer-landing/src/components/`** (Boxes, UI compartida); sin referencias operativas a carpetas frontend eliminadas.  
+3. Tras cambios visuales/técnicos: actualizar X-Ray local y esta tabla.  
+4. **Generar Prompt v0:** merge **USER** (HYBRID_BRIDGE y/o MASTER) + chasis + local de la app activa; destino de código **Next** (`v0-ingestion/` + `BoxLoader`).
+
+🚀 META-INSTRUCCIÓN PARA GEMINI (PROMPT ORCHESTRATOR)
+Tu Rol: Eres el "Fifer Prompt Orchestrator", un experto en ingeniería de prompts para v0.dev y Lovable.
+
+Tu Misión: Cuando el usuario te pida crear una nueva interfaz o componente, no generes el código tú mismo. En su lugar, debes redactar un Prompt Maestro ultra-detallado para que v0.dev lo ejecute.
+
+📋 Reglas de Extracción de Contexto
+Anclaje Visual: Lee el archivo _xray_v0_MASTER.md para extraer los tokens de diseño (Deep Navy, Electric Yellow, Blue) y las reglas de Grid 12.
+
+Contexto Local: Localiza en este reporte el enlace al _xray_v0_local.md de la app afectada (Finance, Content, Ingestor, etc.) para aplicar sus slots y paleta específica.
+
+Manual de IA: Consulta _xray_HYBRID_BRIDGE.md para incluir en el prompt final las instrucciones de cómo v0 debe estructurar el archivo (Fifer Boxes, Next.js 14).
+
+🛡️ Inviolables para el Prompt de v0
+El prompt que generes para v0 DEBE incluir estas restricciones técnicas:
+
+Zero Hardcoding: "Prohibido usar datos estáticos; prepara el componente para JIT Hydration e inyecta estados de carga (Skeleton) y error".
+
+Envoltorio Box: "El componente debe ser exportado de forma que sea compatible con el BoxLoader.tsx y el sistema de manifiestos IFiferBoxManifest".
+
+Rutas: "Usa alias de ruta @/components/... asumiendo que el destino es fifer-landing/src/components/v0-ingestion/".
+
+Resiliencia: "Incluye lógica para que, si el fetch de datos falla, el componente lance un error capturable por el BoxErrorBoundary superior".
+
+Procedimiento: Una vez analizados los X-Rays, entrega al usuario un bloque de texto que diga: "Aquí tienes el Prompt Maestro para v0. Pégalo en v0.dev junto a este reporte maestro para una precisión del 100%."
+
+Por qué esto cambia las reglas del juego:
+Aislamiento de Errores: Gemini ya sabe que su trabajo no es programar (donde a veces se equivoca con las rutas de un monorepo complejo), sino ser el estratega que le da las órdenes a v0.
+
+Ahorro de Tokens: Al no pedirle código a Gemini, las conversaciones son más ligeras y rápidas.
+
+Fidelidad Extrema: v0 recibirá un prompt que contiene el "ADN" de FIFER: desde el color exacto del borde hasta cómo debe fallar el componente si la API de Finanzas no responde.
+
+Como consejo de "colega" AI: Cuando le pases el archivo a Gemini, simplemente dile: "Lee la Meta-Instrucción y prepárame el prompt para la nueva sección de estadísticas de afiliados". Verás cómo la precisión sube de nivel inmediatamente.
+
+⚡ Comandos Rápidos para Gemini (Orquestador)
+1. Generación de Página Completa (Layout Maestro)
+Usa este comando cuando necesites estructurar una vista nueva que orqueste varios componentes dentro del chasis de FIFER.
+
+Comando: "Activa la Meta-Instrucción del reporte. Genera el Prompt Maestro para v0 de una página completa para el módulo de [Nombre del Módulo].
+
+Requisito: Debe usar el Grid de 12 columnas del _xray_v0_MASTER.md.
+
+Estructura: Orquesta slots para el fifer-landing siguiendo la topología actual.
+
+Estética: Aplica el diseño deportivo-tecnológico (Deep Navy / Yellow) y bordes redondeados estándar."
+
+2. Generación de Data Box (Resiliencia JIT)
+Ideal para crear componentes de visualización de datos (gráficos, KPIs, listas) que deben funcionar de forma independiente y aislada.
+
+Comando: "Activa la Meta-Instrucción. Genera el Prompt Maestro para v0 para un Data Box de [Tipo de Dato, ej: ROI de Campañas].
+
+Inviolable: Aplica JIT Hydration estricto; el componente debe cargar sus datos internamente y manejar su propio loading y error.
+
+Integración: El código debe ser compatible con el BoxLoader.tsx y el envoltorio BoxErrorBoundary.
+
+Localización: Usa la paleta de colores del _xray_v0_local.md de [App, ej: Finance]."
+
+3. Modal de Configuración (Metadata & BYOK)
+Úsalo para crear interfaces de ajustes, conexión de APIs (BYOK) o parámetros de IA que se integren con el backend.
+
+Comando: "Activa la Meta-Instrucción. Genera el Prompt Maestro para v0 para un Modal de Configuración de [Feature, ej: API Keys de OpenAI].
+
+Lógica: Debe contemplar campos para credenciales cifradas (BYOK First) según las leyes de arquitectura.
+
+Diseño: Usa el estilo de formularios de FIFER definido en el Chasis UI Maestro.
+
+Fallback: Si no hay conexión con el Vault, el componente debe mostrar el Ghost Mode local."
+
+💡 Pro-Tip para la Ejecución
+Cuando Gemini te entregue el prompt resultante:
+
+Cópialo íntegramente.
+
+Ve a v0.dev.
+
+Pega el texto y adjunta también el FIFER_XRAY_REPORT.md en el chat de v0.
+
+Esto le da a v0 una "segunda capa" de contexto sobre la salud global y la ubicación de las carpetas, asegurando que el código que genere sea 100% compatible con tu sistema de Fifer Boxes.
+
+---
+*Auditoría X-Ray · Última sincronización: 2026-04-08*

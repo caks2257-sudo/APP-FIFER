@@ -47,3 +47,6 @@ Thumbs.db
 .DS_Store
 .vercel
 .env*.local
+
+# DNA Distiller (conteo local de interacciones)
+**/.dna-janitor-state.json

@@ -16,6 +16,68 @@ const {
   buildRawProductDataFromWebScrape,
   enrichTagCenterRequestBody,
 } = require("../../../modules/fifer-platform/tag-center/tagRepository.js");
+const { recommendCapabilities } = require("../../../services/ai/curator_service.js");
+const { routeTask } = require("../../../services/ai/ai_task_router.js");
+const { fetchCapabilitiesForCurator } = require("../../../system/discovery_worker.js");
+
+/**
+ * Guiones publicitarios vía Smart Task Router (prioriza Groq / cadena speed_generation).
+ * No lanza: devuelve objeto con ok/error para el frontend.
+ */
+async function generateAdScriptsViaRouter(ctx = {}) {
+  const title = String(ctx.title || "Producto").slice(0, 300);
+  const excerpt = String(ctx.excerpt || "").slice(0, 4500);
+  const tags = Array.isArray(ctx.strategy?.tags) ? ctx.strategy.tags.filter(Boolean).join(", ") : "";
+  const prompt = [
+    "Eres redactor publicitario para TikTok e Instagram (español latino).",
+    "Genera 3 guiones cortos (voz en off + CTA), separados exactamente por la línea ---GUION--- en su propia línea.",
+    "Cada guión: máximo 90 palabras. Tono dinámico; no inventes especificaciones técnicas no mencionadas en el contexto.",
+    "",
+    `Producto: ${title}`,
+    tags ? `Tags estrategia: ${tags}` : "",
+    "",
+    "Contexto del producto:",
+    excerpt,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  try {
+    const out = await routeTask(
+      "speed_generation",
+      {
+        prompt,
+        max_tokens: 1800,
+        temperature: 0.55,
+      },
+      {
+        userId: ctx.user_id || ctx.userId || null,
+        userTier: ctx.userTier,
+      }
+    );
+    if (!out.ok) {
+      return {
+        ok: false,
+        error: out.error || "router_speed_generation_failed",
+        routing: out.routing || null,
+        routed_via: out.routed_via ?? null,
+      };
+    }
+    return {
+      ok: true,
+      text: String(out.data?.text || "").trim(),
+      routed_via: out.routed_via,
+      routing: out.routing || null,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err?.message || String(err),
+      routing: null,
+      routed_via: null,
+    };
+  }
+}
 
 function isAliExpressProductUrl(url) {
   try {
@@ -403,10 +465,59 @@ async function runUrlCampaignPipeline(input = {}) {
     draft_id: draftRes.ok && draftRes.draft_id ? draftRes.draft_id : null,
   };
 
+  let curatorPayload = null;
+  try {
+    const caps = await fetchCapabilitiesForCurator();
+    const productDataForCurator = {
+      name: d.name,
+      description:
+        (typeof d.description === "string" && d.description) ||
+        (raw_product_data && String(raw_product_data.description || "")) ||
+        "",
+      category: raw_product_data?.category || "",
+      excerpt: String(excerpt || "").slice(0, 8000),
+    };
+    curatorPayload = await recommendCapabilities(productDataForCurator, caps, {
+      userId: input.user_id || null,
+    });
+  } catch (err) {
+    console.warn("[url_campaign_pipeline] Curador omitido:", err?.message || String(err));
+    curatorPayload = null;
+  }
+
+  let adScriptsRouter = {
+    ok: false,
+    error: "not_executed",
+    routed_via: null,
+    routing: null,
+  };
+  try {
+    adScriptsRouter = await generateAdScriptsViaRouter({
+      title: d.name,
+      excerpt,
+      strategy: strategy && typeof strategy === "object" ? strategy : null,
+      user_id: input.user_id || null,
+    });
+  } catch (err) {
+    adScriptsRouter = {
+      ok: false,
+      error: err?.message || String(err),
+      routed_via: null,
+      routing: null,
+    };
+    console.warn("[url_campaign_pipeline] ad_scripts_router:", adScriptsRouter.error);
+  }
+
+  const dataWithCurator = {
+    ...dataWithDraft,
+    ...(curatorPayload ? { curator: curatorPayload } : {}),
+    ad_scripts_router: adScriptsRouter,
+  };
+
   try {
     await reportCampaignCost(
       input.user_id || null,
-      dataWithDraft.draft_id || null,
+      dataWithCurator.draft_id || null,
       Number(pipelineMeta.cost_est || 0)
     );
   } catch (err) {
@@ -415,7 +526,7 @@ async function runUrlCampaignPipeline(input = {}) {
 
   return {
     ...result,
-    data: dataWithDraft,
+    data: dataWithCurator,
     metadata: {
       ...pipelineMeta,
       draft_persisted: draftRes.ok,

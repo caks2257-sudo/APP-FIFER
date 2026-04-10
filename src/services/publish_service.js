@@ -1,4 +1,9 @@
 const axios = require("axios");
+const {
+  getDraftById,
+  markDraftAsStatus,
+  findAiCapabilityForDraftVoice,
+} = require("../modules/fifer-platform/campaigns/draftRepository.js");
 
 const DEFAULT_DISPATCH_TIMEOUT_MS = 30000;
 const INVENTORY_EVENTS = new Set([
@@ -89,6 +94,146 @@ function buildMakeDispatchPayloadFromDraft(draft) {
       is_simulation: process.env.FEATURE_DRY_RUN === "true",
     },
   };
+}
+
+/**
+ * Payload unificado para Make.com — publicación explícita de borrador (guión + voz + afiliado).
+ * @param {object} draft — fila campaign_drafts
+ * @param {object|null} voiceRow — fila ai_capabilities o null
+ */
+function buildUnifiedPublishEnvelope(draft, voiceRow) {
+  const base = buildMakeDispatchPayloadFromDraft(draft);
+  const meta = draft.metadata && typeof draft.metadata === "object" ? draft.metadata : {};
+  const affiliateUrl =
+    (typeof meta.affiliate_url === "string" && meta.affiliate_url.trim()) ||
+    (typeof meta.url_ingestion?.affiliate_url === "string" && meta.url_ingestion.affiliate_url.trim()) ||
+    String(draft.source_url || "").trim();
+
+  const voice =
+    voiceRow && typeof voiceRow === "object"
+      ? {
+          capability_id: voiceRow.id,
+          name: voiceRow.name,
+          external_id: voiceRow.external_id,
+          provider: voiceRow.provider,
+          capability_type: voiceRow.capability_type,
+          metadata: voiceRow.metadata && typeof voiceRow.metadata === "object" ? voiceRow.metadata : {},
+        }
+      : null;
+
+  const script = String(base.content.caption || "").trim();
+  const dry = process.env.FEATURE_DRY_RUN === "true";
+
+  return {
+    event: "FIFER_PUBLISH_CAMPAIGN_DRAFT",
+    fifer_metadata: {
+      environment: process.env.NODE_ENV || "development",
+      draft_id: draft.id,
+      timestamp: new Date().toISOString(),
+      ...(dry ? { is_simulation: true } : {}),
+    },
+    product: base.product,
+    strategy: base.strategy,
+    campaign_content: {
+      format_type: base.content.format_type,
+      platforms: base.content.platforms,
+      script,
+      voice,
+      affiliate_url: affiliateUrl,
+      assets: {
+        video_url: base.content.video_url,
+        caption: base.content.caption,
+        voice_id: base.content.voice_id,
+      },
+    },
+  };
+}
+
+/**
+ * Despacho a Make.com para publicar un borrador (MAKE_PUBLISH_WEBHOOK_URL).
+ * Éxito HTTP 200 → status `processing_external`; fallo → `failed_dispatch`.
+ *
+ * @param {string} draftId
+ * @returns {Promise<{ success: boolean, reason?: string, draft_id?: string, http_status?: number, error?: string, body?: unknown }>}
+ */
+async function dispatchToMake(draftId) {
+  const id = String(draftId || "").trim();
+  if (!id) {
+    return { success: false, reason: "missing_draft_id" };
+  }
+
+  const draft = await getDraftById(id);
+  if (!draft) {
+    return { success: false, reason: "not_found" };
+  }
+
+  const terminalBlocked = new Set(["published", "discarded", "paused_by_inventory"]);
+  if (terminalBlocked.has(draft.status)) {
+    return { success: false, reason: "invalid_status", status: draft.status };
+  }
+
+  const webhookUrl = String(process.env.MAKE_PUBLISH_WEBHOOK_URL || "").trim();
+  if (!webhookUrl) {
+    console.error("[dispatchToMake] MAKE_PUBLISH_WEBHOOK_URL no configurada");
+    const marked = await markDraftAsStatus(id, "failed_dispatch");
+    if (!marked.ok) {
+      console.error("[dispatchToMake] No se pudo marcar failed_dispatch:", marked.error);
+    }
+    return { success: false, reason: "missing_publish_webhook_url" };
+  }
+
+  let voiceRow = null;
+  try {
+    voiceRow = await findAiCapabilityForDraftVoice(draft);
+  } catch (err) {
+    console.warn("[dispatchToMake] lookup voz ai_capabilities:", err?.message || err);
+  }
+
+  const payload = buildUnifiedPublishEnvelope(draft, voiceRow);
+
+  try {
+    const response = await axios.post(webhookUrl, payload, {
+      timeout: DEFAULT_DISPATCH_TIMEOUT_MS,
+      validateStatus: () => true,
+    });
+
+    const ok = response.status === 200;
+    if (!ok) {
+      console.error(
+        "[dispatchToMake] Make respondió",
+        response.status,
+        typeof response.data === "object" ? JSON.stringify(response.data).slice(0, 500) : response.data
+      );
+      const marked = await markDraftAsStatus(id, "failed_dispatch");
+      if (!marked.ok) {
+        console.error("[dispatchToMake] No se pudo marcar failed_dispatch:", marked.error);
+      }
+      return {
+        success: false,
+        reason: "http_error",
+        status: response.status,
+        body: response.data,
+      };
+    }
+
+    const marked = await markDraftAsStatus(id, "processing_external");
+    if (!marked.ok) {
+      return { success: false, reason: "db_update_failed", error: marked.error };
+    }
+
+    return { success: true, draft_id: id, http_status: 200 };
+  } catch (error) {
+    console.error("[dispatchToMake] request_failed:", error?.message || String(error));
+    const marked = await markDraftAsStatus(id, "failed_dispatch");
+    if (!marked.ok) {
+      console.error("[dispatchToMake] No se pudo marcar failed_dispatch:", marked.error);
+    }
+    return {
+      success: false,
+      reason: "request_failed",
+      error: error?.message || String(error),
+    };
+  }
 }
 
 /**
@@ -306,9 +451,11 @@ async function notifyMakeInventoryChange(draft, eventType) {
 
 module.exports = {
   dispatchMakeWebhook,
+  dispatchToMake,
   notifyMakeToPause,
   notifyMakeToResume,
   notifyMakeInventoryChange,
   buildMakeDispatchPayloadFromDraft,
+  buildUnifiedPublishEnvelope,
   formatMakePayload,
 };

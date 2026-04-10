@@ -35,7 +35,7 @@ const {
   }
 
   console.log(
-    "✅ Pre-flight OK. Siguiente: `npm run dev:safe` (raíz) o `npm run dev:all` en fifer-landing/temp-frontend.\n"
+    "✅ Pre-flight OK. Siguiente: `npm run dev:safe` (raíz) o `npm run dev` en `fifer-landing` (Next.js).\n"
   );
   process.exit(0);
 })().catch((err) => {

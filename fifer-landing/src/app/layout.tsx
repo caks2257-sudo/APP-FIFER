@@ -1,47 +1,32 @@
-import type { Metadata } from "next";
-import { GoogleAnalytics } from '@next/third-parties/google';
-import { Source_Sans_3, Manrope } from "next/font/google";
-import Script from 'next/script'; 
-
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import { siteDetails } from '@/data/siteDetails';
-
+﻿import type { Metadata, Viewport } from "next";
+import { Montserrat, Open_Sans } from "next/font/google";
+import { siteDetails } from "@/data/siteDetails";
 import "./globals.css";
 
-const manrope = Manrope({ subsets: ['latin'] });
-const sourceSans = Source_Sans_3({ subsets: ['latin'] });
+const fontOpenSans = Open_Sans({
+  subsets: ["latin"],
+  variable: "--font-open-sans",
+  display: "swap",
+});
+
+const fontMontserrat = Montserrat({
+  subsets: ["latin"],
+  variable: "--font-montserrat",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: siteDetails.metadata.title,
   description: siteDetails.metadata.description,
-  openGraph: {
-    title: siteDetails.metadata.title,
-    description: siteDetails.metadata.description,
-    url: siteDetails.siteUrl,
-    type: 'website',
-    images: [
-      {
-        url: '/images/og-image.jpg',
-        width: 1200,
-        height: 675,
-        alt: siteDetails.siteName,
-      },
-    ],
+  appleWebApp: {
+    capable: true,
+    title: "FIFER",
+    statusBarStyle: "black-translucent",
   },
-  twitter: {
-    card: 'summary_large_image',
-    title: siteDetails.metadata.title,
-    description: siteDetails.metadata.description,
-    images: ['/images/twitter-image.jpg'],
-  },
-  // --- VERIFICACIÓN DE ADMITAD ---
-  // Esto generará automáticamente: <meta name="verify-admitad" content="3099946505" />
-  verification: {
-    other: {
-      'verify-admitad': '3099946505',
-    },
-  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0a0f1e",
 };
 
 export default function RootLayout({
@@ -50,35 +35,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${manrope.className} ${sourceSans.className} antialiased`}>
-        {siteDetails.googleAnalyticsId && (
-          <GoogleAnalytics gaId={siteDetails.googleAnalyticsId} />
-        )}
-        
-        <Header />
-        <main>
-          {children}
-        </main>
-        <Footer />
-
-        {/* --- IMPACT STAT TAG VERIFICATION --- */}
-        <Script id="impact-stat-tag" strategy="afterInteractive">
-          {`
-            (function(i,m,p,a,c,t){
-              c.ire_o=p;
-              c[p]=c[p]||function(){(c[p].a=c[p].a||[]).push(arguments)};
-              t=a.createElement(m);
-              var z=a.getElementsByTagName(m)[0];
-              t.async=1;
-              t.src=i;
-              z.parentNode.insertBefore(t,z)
-            })('https://utt.impactcdn.com/P-A7161370-3636-4aa4-8330-9e02253a92d91.js','script','impactStat',document,window);
-            
-            impactStat('transformLinks');
-            impactStat('trackImpression');
-          `}
-        </Script>
+    <html
+      lang="es"
+      className={`${fontOpenSans.variable} ${fontMontserrat.variable}`}
+    >
+      <body className={`${fontOpenSans.className} font-sans antialiased`}>
+        {children}
       </body>
     </html>
   );
