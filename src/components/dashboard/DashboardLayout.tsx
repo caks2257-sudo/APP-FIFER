@@ -1,34 +1,52 @@
-'use client';
-
-import { useState, ReactNode } from 'react';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
-import clsx from 'clsx';
+import type { DashboardWidget } from './mockDashboardConfig';
+import PageOrchestrator from '@/components/core/PageOrchestrator';
+
+type DashboardLayoutData = Record<string, unknown>;
+
+type DashboardLayoutConfig = {
+  widgets: DashboardWidget[];
+};
 
 interface DashboardLayoutProps {
-  children: ReactNode;
+  data?: DashboardLayoutData;
+  config?: DashboardLayoutConfig;
+  isRefining?: boolean;
+  isLoading?: boolean;
+  hasError?: boolean;
 }
 
-export default function DashboardLayout({ children }: DashboardLayoutProps) {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+export default function DashboardLayout({
+  data,
+  config,
+  isRefining = false,
+  isLoading = false,
+  hasError = false,
+}: DashboardLayoutProps) {
+  void data;
+  const resolvedConfig = config ?? { widgets: [] };
 
   return (
-    <div className="min-h-screen bg-[#0A0F1E]">
-      <Sidebar 
-        isCollapsed={isSidebarCollapsed} 
-        onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} 
-      />
-      <Topbar isSidebarCollapsed={isSidebarCollapsed} />
-      
-      <main
-        className={clsx(
-          'pt-16 min-h-screen transition-all duration-300',
-          isSidebarCollapsed ? 'ml-20' : 'ml-[280px]'
-        )}
-      >
-        <div className="p-6">
-          {children}
-        </div>
+    <div className="min-h-screen bg-[#0A0F1E] text-[#F9FAFB]">
+      <Sidebar />
+      <main className="ml-64 min-h-screen bg-[#0A0F1E]">
+        <Topbar />
+        <section className="px-8 pb-8 pt-28">
+          <header className="mb-8">
+            <h1 className="text-3xl font-semibold tracking-tight text-[#F9FAFB]">Dashboard</h1>
+            <p className="mt-2 text-sm text-[#9CA3AF]">
+              Vista analitica de expedientes, tramites y actividad operativa.
+            </p>
+          </header>
+
+          <PageOrchestrator
+            widgets={resolvedConfig.widgets}
+            isRefining={isRefining}
+            isLoading={isLoading}
+            hasError={hasError}
+          />
+        </section>
       </main>
     </div>
   );

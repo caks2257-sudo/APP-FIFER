@@ -30,6 +30,8 @@ const config: Config = {
       fontFamily: {
         sans: ['var(--font-source-sans)', 'Source Sans 3', 'sans-serif'],
         heading: ['var(--font-manrope)', 'Manrope', 'sans-serif'],
+        title: ['var(--font-montserrat)', 'Montserrat', 'sans-serif'],
+        data: ['var(--font-inter)', 'Inter', 'sans-serif'],
       },
       borderRadius: {
         'xl': '0.75rem', // FIFER DNA: exactly 0.75rem

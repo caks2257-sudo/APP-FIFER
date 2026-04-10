@@ -1,0 +1,11 @@
+---
+description: Protect FIFER_CORE from deletion or destructive edits
+alwaysApply: true
+---
+
+# FIFER Core Protection Protocol
+
+- `FIFER_CORE` is a critical project nucleus for data engines and synchronization.
+- Never delete, rename, or empty `FIFER_CORE` or its core subfolders (`xray_engines`, `v0_sync_pack`, `knowledge_base`).
+- Before any refactor touching `FIFER_CORE`, preserve backward compatibility and explicitly confirm with the user.
+- If a task appears to remove or overwrite `FIFER_CORE`, stop and ask for explicit confirmation first.
