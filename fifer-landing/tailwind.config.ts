@@ -53,6 +53,14 @@ const config: Config = {
         "dashboard-bg": "var(--dashboard-bg)",
         "dashboard-sidebar": "var(--dashboard-sidebar)",
         "dashboard-canvas": "var(--dashboard-canvas)",
+        // FIFER Dashboard DNA (v0 shell)
+        "fifer-deep-navy": "#0A0F1E",
+        "fifer-accent": "#EAB308",
+        "fifer-primary": "#1E293B",
+        "fifer-surface": "#111827",
+        "fifer-surface-elevated": "#1F2937",
+        "fifer-border": "#374151",
+        "fifer-border-subtle": "#1F2937",
       },
       fontFamily: {
         /** Cuerpo — Open Sans (variable en layout) */
@@ -60,6 +68,11 @@ const config: Config = {
         "fifer-body": ["var(--font-open-sans)", "system-ui", "sans-serif"],
         /** Títulos — Montserrat */
         "fifer-heading": ["var(--font-montserrat)", "system-ui", "sans-serif"],
+        /** Opcional — alineado con shell v0 si se cargan variables Manrope */
+        heading: ["var(--font-manrope)", "Manrope", "sans-serif"],
+      },
+      borderRadius: {
+        xl: "0.75rem",
       },
       boxShadow: {
         /** Halo amarillo eléctrico — `shadow-fifer-glow-yellow` */
