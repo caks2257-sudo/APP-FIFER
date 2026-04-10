@@ -42,7 +42,7 @@ export default function Topbar({ isSidebarCollapsed }: TopbarProps) {
         <div className="flex items-center gap-3 pl-4 border-l border-[#1F2937]">
           <div className="text-right hidden sm:block">
             <p className="text-sm font-medium text-[#F9FAFB]">Carlos Mendoza</p>
-            <p className="text-xs text-[#6B7280]">Arquitecto Senior</p>
+            <p className="text-xs text-[#6B7280]">Administrador</p>
           </div>
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#EAB308] to-[#F59E0B] flex items-center justify-center">
             <span className="text-[#0A0F1E] font-semibold text-sm">CM</span>
