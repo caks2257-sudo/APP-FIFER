@@ -1,0 +1,25 @@
+{
+  "name": "@fifer/legal-rules-engine",
+  "version": "0.1.0",
+  "description": "Motor de reglas de urbanismo para validación de zonas (Chicureo, Colina)",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "prebuild": "npm run clean"
+  },
+  "keywords": [
+    "urbanismo",
+    "chicureo",
+    "colina",
+    "legal-rules"
+  ],
+  "license": "ISC",
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}

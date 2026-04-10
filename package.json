@@ -24,7 +24,8 @@
     "fifer-content",
     "fifer-ingestor",
     "saas-fifer",
-    "fifer-landing"
+    "fifer-landing",
+    "packages/engines/legal-rules-engine"
   ],
   "type": "commonjs",
   "bugs": {
