@@ -3,14 +3,12 @@ import { GoogleAnalytics } from '@next/third-parties/google';
 import { Source_Sans_3, Manrope } from "next/font/google";
 import Script from 'next/script'; 
 
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import { siteDetails } from '@/data/siteDetails';
 
 import "./globals.css";
 
-const manrope = Manrope({ subsets: ['latin'] });
-const sourceSans = Source_Sans_3({ subsets: ['latin'] });
+const manrope = Manrope({ subsets: ['latin'], variable: '--font-manrope' });
+const sourceSans = Source_Sans_3({ subsets: ['latin'], variable: '--font-source-sans' });
 
 export const metadata: Metadata = {
   title: siteDetails.metadata.title,
@@ -51,16 +49,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${manrope.className} ${sourceSans.className} antialiased`}>
+      <body className={`${manrope.variable} ${sourceSans.variable} antialiased font-sans`}>
         {siteDetails.googleAnalyticsId && (
           <GoogleAnalytics gaId={siteDetails.googleAnalyticsId} />
         )}
         
-        <Header />
-        <main>
-          {children}
-        </main>
-        <Footer />
+        {children}
 
         {/* --- IMPACT STAT TAG VERIFICATION --- */}
         <Script id="impact-stat-tag" strategy="afterInteractive">
