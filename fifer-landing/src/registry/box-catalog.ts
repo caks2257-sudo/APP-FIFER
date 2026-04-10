@@ -6,6 +6,10 @@
 import { BoxManifestSchema, type BoxManifest } from "@/schema/registry.schema";
 import type { ResizableSplitLayoutBoxProps } from "@/components/v0-ingestion/ResizableSplitLayoutBox";
 import type { IFiferBoxManifest } from "@/types/fifer-box";
+import {
+  USER_SPACE_BOX_CATALOG_ENTRIES,
+  USER_SPACE_FIFER_MANIFESTS,
+} from "@/user_space/user-space-manifests";
 import { z } from "zod";
 
 export type BoxVariant = "Mini" | "Standard" | "Hero";
@@ -167,6 +171,7 @@ export const FIFER_BOX_CATALOG: ReadonlyArray<BoxManifest> = Object.freeze(
       },
     },
     },
+    ...USER_SPACE_FIFER_MANIFESTS,
   ])
 );
 
@@ -184,6 +189,7 @@ export function getFiferBoxManifest(boxId: string): BoxManifest | undefined {
  * `src/components/v0-ingestion/registry.ts`. Los `boxId` del núcleo deben existir en `FIFER_BOX_CATALOG`.
  */
 export const BOX_CATALOG: Record<string, BoxCatalogEntry> = {
+  ...USER_SPACE_BOX_CATALOG_ENTRIES,
   "fifer-finance-snapshot": {
     id: "fifer-finance-snapshot",
     variant: "Standard",

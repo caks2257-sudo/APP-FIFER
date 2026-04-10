@@ -1,14 +1,17 @@
 import type { ComponentType } from "react";
 import type { BoxProps } from "@/types/fifer-box";
+import { USER_SPACE_V0_BOX_LOADERS } from "@/user_space/user-space-manifests";
 
 export type V0BoxModuleLoader = () => Promise<{ default: ComponentType<BoxProps> }>;
 
 /**
  * Mapa JIT: `boxId` → import dinámico del Box v0.
  * Metadatos declarativos: `src/registry/box-catalog.ts`.
+ * User space (sandbox): `src/user_space/**` + `USER_SPACE_V0_BOX_LOADERS`.
  * Persona IA (FIFER OS Core): `ai-persona.ts` + `docs/ai_persona.md`.
  */
 export const V0_BOX_LOADERS: Partial<Record<string, V0BoxModuleLoader>> = {
+  ...USER_SPACE_V0_BOX_LOADERS,
   "fifer-dom-evaluator": () => import("./fifer-dom-evaluator"),
   "fifer-finance-snapshot": () => import("./boxes/fifer-finance-snapshot"),
   "finance-cashflow-chart": () => import("./boxes/finance-uf-card"),

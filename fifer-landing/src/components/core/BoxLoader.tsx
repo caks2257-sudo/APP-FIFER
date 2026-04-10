@@ -36,6 +36,8 @@ import { getV0BoxLoader } from "@/components/v0-ingestion/registry";
 import { defaultHrefForFavoriteBox, labelForFavoriteBox } from "@/config/sidebar-navigation";
 import { useFiferData } from "@/hooks/useFiferData";
 import { useFiferEngine } from "@/hooks/useFiferEngine";
+import { useUserEngine } from "@/hooks/useUserEngine";
+import { isUserSpaceBoxId } from "@/user_space/user-space-box-ids";
 import { useFinanceStore } from "@/store/useFinanceStore";
 import { useDualStageShellStore } from "@/store/useDualStageShellStore";
 import { useLayoutStore } from "@/store/useLayoutStore";
@@ -174,8 +176,6 @@ export function BoxLoader({
   const refiningTaskSnippet = useDualStageShellStore((s) => s.taskByBoxId[boxId] ?? "");
   /** Dual-Stage: tarea activa en el store → “Pulido de Prompt” (no depende de props sueltas). */
   const shellIsRefining = Boolean(refiningTaskSnippet);
-  const engine = useFiferEngine();
-  const isRefining = shellIsRefining || engine.isRefining;
   /** Metadatos UI opcionales (`BOX_CATALOG`) — variant Mini → Ghost si payload vacío. */
   const ghostWhenEmpty = getBoxCatalogEntry(boxId)?.variant === "Mini";
   const byokService = useMemo(() => resolveByokService(boxId), [boxId]);
@@ -186,11 +186,21 @@ export function BoxLoader({
   const [jitError, setJitError] = useState<Error | null>(null);
   const hadErrorRef = useRef(false);
 
-  const circuitOpen = useSyncExternalStore(
+  const isUserSpace = isUserSpaceBoxId(boxId);
+  const engine = useFiferEngine();
+  const userEngine = useUserEngine(boxId, healNonce);
+  const isRefining = shellIsRefining || (isUserSpace ? userEngine.isRefining : engine.isRefining);
+  /** BYOK: el formulario Vault debe permanecer visible mientras `Probar conexión` usa Dual-Stage (`isRefining`). */
+  const vaultHighRiskLock = isUserSpace && userEngine.lockedByVault;
+  const showRefiningSkeleton = isRefining && !vaultHighRiskLock;
+
+  const circuitApplies = isUserSpace;
+  const rawCircuitOpen = useSyncExternalStore(
     boxCircuitBreaker.subscribe,
     () => boxCircuitBreaker.isOpen(boxId),
     () => false,
   );
+  const circuitOpen = circuitApplies && rawCircuitOpen;
 
   useEffect(() => {
     if (aiBlocked && flip && onToggleAiView) {
@@ -200,9 +210,19 @@ export function BoxLoader({
 
   /** Demo vs real + fetch API: `useFiferData` → skeleton mientras carga; error del adaptador (Fase 5) → Discovery. */
   const bridge = useFiferData(moduleIdResolved, boxId);
-  const resolvedData = dataOverride !== undefined ? dataOverride : (isRefining ? undefined : (engine.data ?? bridge.data));
-  const resolvedLoading = loadingOverride ?? (bridge.isLoading || engine.isLoading);
-  const resolvedError = errorOverride ?? (engine.error ?? bridge.error);
+  const resolvedData =
+    dataOverride !== undefined
+      ? dataOverride
+      : isRefining
+        ? undefined
+        : isUserSpace
+          ? userEngine.data
+          : (engine.data ?? bridge.data);
+  const resolvedLoading =
+    loadingOverride ??
+    (isUserSpace ? userEngine.isLoading : bridge.isLoading || engine.isLoading);
+  const resolvedError =
+    errorOverride ?? (isUserSpace ? userEngine.error : (engine.error ?? bridge.error));
   const isDataCorruptionError =
     resolvedError instanceof FiferDataValidationError || resolvedError?.name === "FiferDataValidationError";
 
@@ -212,7 +232,7 @@ export function BoxLoader({
     resolvedData !== null &&
     "requiresProMotor" in resolvedData &&
     Boolean((resolvedData as { requiresProMotor?: boolean }).requiresProMotor);
-  const requiresProMotor = engine.requiresProMotor || dataRequiresPro;
+  const requiresProMotor = !isUserSpace && (engine.requiresProMotor || dataRequiresPro);
 
   useEffect(() => {
     if (!slotName || !routePathForLayout) return;
@@ -223,10 +243,11 @@ export function BoxLoader({
       "engineManifest" in resolvedData
         ? (resolvedData as { engineManifest?: Partial<IFiferBoxManifest> }).engineManifest
         : undefined;
-    const m = engine.lastEngineManifest ?? fromData;
+    const m = isUserSpace ? fromData : (engine.lastEngineManifest ?? fromData);
     if (!m?.layout) return;
     applyPartialEngineManifest(moduleIdResolved, routePathForLayout, slotName, boxId, m);
   }, [
+    isUserSpace,
     engine.lastEngineManifest,
     resolvedData,
     slotName,
@@ -282,17 +303,19 @@ export function BoxLoader({
   }, [boxId, catalogGap]);
 
   useEffect(() => {
+    if (!circuitApplies) return;
     const bad = Boolean(resolvedError || jitError);
     if (bad && !hadErrorRef.current) {
       boxCircuitBreaker.recordFailure(boxId);
     }
     hadErrorRef.current = bad;
-  }, [resolvedError, jitError, boxId]);
+  }, [circuitApplies, resolvedError, jitError, boxId]);
 
   useEffect(() => {
+    if (!circuitApplies) return;
     if (resolvedLoading || resolvedError || jitError || isRefining) return;
     boxCircuitBreaker.recordSuccess(boxId);
-  }, [resolvedLoading, resolvedError, jitError, isRefining, boxId]);
+  }, [circuitApplies, resolvedLoading, resolvedError, jitError, isRefining, boxId]);
 
   useEffect(() => {
     const loader = getV0BoxLoader(boxId);
@@ -336,7 +359,7 @@ export function BoxLoader({
 
   const showFetchError = Boolean(resolvedError);
   const hasAnyError = showFetchError || Boolean(jitError) || circuitOpen;
-  const isLocked = aiBlocked || missingByokCredentials;
+  const isLocked = aiBlocked || missingByokCredentials || (isUserSpace && userEngine.lockedByVault);
   const isProExecuting = !isRefining && resolvedLoading && !hasAnyError;
   const visualState: BoxVisualState = hasAnyError ? "error" : resolvedLoading ? "loading" : isLocked ? "locked" : "idle";
 
@@ -385,6 +408,8 @@ export function BoxLoader({
       data-fifer-pro-upsell={showProUpsellStrip ? "true" : "false"}
       data-fifer-module={moduleIdResolved}
       data-fifer-state={visualState}
+      data-fifer-vault-high-risk-lock={vaultHighRiskLock ? "true" : "false"}
+      data-fifer-vault-lock-reason={userEngine.lockReason ?? ""}
       data-fifer-pro-executing={isProExecuting ? "true" : "false"}
       data-box-variant={expanded ? "hero" : "standard"}
       data-ai-face={flip ? "on" : "off"}
@@ -558,7 +583,7 @@ export function BoxLoader({
         style={{ transformStyle: "preserve-3d", width: "100%" }}
         layout
       >
-        {isRefining ? (
+        {showRefiningSkeleton ? (
           <div className="space-y-3">
             <RefiningSkeleton />
             <RefiningPromptPulse
@@ -599,17 +624,36 @@ export function BoxLoader({
                 onReconnectData={onReconnectData}
               />
             )}
-            onRenderFailure={() => boxCircuitBreaker.recordFailure(boxId)}
+            onRenderFailure={() => {
+              if (circuitApplies) boxCircuitBreaker.recordFailure(boxId);
+            }}
           >
             <ThrowBoxError error={jitError} />
           </BoxErrorBoundary>
         ) : resolvedLoading ? (
           <GhostSkeleton />
+        ) : vaultHighRiskLock && userEngine.report ? (
+          <div
+            className="w-full"
+            data-fifer-locked="true"
+            data-fifer-lock-reason="vault-high-risk"
+          >
+            <DiscoveryBox
+              boxId={boxId}
+              reason="vault-high-risk"
+              engineReport={userEngine.report}
+              onVaultKeySaved={onHeal}
+              onHeal={onHeal}
+              onReconnectData={onReconnectData}
+            />
+          </div>
         ) : isLocked ? (
           <div
             className="relative min-h-[160px] w-full"
             data-fifer-locked="true"
-            data-fifer-lock-reason={missingByokCredentials ? "byok" : "wallet"}
+            data-fifer-lock-reason={
+              missingByokCredentials ? "byok" : isUserSpace && userEngine.lockedByVault ? "vault-high-risk" : "wallet"
+            }
           >
             <BoxLockedOverlay
               moduleName={manifest?.sourceModule ?? moduleIdResolved}
@@ -618,7 +662,9 @@ export function BoxLoader({
                   ? `Integración ${
                       byokService === "google-ads" ? "Google Ads / Shopping" : "MercadoLibre"
                     } requiere credenciales BYOK en Perfil.`
-                  : "Saldo de Chispas agotado (Financial Bunker). Las acciones de IA permanecen bloqueadas hasta recargar."
+                  : isUserSpace && userEngine.lockedByVault
+                    ? "Motor de usuario (riesgo alto): vincula una API Key válida en Vault / Perfil antes de ejecutar."
+                    : "Saldo de Chispas agotado (Financial Bunker). Las acciones de IA permanecen bloqueadas hasta recargar."
               }
             />
           </div>
@@ -641,7 +687,9 @@ export function BoxLoader({
                   onReconnectData={onReconnectData}
                 />
               )}
-              onRenderFailure={() => boxCircuitBreaker.recordFailure(boxId)}
+              onRenderFailure={() => {
+                if (circuitApplies) boxCircuitBreaker.recordFailure(boxId);
+              }}
             >
               {mainContent()}
             </BoxErrorBoundary>

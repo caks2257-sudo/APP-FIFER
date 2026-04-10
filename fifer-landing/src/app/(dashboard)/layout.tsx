@@ -1,6 +1,6 @@
 import { AmbientFeedback } from "@/components/core/AmbientFeedback";
 import { DemoModeFloatingToggle } from "@/components/core/DemoModeFloatingToggle";
-import { DashboardStatsRail } from "@/components/core/DashboardStatsRail";
+import { DashboardShellBody } from "@/components/core/DashboardShellBody";
 import { FiferAlertHost } from "@/components/core/FiferAlertHost";
 import { LivingCommandBar } from "@/components/core/LivingCommandBar";
 import { OfflineSyncBridge } from "@/components/core/OfflineSyncBridge";
@@ -26,20 +26,7 @@ export default function DashboardGroupLayout({
             className="grid grid-cols-12 gap-4 rounded-[0.75rem] border border-[#EAB308]/20 bg-[#0A0F1E] p-4"
             data-shell-canvas="living-os"
           >
-            <div
-              className="col-span-12 rounded-[0.75rem] border border-[#EAB308]/15 bg-[#0A0F1E]/70 p-3 xl:col-span-8"
-              data-slot="slot-main"
-            >
-              {children}
-            </div>
-            <div
-              className="col-span-12 grid grid-cols-12 gap-4 rounded-[0.75rem] border border-[#EAB308]/15 bg-[#0A0F1E]/55 p-3 xl:col-span-4"
-              data-slot="slot-stats-grid"
-            >
-              <div className="col-span-12 rounded-[0.75rem] border border-[#EAB308]/20 bg-[#0A0F1E]/40 p-2">
-                <DashboardStatsRail />
-              </div>
-            </div>
+            <DashboardShellBody>{children}</DashboardShellBody>
           </section>
         </main>
       </div>

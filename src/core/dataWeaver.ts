@@ -5,7 +5,7 @@
 
 export type WeaverCriterion = "date" | "roi";
 
-export type WeaverSource = "finance" | "shopify" | "affiliates" | "generic";
+export type WeaverSource = "finance" | "shopify" | "affiliates" | "generic" | "experimental";
 
 export type WeaverModuleSlice<Row extends Record<string, unknown> = Record<string, unknown>> = {
   moduleId: string;

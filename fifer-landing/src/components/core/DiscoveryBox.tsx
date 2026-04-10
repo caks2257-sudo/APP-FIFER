@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { healComponent } from "@/lib/box-heal";
 import { FIFER_VAULT_PROFILE_HREF } from "@/config/fifer-vault";
+import type { UserEngineReport } from "@/schemas/engine-report.schema";
+import { VaultConfigForm } from "@/components/core/VaultConfigForm";
 
 export type DiscoveryReason =
   | "error"
@@ -12,7 +14,8 @@ export type DiscoveryReason =
   | "wallet-empty"
   | "data-corrupt"
   | "circuit-open"
-  | "credentials";
+  | "credentials"
+  | "vault-high-risk";
 
 const REASON_COPY: Record<DiscoveryReason, { title: string; hint: string }> = {
   error: {
@@ -47,6 +50,10 @@ const REASON_COPY: Record<DiscoveryReason, { title: string; hint: string }> = {
     title: "Ghost Mode · credenciales de API",
     hint: "El motor no pudo autenticarse con la integración. Reconecta la API o actualiza claves en Vault / Perfil.",
   },
+  "vault-high-risk": {
+    title: "AIVault · motor de alto riesgo",
+    hint: "Este motor exige BYOK: guarda tu API Key cifrada en el dispositivo (AES-GCM) antes de ejecutar. Puedes probar la conexión sin guardar.",
+  },
 };
 
 function credentialsCopy(httpStatus: 401 | 403): { title: string; hint: string } {
@@ -72,6 +79,8 @@ export function DiscoveryBox({
   onHeal,
   onReconnectData,
   onTopUp,
+  engineReport,
+  onVaultKeySaved,
 }: {
   boxId: string;
   reason: DiscoveryReason;
@@ -84,11 +93,19 @@ export function DiscoveryBox({
   onReconnectData?: () => void;
   /** Recarga virtual de Chispas (modo demo / futuro BYOK). */
   onTopUp?: () => void;
+  /** Solo `reason === "vault-high-risk"`: reporte del motor (`engine_report.json`). */
+  engineReport?: UserEngineReport;
+  /** Tras `setCustomKey` + rehidratación (p. ej. `onHeal` en `BoxLoader`). */
+  onVaultKeySaved?: () => void;
 }) {
   const status =
     httpStatusProp === 401 || httpStatusProp === 403 ? httpStatusProp : undefined;
   const copy =
-    reason === "credentials" ? REASON_COPY.credentials : status ? credentialsCopy(status) : REASON_COPY[reason];
+    reason === "credentials"
+      ? REASON_COPY.credentials
+      : status
+        ? credentialsCopy(status)
+        : REASON_COPY[reason];
 
   function handleHealClick() {
     healComponent({ boxId });
@@ -116,7 +133,10 @@ export function DiscoveryBox({
           {message}
         </pre>
       ) : null}
-      <div className="flex flex-wrap gap-2.5">
+      {reason === "vault-high-risk" && engineReport ? (
+        <VaultConfigForm boxId={boxId} report={engineReport} onConfigured={onVaultKeySaved} />
+      ) : null}
+      <div className="mt-3 flex flex-wrap gap-2.5">
         {showCredentialsCta ? (
           <Link
             href={vaultProfileHref}
@@ -139,7 +159,7 @@ export function DiscoveryBox({
             onClick={handleHealClick}
             className="rounded-lg border border-[#EAB308]/55 bg-[#EAB308]/10 px-3.5 py-2 text-[13px] font-semibold text-[#FEF9C3] hover:bg-[#EAB308]/20"
           >
-            Reparar con IA
+            {reason === "circuit-open" ? "Sanar" : "Reparar con IA"}
           </button>
         )}
         {onReconnectData ? (

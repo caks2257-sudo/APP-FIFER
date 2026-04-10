@@ -16,6 +16,7 @@
 | **OpenAI** | 🟢 | — | Ninguna (verificar BYOK en prod) | — |
 | **Google Cloud (Vertex / AI Studio)** | 🟡 | Proyecto, API habilitada o credenciales de servicio | Habilitar APIs, IAM y `GOOGLE_APPLICATION_CREDENTIALS` o workload identity | — |
 | **Transbank** | 🔴 | Certificado TLS / ambiente o credenciales de comercio | Renovar `.crt`, alinear `.env` y ambiente (integración vs producción) | — |
+| **Finance Mock Gateway** | 🟢 Activo (Dev Mode) | Bypass controlado para pasarelas con estado crítico | Mantener `USE_FINANCE_MOCK=true` solo en desarrollo y pruebas | 1500ms (simulado) |
 | **APIs municipales (Chicureo)** | 🟡 | Origen no expuesto o rate limit | Confirmar endpoint oficial o mantener mocks hasta API estable | — |
 
 **Leyenda:** 🟢 OK · 🟡 degradado / pendiente · 🔴 caído o bloqueado.
@@ -75,4 +76,4 @@ Cuando una llamada HTTP a una API integrada devuelva:
 - [ ] Si se añade un proveedor nuevo, nueva fila en la tabla y entrada en el catálogo.
 
 ---
-*Auditoría X-Ray · Última sincronización: 2026-04-08*
+*Auditoría X-Ray · Última sincronización: 2026-04-09*

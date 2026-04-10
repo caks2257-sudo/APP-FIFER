@@ -6,12 +6,21 @@
 const path = require("path");
 const Stripe = require("stripe");
 const { createClient } = require("@supabase/supabase-js");
+const { FinanceGatewayMock } = require(path.join(
+  __dirname,
+  "../../../../packages/engines/finance-engine/src/gateways/FinanceGatewayMock.js"
+));
 
 const AUTH_SCHEMA = "fifer_auth";
 const FINANCE_SCHEMA = "fifer_finance";
 
 let _stripe = null;
 let _supabase = null;
+const _financeMock = new FinanceGatewayMock();
+
+function isFinanceMockEnabled() {
+  return FinanceGatewayMock.isEnabled();
+}
 
 function getStripe() {
   if (_stripe) return _stripe;
@@ -137,6 +146,18 @@ async function upsertProSubscription(userId, event, session) {
  * @type {import('express').RequestHandler}
  */
 async function handleStripeWebhook(req, res) {
+  if (isFinanceMockEnabled()) {
+    const payload = Buffer.isBuffer(req.body) ? req.body.toString("utf8") : req.body;
+    const mockResult = await _financeMock.handleWebhook({
+      provider: "stripe",
+      eventType: "checkout.session.completed",
+      payload,
+      client_reference_id: req?.body?.client_reference_id,
+      userId: req?.body?.user_id,
+    });
+    return res.status(mockResult.db?.ok ? 200 : 500).json(mockResult);
+  }
+
   const whSecret = String(process.env.STRIPE_WEBHOOK_SECRET || "").trim();
   if (!whSecret) {
     console.warn("[stripe] STRIPE_WEBHOOK_SECRET not configured");
@@ -222,4 +243,5 @@ module.exports = {
   handleStripeWebhook,
   stripeWebhookRawBody,
   resolveUserIdFromSession,
+  isFinanceMockEnabled,
 };

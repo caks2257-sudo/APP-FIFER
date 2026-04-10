@@ -9,15 +9,171 @@
 const axios = require("axios");
 const { createClient } = require("@supabase/supabase-js");
 const path = require("path");
+const fs = require("fs");
 const { listApiHealthStatus } = require("../../system/api_health_monitor.js");
 const groqAdapter = require("./groq_adapter.js");
 const openaiAdapter = require("./openai_adapter.js");
+const { FinanceGatewayMock } = require(path.join(
+  __dirname,
+  "../../../packages/engines/finance-engine/src/gateways/FinanceGatewayMock.js"
+));
 
 const userProfileRepoPath = path.join(__dirname, "../../modules/fifer-platform/auth/userProfileRepository.js");
 const byokVaultPath = path.join(__dirname, "../../modules/fifer-platform/auth/byokVault.js");
 
 const FINANCE_DB_SCHEMA = "fifer_finance";
 let _financeSupabase = null;
+const FINANCE_BIOME_PRIMARY = "#059669";
+const FINANCE_BIOME_ACCENT = "#D97706";
+const FINANCE_INTEGRATIONS_STATUS_PATH = path.join(__dirname, "../../../v0_pack/11_INTEGRATIONS_STATUS.md");
+const FINANCE_CIRCUIT_THRESHOLD = Number(process.env.FINANCE_CIRCUIT_THRESHOLD || 1);
+const _financeGatewayMock = new FinanceGatewayMock();
+const _financeCircuit = new Map();
+let _integrationStatusCache = { loadedAt: 0, rows: [] };
+
+function financeBiomeLog(level, message) {
+  const tag = `[finance-biome ${FINANCE_BIOME_PRIMARY}/${FINANCE_BIOME_ACCENT}]`;
+  if (level === "warn") {
+    console.warn(`${tag} ${message}`);
+    return;
+  }
+  if (level === "error") {
+    console.error(`${tag} ${message}`);
+    return;
+  }
+  console.log(`${tag} ${message}`);
+}
+
+function readFinanceIntegrationsStatusRows() {
+  const now = Date.now();
+  if (now - _integrationStatusCache.loadedAt < 60000 && Array.isArray(_integrationStatusCache.rows)) {
+    return _integrationStatusCache.rows;
+  }
+  try {
+    const raw = fs.readFileSync(FINANCE_INTEGRATIONS_STATUS_PATH, "utf8");
+    const rows = [];
+    for (const line of raw.split(/\r?\n/)) {
+      if (!line.startsWith("| **")) continue;
+      const cols = line.split("|").map((x) => x.trim());
+      if (cols.length < 4) continue;
+      const service = String(cols[1] || "").replace(/\*\*/g, "").trim().toLowerCase();
+      const status = String(cols[2] || "").trim();
+      if (!service) continue;
+      rows.push({ service, status });
+    }
+    _integrationStatusCache = { loadedAt: now, rows };
+    return rows;
+  } catch (_err) {
+    return [];
+  }
+}
+
+function getFinanceProviderHealth(providerName) {
+  const provider = String(providerName || "").trim().toLowerCase();
+  const aliases = {
+    stripe: ["stripe", "transbank"],
+    flow: ["flow", "transbank"],
+  };
+  const lookup = aliases[provider] || [provider];
+  const rows = readFinanceIntegrationsStatusRows();
+  const match = rows.find((row) => lookup.some((key) => row.service.includes(key)));
+  if (!match) {
+    return { status: "unknown", critical: false, service: provider };
+  }
+  const st = String(match.status || "");
+  const critical = st.includes("🔴") || st.includes("🟡");
+  return { status: st, critical, service: match.service };
+}
+
+function openFinanceCircuit(providerName, reason) {
+  const provider = String(providerName || "unknown").trim().toLowerCase();
+  const next = (_financeCircuit.get(provider) || 0) + 1;
+  _financeCircuit.set(provider, next);
+  const isOpen = next >= FINANCE_CIRCUIT_THRESHOLD;
+  if (isOpen) {
+    financeBiomeLog(
+      "warn",
+      `CircuitBreaker OPEN provider=${provider} threshold=${FINANCE_CIRCUIT_THRESHOLD} reason=${reason}`
+    );
+  }
+  return { provider, failures: next, open: isOpen };
+}
+
+function resetFinanceCircuit(providerName) {
+  const provider = String(providerName || "unknown").trim().toLowerCase();
+  _financeCircuit.delete(provider);
+}
+
+/**
+ * Router financiero para pasarelas de pago.
+ * Si la integración está en estado crítico (🔴/🟡), abre CircuitBreaker y redirige al FinanceGatewayMock.
+ *
+ * @param {'stripe'|'flow'} provider
+ * @param {'createSubscription'|'handleWebhook'|'getPaymentStatus'} action
+ * @param {object} [payload]
+ */
+async function routeFinanceTask(provider, action, payload = {}) {
+  const normalizedProvider = String(provider || "").trim().toLowerCase();
+  const normalizedAction = String(action || "").trim();
+  if (!normalizedProvider || !normalizedAction) {
+    return { ok: false, status: 400, routed_via: null, error: "invalid_finance_route_params", data: null };
+  }
+
+  const providerHealth = getFinanceProviderHealth(normalizedProvider);
+  const forceMock = FinanceGatewayMock.isEnabled();
+  const mustUseMock = forceMock || providerHealth.critical;
+
+  if (mustUseMock) {
+    const circuit = openFinanceCircuit(
+      normalizedProvider,
+      forceMock ? "USE_FINANCE_MOCK=true" : `integration_status=${providerHealth.status}`
+    );
+    if (!circuit.open) {
+      return {
+        ok: false,
+        status: 503,
+        routed_via: null,
+        error: "finance_circuit_not_open_yet",
+        data: { provider: normalizedProvider, circuit, provider_health: providerHealth },
+      };
+    }
+
+    if (typeof _financeGatewayMock[normalizedAction] !== "function") {
+      return {
+        ok: false,
+        status: 400,
+        routed_via: "finance_mock",
+        error: `unsupported_finance_action:${normalizedAction}`,
+        data: null,
+      };
+    }
+    const result = await _financeGatewayMock[normalizedAction]({ ...payload, provider: normalizedProvider });
+    return {
+      ok: true,
+      status: 200,
+      routed_via: "finance_mock",
+      error: null,
+      data: {
+        ...(result && typeof result === "object" ? result : {}),
+        provider_health: providerHealth,
+        circuit_breaker: circuit,
+      },
+    };
+  }
+
+  resetFinanceCircuit(normalizedProvider);
+  financeBiomeLog(
+    "info",
+    `Provider healthy for ${normalizedProvider}. No mock redirect. status=${providerHealth.status || "unknown"}`
+  );
+  return {
+    ok: false,
+    status: 501,
+    routed_via: null,
+    error: `finance_provider_not_implemented:${normalizedProvider}`,
+    data: { provider_health: providerHealth },
+  };
+}
 
 function getFinanceSupabaseClient() {
   if (_financeSupabase) return _financeSupabase;
@@ -897,6 +1053,7 @@ async function routeTask(taskType, payload = {}, routingContext = {}) {
 
 module.exports = {
   routeTask,
+  routeFinanceTask,
   resolveTierRoutingContext,
   buildHealthIndex,
   ROUTING_CHAINS,

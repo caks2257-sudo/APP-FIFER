@@ -4,6 +4,7 @@
  */
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { decryptVaultSecret, encryptVaultSecret } from "@/lib/vault-crypto";
 
 export const FIFER_USER_DNA_KEY = "fifer-user-dna";
 
@@ -78,6 +79,11 @@ interface UserState {
   moduleLastVisitAt: Record<string, number>;
   /** Términos derivados de comandos / búsquedas (ABKupfer, cruces con stock). */
   searchInterestSignals: string[];
+  /**
+   * BYOK por motor (`boxId` user_space) — valores AES-GCM serializados (`vault-crypto`),
+   * nunca plaintext en disco (ver `04_INTEGRATIONS_HEALTH.md`).
+   */
+  vaultKeyCipherByEngineId: Record<string, string>;
 }
 
 interface UserStore extends UserState {
@@ -100,6 +106,12 @@ interface UserStore extends UserState {
   recordModuleVisit: (moduleId: string) => void;
   /** Registra tokens de interés desde texto libre (Commander, búsqueda). */
   appendSearchInterestSignal: (raw: string) => void;
+  /** True si hay ciphertext guardado para ese `boxId` / motor. */
+  hasVaultKeyForEngine: (engineId: string) => boolean;
+  /** Persiste API key cifrada (AES-GCM) para `engineId` (usar `boxId` en user_space). */
+  setCustomKey: (engineId: string, plaintextKey: string) => Promise<void>;
+  /** Recupera la clave en memoria solo para `execute()` / prueba de conexión (no loguear). */
+  getVaultKeyPlain: (engineId: string) => Promise<string | null>;
 }
 
 const defaultState: UserState = {
@@ -116,6 +128,7 @@ const defaultState: UserState = {
   neuralSchedule: { financeReviewWeekday: 1 },
   moduleLastVisitAt: {},
   searchInterestSignals: [],
+  vaultKeyCipherByEngineId: {},
 };
 
 export const useUserStore = create<UserStore>()(
@@ -247,6 +260,35 @@ export const useUserStore = create<UserStore>()(
           return { searchInterestSignals: merged.slice(0, MAX_SEARCH_INTEREST_SIGNALS) };
         });
       },
+
+      hasVaultKeyForEngine: (engineId) => {
+        const id = String(engineId || "").trim();
+        if (!id) return false;
+        return Boolean(get().vaultKeyCipherByEngineId[id]);
+      },
+
+      setCustomKey: async (engineId, plaintextKey) => {
+        const id = String(engineId || "").trim();
+        const raw = String(plaintextKey || "").trim();
+        if (!id || !raw) return;
+        const cipher = await encryptVaultSecret(raw);
+        set((s) => ({
+          vaultKeyCipherByEngineId: { ...s.vaultKeyCipherByEngineId, [id]: cipher },
+          hasCustomKey: true,
+        }));
+      },
+
+      getVaultKeyPlain: async (engineId) => {
+        const id = String(engineId || "").trim();
+        if (!id) return null;
+        const cipher = get().vaultKeyCipherByEngineId[id];
+        if (!cipher) return null;
+        try {
+          return await decryptVaultSecret(cipher);
+        } catch {
+          return null;
+        }
+      },
     }),
     {
       name: FIFER_USER_DNA_KEY,
@@ -272,6 +314,7 @@ export const useUserStore = create<UserStore>()(
         neuralSchedule: s.neuralSchedule,
         moduleLastVisitAt: s.moduleLastVisitAt,
         searchInterestSignals: s.searchInterestSignals,
+        vaultKeyCipherByEngineId: s.vaultKeyCipherByEngineId,
       }),
       merge: (persisted, current) => {
         const p = persisted as Partial<UserState> | null;
@@ -307,6 +350,10 @@ export const useUserStore = create<UserStore>()(
           searchInterestSignals: Array.isArray(p.searchInterestSignals)
             ? p.searchInterestSignals.slice(0, MAX_SEARCH_INTEREST_SIGNALS)
             : [],
+          vaultKeyCipherByEngineId:
+            p.vaultKeyCipherByEngineId && typeof p.vaultKeyCipherByEngineId === "object"
+              ? (p.vaultKeyCipherByEngineId as Record<string, string>)
+              : {},
         };
       },
     }

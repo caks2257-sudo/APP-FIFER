@@ -206,6 +206,7 @@ Al actualizar documentación en el **mismo** cierre de tarea que toca rutas, esq
    - Toda lógica de negocio (scraping, cálculos, IA) **DEBE** residir en `src/engines/`.
    - Las carpetas `fifer-landing/src/app` solo actúan como **Shells visuales** que consumen motores.
    - **PROHIBIDO** el acoplamiento directo entre UI y APIs de terceros sin pasar por un Engine.
+9. **Asynchronous Mocking (Finanzas):** El sistema soporta mockeo financiero asíncrono para resiliencia en desarrollo. Si pasarelas de pago (`Stripe`/`Flow`) están en estado crítico (🔴/🟡) o `USE_FINANCE_MOCK=true`, el Smart Task Router puede abrir CircuitBreaker y derivar a `FinanceGatewayMock` con delay de refinamiento (1.5s) antes de confirmar éxito (`subscription_tier = pro` en flujo simulado).
 
 ## 3. GOVERNANCE & STYLEGUIDE
 - **Zero-regression obligatorio** en cambios estructurales.

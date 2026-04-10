@@ -14,6 +14,7 @@ import {
 import { GOOGLE_ADS_MOCK_INTEGRATION_ERROR } from "@/lib/integration-messages";
 import { FIFER_DATA_CORRUPTION_MESSAGE, FiferDataValidationError, validateFiferBoxData } from "@/types/schemas";
 import { boxDataHasAdapterGhostMode } from "@/utils/adapters";
+import { isUserSpaceBoxId } from "@/user_space/user-space-box-ids";
 
 export interface UseFiferDataResult {
   data: BoxProps["data"];
@@ -70,6 +71,9 @@ function resolveMockData(moduleId: string, boxId: string): BoxProps["data"] {
 }
 
 function initialState(moduleId: string, boxId: string): UseFiferDataResult {
+  if (isUserSpaceBoxId(boxId)) {
+    return { data: {}, isLoading: false, error: null, isDemoMode: false };
+  }
   const demo = useLayoutStore.getState().isDemoMode;
   if (demo) return buildDemoResult(moduleId, boxId);
   return { data: {}, isLoading: true, error: null, isDemoMode: false };
@@ -82,9 +86,14 @@ function initialState(moduleId: string, boxId: string): UseFiferDataResult {
  */
 export function useFiferData(moduleId: string, boxId: string): UseFiferDataResult {
   const isDemoMode = useLayoutStore((s) => s.isDemoMode);
+  const isUserSpace = isUserSpaceBoxId(boxId);
   const [state, setState] = useState<UseFiferDataResult>(() => initialState(moduleId, boxId));
 
   useEffect(() => {
+    if (isUserSpace) {
+      setState({ data: {}, isLoading: false, error: null, isDemoMode: false });
+      return;
+    }
     if (isDemoMode) {
       setState(buildDemoResult(moduleId, boxId));
       return;
@@ -126,7 +135,7 @@ export function useFiferData(moduleId: string, boxId: string): UseFiferDataResul
     return () => {
       cancelled = true;
     };
-  }, [isDemoMode, moduleId, boxId]);
+  }, [isUserSpace, isDemoMode, moduleId, boxId]);
 
   return state;
 }

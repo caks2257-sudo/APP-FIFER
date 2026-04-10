@@ -4,6 +4,8 @@
     "private": true,
     "scripts": {
         "dev": "next dev",
+        "fifer:discover-engines": "npx tsx scripts/discover-user-engines.ts",
+        "prebuild": "npm run fifer:discover-engines",
         "build": "next build",
         "start": "next start",
         "lint": "next lint",

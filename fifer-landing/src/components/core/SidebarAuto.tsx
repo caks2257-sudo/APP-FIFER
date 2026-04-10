@@ -286,6 +286,21 @@ export function SidebarAuto({ collapsed = false }: { collapsed?: boolean }) {
           }}
         >
           <Link
+            href="/mis-apps"
+            style={{
+              display: "block",
+              fontSize: 11,
+              color: linkActive(pathname, "/mis-apps") ? FIFER_ELECTRIC_YELLOW : "#71717a",
+              textDecoration: "none",
+              padding: "6px 8px",
+              borderRadius: 8,
+              fontWeight: linkActive(pathname, "/mis-apps") ? 600 : 400,
+              marginBottom: 6,
+            }}
+          >
+            Mis Apps
+          </Link>
+          <Link
             href="/system-status"
             style={{
               display: "block",
