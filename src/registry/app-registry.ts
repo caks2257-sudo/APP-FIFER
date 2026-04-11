@@ -97,6 +97,22 @@ export const appRegistry: FiferAppDefinition[] = [
     permission: 'admin',
     category: 'master',
   },
+  {
+    id: 'finanzas',
+    label: 'Finanzas',
+    href: '/finanzas',
+    iconKey: 'LineChart',
+    permission: 'pro',
+    category: 'finanzas',
+  },
+  {
+    id: 'afiliados',
+    label: 'Red de Afiliados',
+    href: '/afiliados',
+    iconKey: 'Users',
+    permission: 'pro',
+    category: 'network',
+  },
 ];
 
 const appById = Object.fromEntries(
@@ -135,35 +151,35 @@ const sidebarNavigationSource = [
   {
     type: 'group',
     label: 'Trámites DOM',
-    href: '/dashboard/dom',
+    href: '/dom',
     iconKey: 'Building',
     permission: 'public',
     children: [
       {
         type: 'link',
         label: 'Recepción Municipal',
-        href: '/dashboard/dom/recepcion',
+        href: '/dom/recepcion',
         iconKey: 'ClipboardList',
         permission: 'public',
       },
       {
         type: 'link',
         label: 'Permisos de Edificación',
-        href: '/dashboard/dom/permisos',
+        href: '/dom/permisos',
         iconKey: 'FileCheck2',
         permission: 'public',
       },
       {
         type: 'link',
         label: 'Regularizaciones',
-        href: '/dashboard/dom/regularizaciones',
+        href: '/dom/regularizaciones',
         iconKey: 'ShieldCheck',
         permission: 'public',
       },
       {
         type: 'link',
         label: 'Normativa OGUC/LGUC',
-        href: '/dashboard/dom/normativa',
+        href: '/dom/normativa',
         iconKey: 'BookOpen',
         permission: 'public',
       },
@@ -188,16 +204,16 @@ const sidebarNavigationSource = [
   {
     type: 'group',
     label: 'Finanzas',
-    href: '/dashboard/finanzas',
+    href: '/finanzas',
     iconKey: 'LineChart',
     permission: 'public',
     children: [
       {
         type: 'link',
-        label: 'Finanzas y Flujo',
-        href: '/dashboard/finanzas',
+        label: 'Finanzas',
+        href: '/finanzas',
         iconKey: 'LineChart',
-        permission: 'public',
+        appId: 'finanzas',
       },
       {
         type: 'link',
@@ -218,9 +234,9 @@ const sidebarNavigationSource = [
   {
     type: 'link',
     label: 'Red de Afiliados',
-    href: '/dashboard/afiliados',
+    href: '/afiliados',
     iconKey: 'Users',
-    permission: 'public',
+    appId: 'afiliados',
   },
   {
     type: 'group',

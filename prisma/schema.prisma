@@ -17,6 +17,17 @@ enum InternalApiKeyScope {
   FULL_ACCESS
 }
 
+enum TransactionType {
+  INGRESO
+  EGRESO
+}
+
+enum TransactionStatus {
+  PENDIENTE
+  COMPLETADO
+  FALLIDO
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -26,22 +37,70 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  expediente       Expediente?
+  financialAccount FinancialAccount?
   bots             Bot[]
   contracts        Contract[]
   documents        Document[]
   internalApiKeys  InternalApiKey[]
 }
 
+/// Expediente municipal 1:1 con `User` — identificación legal persistida (no sustituye `User.name` en flujos legacy).
+model Expediente {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  rut             String   @unique
+  nombres         String
+  apellidoPaterno String
+  apellidoMaterno String
+  nacionalidad    String
+  fechaNacimiento DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// Cuenta financiera 1:1 con `User` — saldo y moneda base para la app Finanzas.
+model FinancialAccount {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  balance   Decimal  @default(0) @db.Decimal(18, 2)
+  currency  String   @default("CLP")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+}
+
+/// Movimiento contable asociado a una cuenta financiera.
+model Transaction {
+  id        String            @id @default(cuid())
+  accountId String
+  amount    Decimal           @db.Decimal(18, 2)
+  currency  String            @default("CLP")
+  type      TransactionType
+  concept   String
+  status    TransactionStatus
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  account FinancialAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId])
+}
+
 // Llaves internas: qué App puede invocar qué Engine (Control de Flujo — .cursorrules §5).
 model InternalApiKey {
-  id                  String               @id @default(cuid())
-  name                String // ej. "Engine de Imágenes"
-  apiKey              String               @unique // secreto o hash almacenado; nunca reutilizar en texto plano en logs
-  scope               InternalApiKeyScope  @default(READ_ONLY)
-  targetAppOrEngine   String // slug del Engine o App autorizado como destinatario de esta llave
-  ownerId             String
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
+  id                String              @id @default(cuid())
+  name              String // ej. "Engine de Imágenes"
+  apiKey            String              @unique // secreto o hash almacenado; nunca reutilizar en texto plano en logs
+  scope             InternalApiKeyScope @default(READ_ONLY)
+  targetAppOrEngine String // slug del Engine o App autorizado como destinatario de esta llave
+  ownerId           String
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
 
   owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
@@ -56,6 +115,8 @@ model Bot {
   modelId   String
   avatarUrl String?
   mainApp   String   @default("misbots")
+  /// Columna legada en PostgreSQL (`sourceApp`) conservada para alinear `db push` con tablas que no ejecutaron el paso de renombre a `mainApp`.
+  sourceApp String?
   subApp    String?
   metadata  Json?
   ownerId   String

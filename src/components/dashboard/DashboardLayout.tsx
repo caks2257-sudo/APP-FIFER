@@ -1,7 +1,8 @@
+import ExpedienteHydrator from '@/components/perfil/ExpedienteHydrator';
+import PageOrchestrator from '@/components/core/PageOrchestrator';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import type { DashboardWidget } from './mockDashboardConfig';
-import PageOrchestrator from '@/components/core/PageOrchestrator';
 
 type DashboardLayoutData = Record<string, unknown>;
 
@@ -31,6 +32,7 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-[#0A0F1E] text-[#F9FAFB]">
+      <ExpedienteHydrator />
       <Sidebar />
       <main className="ml-64 min-h-screen bg-[#0A0F1E]">
         <Topbar />

@@ -21,15 +21,19 @@
     "fifer:create-engine": "npx tsx scripts/create-fifer-engine.ts",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
-    "prisma:seed": "node scripts/prisma-seed-pooler.mjs"
+    "prisma:seed": "node scripts/prisma-seed-pooler.mjs",
+    "fifer:admin-setup": "npx tsx src/scripts/force-sync-admin.ts",
+    "fifer:sync-uuid": "npx tsx src/scripts/sync-uuid-admin.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@headlessui/react": "^2.1.8",
+    "@hookform/resolvers": "^5.2.2",
     "@next/third-parties": "^14.2.13",
     "@prisma/client": "5.22.0",
+    "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.103.0",
     "axios": "^1.15.0",
     "clsx": "^2.1.1",
@@ -39,6 +43,7 @@
     "next": "^14.2.13",
     "react": "^18",
     "react-dom": "^18",
+    "react-hook-form": "^7.72.1",
     "react-icons": "^5.3.0",
     "zod": "^4.3.6",
     "zustand": "^5.0.12"

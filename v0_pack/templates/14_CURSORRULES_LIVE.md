@@ -1,6 +1,6 @@
-<!-- Espejo vivo — generado automáticamente (2026-04-11T07:41:41.764Z) — fuente: .cursorrules — no editar a mano -->
+<!-- Espejo vivo — generado automáticamente (2026-04-11T22:07:13.783Z) — fuente: .cursorrules — no editar a mano -->
 
-# 🏗️ FIFER ECOSYSTEM - MASTER SYSTEM INSTRUCTOR (v6.0 - Fractal Blueprint Era)
+# 🏗️ FIFER ECOSYSTEM - MASTER SYSTEM INSTRUCTOR (v6.1 — Fractal Blueprint + Ley de Sincronización Retroactiva)
 
 ## 0. CONSTITUCIÓN — LEYES FUNDAMENTALES
 1. **Zero-Trust Visual:** Toda UI debe usar estrictamente Tailwind inline. Prohibido CSS Modules o Styled Components. El ADN visual inmutable es el "Nevado Técnico" (Fondo Deep Navy `#0A0F1E` y acento Electric Yellow `#EAB308`).
@@ -12,6 +12,11 @@
    * En caso de duda, Cursor debe preguntar antes de realizar cualquier cambio en este archivo.
 
 ## 1. EL NUEVO PARADIGMA X-RAY (Planos Especializados)
+
+### Directiva obligatoria — espejo X-Ray en tiempo real (`_xray_*.md`)
+
+> Toda creación o modificación de un archivo X-Ray (`_xray_*.md`), ya sea una actualización de los que ya existen o una categoría completamente distinta, DEBE ser siempre un espejo X-Ray en tiempo real que refleje fielmente el código y las conexiones de la aplicación. Queda estrictamente prohibida la escritura descriptiva, estática o el uso de plantillas desconectadas de la realidad del código.
+
 **PROTOCOLO DE ESPEJO UNIVERSAL:** Está estrictamente prohibido crear X-rays de texto simple o meramente narrativos. Todo X-ray (Database, Logic, UI, Comms, Location, Routing, Healing, Contract, Data) debe ser un **Espejo Técnico**: documentación verificable frente al código y al esquema. Antes de dar por terminada una tarea, el Agente debe comprobar que el X-ray refleje la realidad exacta del código (nombres de tablas y modelos Prisma, rutas, tipos, scopes, políticas RLS donde aplique).
 
 **REGLA DE ANCLA LÓGICA:** Todo módulo (App, Sub-App, Engine, Sub-Engine) debe incluir en **al menos un** plano bajo su `_blueprints/` la cabecera `## UBICACIÓN LÓGICA` seguida de su dirección `` `FIFER://...` ``. Esa ancla es la identidad inmutable del módulo en el ecosistema y debe coincidir con la entrada generada en `docs/registry/LOCATION_MAP.json` tras ejecutar la sincronización GPS.
@@ -53,6 +58,8 @@ Queda ESTRICTAMENTE PROHIBIDO acoplar la lógica de negocio (Motores) directamen
 5. **Sub-Engines (Topología Fractal):** Las modificaciones o alteraciones de un motor principal no deben sobreescribir el Core. Deben crearse como "Sub-Motores" dentro de la carpeta del padre (ej. `src/engines/[padre]/sub-engines/[hijo]/`). Cada sub-motor es una entidad aislada que DEBE tener sus propios `_blueprints/` e inmunidad, y se registrará en el ecosistema bajo la nomenclatura `padre:hijo`.
 6. **Tier-Aware FinOps (Cascadas Financieras):** Todo motor que consuma APIs de pago (Especialmente el AI Fallback Cascade) TIENE PROHIBIDO usar una cascada estática. Debe recibir el `CoreProfile` (Nivel del usuario: Gratuito vs Pago) para determinar la ruta. Usuarios gratuitos harán cascada SÓLO entre APIs abiertas/gratuitas. Usuarios de pago iniciarán en la mejor API de pago, y solo usarán gratuitas como rescate.
 7. **Control de Flujo (Internal API Keys):** Ninguna App puede solicitar datos a un Engine sin una `InternalApiKey` válida (modelo Prisma `InternalApiKey`: `ownerId`, `scope`, `targetAppOrEngine`) **y** registro del flujo en el Espejo de Comunicación (`docs/blueprints/_xray_INTERNAL_COMMUNICATIONS.md`). Las rutas de API internas deben validar la llave antes de ejecutar lógica del motor.
+8. **Sistema de Engines intercomunicados:** Toda nueva función o modificación de una existente debe tratarse como creación o edición de un Engine o Sub-Engine. Los motores deben estar intercomunicados (contratos, `EngineRegistry`, rutas internas documentadas) y registrados en el sistema X-Ray de forma automática: anclas `## UBICACIÓN LÓGICA` + `` `FIFER://...` ``, planos completos bajo `_blueprints/`, regeneración de `docs/registry/LOCATION_MAP.json` con `npm run sync:gps`, y reflejo de flujos en `docs/blueprints/_xray_INTERNAL_COMMUNICATIONS.md` cuando exista llamada cruzada.
+9. **Nuevo concepto arquitectónico → X-Ray y propagación:** Si una modificación introduce un nuevo concepto arquitectónico, debe integrarse de inmediato como plano X-Ray (categoría nueva o ampliación verificable) y propagarse a todo el sistema, incluyendo `docs/blueprints/STARTER_KIT_UNIVERSAL.md` y plantillas bajo `v0_pack/templates/`.
 
 ## 6. MASTER APPS & SYSTEM GOVERNANCE (Administración)
 Las aplicaciones de nivel "Master" (como la App Desarrollador) tienen privilegios y reglas especiales:
@@ -87,3 +94,16 @@ Las aplicaciones de nivel "Master" (como la App Desarrollador) tienen privilegio
 2. **REGLA DE GPS ACTIVO:** Antes de cualquier **refactorización, renombrado o movimiento** de carpetas que afecte a Apps, Sub-Apps, Engines o Sub-Engines, el Agente **DEBE** ejecutar la sincronización GPS desde la raíz del repo: `npm run sync:gps` (implementación: `npx ts-node scripts/sync-gps.ts` con las mismas opciones de compilación que el resto de scripts TS del proyecto, o el alias npm equivalente). El script escanea `src/`, lee las anclas `## UBICACIÓN LÓGICA` en los X-rays bajo `_blueprints/` y reescribe `LOCATION_MAP.json` para que el mapa refleje la ubicación real de las anclas.
 3. **Obligatorio antes de importar o mover:** Antes de un **import** que asuma una ruta estable, o de **mover/renombrar** un módulo anclado, consulta `LOCATION_MAP.json` **después** de haber ejecutado el GPS si acabas de cambiar el árbol de carpetas.
 4. **Coherencia X-ray ↔ mapa:** Toda ancla `FIFER://...` en un plano local debe corresponder a una entrada del mapa generada por el script; los tipos `APP`, `SUB_APP`, `ENGINE` y `SUB_ENGINE` los asigna el sincronizador según la ruta física del módulo.
+
+## 11. LEY DE SINCRONIZACIÓN RETROACTIVA (ADN evolutivo global)
+
+### 11.1 LEY DE EVOLUCIÓN GLOBAL
+**LEY DE EVOLUCIÓN GLOBAL:** Ante cualquier cambio en los patrones arquitectónicos (ADN), sistema X-Ray o estándares de UI, Cursor tiene la obligación de **ESCANEAR** y **ACTUALIZAR** todas las Apps y Engines existentes. Está **PROHIBIDO** mantener código «Legacy» que no cumpla con la versión más reciente del ADN registrado en `.cursorrules` (y su espejo `v0_pack/templates/14_CURSORRULES_LIVE.md`).
+
+### 11.2 Hub & Spoke (Apps principales y sub-apps)
+- **Hub (App principal):** aplicación de producto de primer nivel bajo `src/app/(dashboard)/<slug>/` con entrada en `src/registry/app-registry.ts`, responsable del shell de experiencia y del `mainApp` por defecto en datos que origine.
+- **Spoke (Sub-App):** segmentos anidados bajo el mismo árbol de rutas (tipo GPS `SUB_APP`) que refinan el dominio; deben documentarse en `_xray_ROUTING.md` y alinearse con `subApp` en persistencia cuando aplique.
+- Los espejos globales `prisma/_xray_DATABASE_GLOBAL.md` y `docs/blueprints/_xray_UI_GLOBAL.md` describen esta jerarquía; cada App debe reflejarla en sus planos locales.
+
+### 11.3 PROTOCOLO DE AUTO-HEALING EVOLUTIVO (GPS + compliance)
+El script `npm run sync:gps` (`scripts/sync-gps.ts`) y los procesos de **Auto-Healing** del ecosistema deben validar **no solo** la ubicación y unicidad de las anclas GPS, sino la **compliance** con el ADN vigente: planos obligatorios bajo `_blueprints/`, coherencia de tipos de módulo (`APP` / `SUB_APP` / `ENGINE` / `SUB_ENGINE`), presencia de **Hub** documentado para cada App de producto (ruta raíz del módulo + registro), y estándar de Sub-Engines (carpeta `sub-engines/`, planos, registro). Si una App no tiene declarado su rol de Hub en los planos o un Sub-Engine incumple el estándar, el sistema debe **marcarlo** para **refactorización inmediata** (deuda bloqueante hasta alinear). La norma operativa detallada vive en `docs/blueprints/AUTO_HEALING_COMPLIANCE.md`.

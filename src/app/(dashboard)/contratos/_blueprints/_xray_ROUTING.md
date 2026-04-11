@@ -12,4 +12,4 @@
 ## Navegación lateral
 
 - En `src/components/dashboard/Sidebar.tsx`, ítem **«Control de Contratos»** con `href: '/contratos'`.
-- Anidado bajo el padre **«Finanzas»** (`label: 'Finanzas'`, `href: '/dashboard/finanzas'`), junto con **«Finanzas y Flujo»** (`/dashboard/finanzas`).
+- Anidado bajo el padre **«Finanzas»** (`label: 'Finanzas'`, `href: '/finanzas'`), junto con la app **«Finanzas»** (`/finanzas`).

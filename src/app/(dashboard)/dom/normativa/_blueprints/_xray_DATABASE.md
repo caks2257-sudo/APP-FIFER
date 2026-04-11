@@ -1,4 +1,4 @@
-# Espejo técnico — Persistencia (Sub-App `dashboard/dom/normativa`)
+# Espejo técnico — Persistencia (Sub-App `dom/normativa`)
 
 ## UBICACIÓN LÓGICA
 
@@ -6,7 +6,7 @@
 
 **targetAppOrEngine:** `normativa`
 
-**Alcance:** UI de normativa DOM bajo la app cabecera `dashboard`; persiste y consume el **esquema compartido** del monorepo salvo tablas de sistema explícitas.  
+**Alcance:** UI de normativa DOM bajo la ruta canónica `/dom/...` (grupo `(dashboard)`); persiste y consume el **esquema compartido** del monorepo salvo tablas de sistema explícitas.  
 **Clase de documento:** Espejo técnico 1:1 con `prisma/schema.prisma` para las tablas que este flujo toca. Si hay divergencia, prevalece `schema.prisma`.  
 **Espejo global ampliado:** `prisma/_xray_DATABASE_GLOBAL.md`.
 

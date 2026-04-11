@@ -17,7 +17,7 @@ App desplegada bajo **§0.15**, **§0.25**, **BaseBoxTemplate** / **ContratosBox
 
 ## Navegación (Sidebar)
 
-- Jerarquía **Finanzas** (acordeón): **Finanzas y Flujo** (`/dashboard/finanzas`) → **Control de Contratos** (`/contratos`).
+- Jerarquía **Finanzas** (acordeón): **Finanzas** (`/finanzas`) → **Control de Contratos** (`/contratos`).
 - Archivo: `src/components/dashboard/Sidebar.tsx`.
 
 ---

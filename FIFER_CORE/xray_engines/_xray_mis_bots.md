@@ -1,74 +1,76 @@
-# X-Ray: Mis Bots
-
-Documento de ADN técnico para el hub **Mis Bots** (`/dashboard/mis-bots` y submódulos, ej. Asistente DOM). Alineado a BDUI y al protocolo de blindaje FIFER.
+# Espejo X-Ray — Mis Bots (persistencia + API + Zod)
 
 ---
 
-## Propósito
+## 1. Modelo Prisma `Bot` (`prisma/schema.prisma`)
 
-Gestión de agentes LLM y asistentes conversacionales del usuario: inventario de bots, estado de sesión, enlaces a cada agente especializado y metadatos para orquestación futura. El frontend solo renderiza vistas derivadas del contrato BDUI.
+| Campo | Tipo | Notas |
+|-------|------|--------|
+| `id` | `String` @id @default(cuid()) | |
+| `name` | `String` | |
+| `status` | `String` | libre en esquema (no enum Prisma) |
+| `modelId` | `String` | |
+| `avatarUrl` | `String?` | |
+| `mainApp` | `String` @default("misbots") | ADN multi-tenant |
+| `subApp` | `String?` | |
+| `metadata` | `Json?` | |
+| `ownerId` | `String` | FK → `User.id`, onDelete Cascade |
+| `createdAt` | `DateTime` | |
+| `updatedAt` | `DateTime` | |
 
----
+Índices: `@@index([ownerId])`, `@@index([mainApp])`.
 
-## Estructura de Datos (Esquema BDUI)
-
-```json
-{
-  "schemaVersion": "1.0",
-  "module": "mis_bots",
-  "updatedAt": "2026-04-10T12:00:00.000Z",
-  "hub": {
-    "title": "Mis Bots",
-    "subtitle": "string | null",
-    "bots": [
-      {
-        "id": "asistente-dom",
-        "label": "Asistente DOM",
-        "description": "string | null",
-        "href": "/dashboard/mis-bots/asistente-dom",
-        "icon": "message-square",
-        "status": "idle | active | error | maintenance",
-        "modelHint": "string | null",
-        "enabled": true,
-        "meta": {}
-      }
-    ]
-  },
-  "submodules": {
-    "asistente-dom": {
-      "screen": "chat | placeholder | settings",
-      "messages": [],
-      "systemPromptRef": "string | null",
-      "actions": []
-    }
-  }
-}
-```
-
-- `bots[]`: fuente única para acordeón lateral y página hub; ausencia o array vacío → *empty state*.
-- `status`: el UI debe mapear a badges y deshabilitar acciones sin lanzar errores si el valor es desconocido (fallback a `idle`).
+Relación: `User.bots` ↔ `Bot.owner`.
 
 ---
 
-## Integraciones / APIs requeridas
+## 2. Contrato Zod BDUI (`src/types/schemas.ts`)
 
-| Integración | Uso previsto | Notas |
-|-------------|--------------|--------|
-| API interna FIFER | CRUD lógico de bots, permisos por usuario | Autenticación server-side |
-| `[API_KEY_OPENAI]` | Completions / Assistants | Solo backend; rotación y límites |
-| `[API_KEY_ANTHROPIC_CLAUDE]` | Mensajería alternativa | Marcador |
-| `[API_KEY_CUSTOM_LLM]` | Proveedor propio o on-prem | Marcador |
-| Webhooks / streaming | Respuestas en tiempo real | Definir contrato SSE o WebSocket en fase de implementación |
+**`botEstadoSchema`:** `z.enum(['activo', 'pausado'])`.
 
----
+**`BotRowSchema`:**
 
-## Protocolo de Resiliencia
+- `id`: `string` min 1  
+- `nombre`: `string` min 1  
+- `estado`: `botEstadoSchema`  
+- `modeloAsignado`: `string` min 1  
+- `costoPromedioUF`: `number` nonnegative  
+- `avatarUrl`: `string` optional  
 
-1. **Fallo de API de chat**: mostrar banner o toast; historial local opcional; no dejar pantalla en blanco — *Empty State* con explicación y reintentar.
-2. **Respuesta parcial o chunk corrupto**: validar cada evento; descartar silenciosamente lo inválido y seguir con último estado coherente.
-3. **Sin configuración de modelo**: usar copy por defecto y deshabilitar envío hasta que BDUI indique `enabled: true`.
-4. **Fallback Data**: JSON demo con `bots: []` o un bot de muestra inactivo para QA y demos sin credenciales; nunca asumir que `messages` existe sin comprobar.
+**`BotDataSchema`:** `schemaVersion?`, `bots` = array `BotRowSchema` (default `[]`), `degraded?`, `errorMessage?`, `errorCode?`.
+
+Tipos exportados: `BotRow`, `BotDataPayload`.
 
 ---
 
-*Última revisión conceptual: alineada a FIFER Master Protocol y CRITICAL_APP_SHIELDING_PROTOCOL.*
+## 3. Desalineación código ↔ base de datos
+
+`src/app/api/v1/misbots/route.ts` — `GET` devuelve un **stub en memoria** tipado como `BotDataPayload` (`schemaVersion: '1.0-misbots'`, array `bots` fijo de tres ítems). **No** ejecuta Prisma ni Supabase sobre el modelo `Bot`.
+
+---
+
+## 4. Rutas API que afectan a bots (handlers)
+
+| Ruta | Rol |
+|------|-----|
+| `GET /api/v1/misbots` | Stub `BotDataPayload` (ver §3). |
+| `POST /api/v1/misbots/generate-avatar` | Requiere `botId`, `prompt`, `core`; motor `ai-fallback:image-gen`. |
+| `POST /api/v1/misbots/test-comms` | Requiere `botId`, `core`; opcional `botNombre`, `provider`; motor `ai-fallback:comms`. |
+
+UI que llama avatares / comms: `src/components/v0-ingestion/boxes/FiferMisbotsMain.tsx` (`GENERATE_AVATAR_PATH`, `TEST_COMMS_PATH`).
+
+Sonda salud: `src/engines/system-health/index.ts` hace `GET` a `/api/v1/misbots` como ruta interna monitoreada.
+
+---
+
+## 5. Mapa de nombres (Prisma ↔ stub API ↔ Zod)
+
+| Concepto | Prisma `Bot` | Stub `GET /api/v1/misbots` | `BotRowSchema` |
+|----------|----------------|---------------------------|----------------|
+| Nombre | `name` | `nombre` | `nombre` |
+| Estado | `status` (string) | `estado` (`activo` / `pausado`) | `estado` (enum Zod) |
+| Modelo | `modelId` | `modeloAsignado` | `modeloAsignado` |
+| Costo UF | — (sin columna en `Bot`) | `costoPromedioUF` | `costoPromedioUF` |
+| Avatar | `avatarUrl` | no en stub actual | `avatarUrl` opcional |
+
+Hecho en código: el modelo `Bot` está en `prisma/schema.prisma`; `src/app/api/v1/misbots/route.ts` (`GET`) no invoca Prisma ni consulta la tabla `Bot`.

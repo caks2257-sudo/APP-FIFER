@@ -26,6 +26,7 @@ import {
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useLayoutEffect, useMemo, useState } from 'react';
+import FiferIsotypeMark from '@/components/branding/FiferIsotypeMark';
 import {
   filterSidebarNavigation,
   type SidebarNavGroup,
@@ -114,25 +115,40 @@ function NavGroupRow({
 }) {
   const Icon = iconMap[group.iconKey] ?? LayoutGrid;
   const subtreeActive = group.children.some((c) => isActiveHref(pathname, c.href));
+  const hubActive = isActiveHref(pathname, group.href) || subtreeActive;
 
   return (
     <li key={group.label}>
-      <button
-        type="button"
-        aria-expanded={expanded}
-        onClick={onToggle}
-        className={`${rowBase} ${rowInactive} ${rowHover} ${
-          subtreeActive && !expanded ? 'text-slate-300' : ''
+      <div
+        className={`flex w-full items-stretch gap-0 rounded-lg border-l-2 px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+          hubActive ? rowActive : `${rowInactive} ${rowHover}`
         }`}
       >
-        <Icon className="h-5 w-5 flex-shrink-0" />
-        <span className="min-w-0 flex-1 text-left">{group.label}</span>
-        {expanded ? (
-          <ChevronDown className="h-4 w-4 flex-shrink-0 text-slate-400" />
-        ) : (
-          <ChevronRight className="h-4 w-4 flex-shrink-0 text-slate-400" />
-        )}
-      </button>
+        <Link
+          href={group.href}
+          className="flex min-w-0 flex-1 items-center gap-3 text-inherit no-underline"
+        >
+          <Icon className="h-5 w-5 flex-shrink-0" />
+          <span className="min-w-0 flex-1 text-left">{group.label}</span>
+        </Link>
+        <button
+          type="button"
+          aria-expanded={expanded}
+          aria-label={expanded ? 'Ocultar submenú' : 'Mostrar submenú'}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onToggle();
+          }}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-slate-400 transition hover:bg-white/10 hover:text-[#F9FAFB] focus:outline-none focus:ring-2 focus:ring-[#EAB308] focus:ring-offset-2 focus:ring-offset-[#0A0F1E]"
+        >
+          {expanded ? (
+            <ChevronDown className="h-4 w-4" />
+          ) : (
+            <ChevronRight className="h-4 w-4" />
+          )}
+        </button>
+      </div>
       <div
         className={`grid transition-all duration-200 ease-out ${
           expanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
@@ -180,9 +196,7 @@ export default function Sidebar() {
     <aside className="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-[#1E293B] bg-[#0A0F1E]">
       <div className="h-20 border-b border-[#1E293B] px-5">
         <div className="flex h-full items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#1E293B]">
-            <span className="text-sm font-semibold text-[#EAB308]">F</span>
-          </div>
+          <FiferIsotypeMark />
           <span className="text-base font-semibold tracking-wide text-[#F9FAFB]">FIFER</span>
         </div>
       </div>

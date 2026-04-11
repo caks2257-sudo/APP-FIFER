@@ -2,6 +2,11 @@
  * GPS sync — genera docs/registry/LOCATION_MAP.json a partir de anclas
  * "## UBICACIÓN LÓGICA" en cada _blueprints/_xray_*.md bajo el árbol src/.
  *
+ * Compliance ADN (.cursorrules §11): además de ubicación y tipos de módulo, el
+ * ecosistema exige validación de planos, Hub & Spoke y estándar de Engines.
+ * Ver docs/blueprints/AUTO_HEALING_COMPLIANCE.md; ampliaciones futuras del
+ * script pueden emitir avisos de deuda si faltan planos obligatorios.
+ *
  * Ejecutar desde la raíz del repositorio:
  *   npm run sync:gps
  *   npx ts-node --compiler-options "{\"module\":\"CommonJS\"}" scripts/sync-gps.ts

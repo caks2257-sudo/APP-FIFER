@@ -4,6 +4,10 @@ Plantilla normativa para cualquier pieza nueva del ecosistema: **TIPO: APP** (UI
 
 Ambos tipos **heredan el mismo ADN de trazabilidad**: `mainApp`, `subApp` (opcional), `ownerId` (y `metadata` opcional en entidades persistidas), alineado con `prisma/schema.prisma` y `.cursorrules` (trazabilidad universal).
 
+**Arquitectura Hub & Spoke:** Toda App de producto es un **Hub** (segmento raíz en `(dashboard)` + registro). Los **Spokes** son Sub-Apps anidadas (tipo GPS `SUB_APP`) que comparten el mismo `mainApp` y refinan `subApp` en datos y rutas. Los espejos globales `prisma/_xray_DATABASE_GLOBAL.md` y `docs/blueprints/_xray_UI_GLOBAL.md` definen esta jerarquía; la **Ley de Sincronización Retroactiva** (`.cursorrules` §11) obliga a que cualquier cambio de ADN se propague a Apps y motores existentes y al Starter Kit.
+
+**Motores:** Toda función nueva o cambio sustancial se modela como Engine o Sub-Engine intercomunicados (§5.8–5.9 de `.cursorrules`), con X-Ray y `sync:gps`. Ver `docs/blueprints/AUTO_HEALING_COMPLIANCE.md` para GPS + compliance.
+
 ---
 
 ## 0. Matriz de tipos
@@ -15,7 +19,8 @@ Ambos tipos **heredan el mismo ADN de trazabilidad**: `mainApp`, `subApp` (opcio
 | **Planos X-Ray** | `_xray_UI`, `_xray_DATA`, `_xray_ROUTING`, `_xray_HEALING`, `_xray_DATABASE` | `_xray_CONTRACT`, `_xray_LOGIC`, `_xray_HEALING`, `_xray_DATABASE` |
 | **Registro** | `src/registry/app-registry.ts` | `EngineRegistry` (convención del monorepo) |
 | **Comunicación con otros motores** | Solo vía HTTP/fetch interno o bus acordado, **con** `InternalApiKey` válida documentada en `_xray_INTERNAL_COMMUNICATIONS.md` | Expone contrato; valida caller según política de llaves |
-| **ADN en datos** | `mainApp` = slug de la app cabecera; `subApp` opcional por módulo | `mainApp` / `subApp` en registros que persista el motor (mismo significado fractal) |
+| **ADN en datos** | `mainApp` = slug del **Hub**; `subApp` opcional por **Spoke** | `mainApp` / `subApp` en registros que persista el motor (mismo significado fractal) |
+| **Hub / Spoke** | Hub = carpeta raíz `<slug>/` + `app-registry`; Spokes = rutas anidadas + planos `_xray_*` | N/A en carpeta `engines/` (motores usan `FIFER://` y contratos; jerarquía fractal `sub-engines/`) |
 
 ---
 
@@ -225,4 +230,4 @@ Cualquier plano nuevo debe seguir el formato **Reflejo de código**: sustituir l
 
 ---
 
-**Fuentes normativas:** `.cursorrules` (Ordenanza §5 Control de Flujo, §8 persistencia, trazabilidad ADN), `prisma/schema.prisma`, `docs/blueprints/_xray_INTERNAL_COMMUNICATIONS.md`.
+**Fuentes normativas:** `.cursorrules` (§5 motores, §8 persistencia, §10 GPS, §11 Ley de Sincronización Retroactiva), `prisma/schema.prisma`, `prisma/_xray_DATABASE_GLOBAL.md`, `docs/blueprints/_xray_UI_GLOBAL.md`, `docs/blueprints/AUTO_HEALING_COMPLIANCE.md`, `docs/blueprints/_xray_INTERNAL_COMMUNICATIONS.md`.

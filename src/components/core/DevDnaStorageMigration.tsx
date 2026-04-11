@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useUserDnaStore } from '@/store/useUserDnaStore';
 
-const EXPECTED_DISPLAY_NAME = 'Cristobal Kupfer';
+const EXPECTED_DISPLAY_NAME = 'Cristobal Kupfer Silva';
 
 /** Temporal: fuerza re-hidratación si el perfil persistido no coincide con el de desarrollo. */
 export default function DevDnaStorageMigration() {

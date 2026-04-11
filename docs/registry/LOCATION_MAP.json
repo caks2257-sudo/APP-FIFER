@@ -1,4 +1,8 @@
 {
+  "FIFER://APP/AFILIADOS": {
+    "path": "src/app/(dashboard)/afiliados",
+    "type": "APP"
+  },
   "FIFER://APP/CONTRATOS": {
     "path": "src/app/(dashboard)/contratos",
     "type": "APP"
@@ -15,6 +19,14 @@
     "path": "src/app/(dashboard)/desarrollador",
     "type": "APP"
   },
+  "FIFER://APP/DOM": {
+    "path": "src/app/(dashboard)/dom",
+    "type": "APP"
+  },
+  "FIFER://APP/FINANZAS": {
+    "path": "src/app/(dashboard)/finanzas",
+    "type": "APP"
+  },
   "FIFER://APP/MISBOTS": {
     "path": "src/app/(dashboard)/misbots",
     "type": "APP"
@@ -28,7 +40,7 @@
     "type": "ENGINE"
   },
   "FIFER://ENGINE/NORMATIVA": {
-    "path": "src/app/(dashboard)/dashboard/dom/normativa",
+    "path": "src/app/(dashboard)/dom/normativa",
     "type": "SUB_APP",
     "targetAppOrEngine": "normativa"
   },

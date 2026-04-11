@@ -55,7 +55,7 @@ El script `scripts/sync-gps.ts` recorre `src/`, localiza carpetas de módulo con
     "type": "ENGINE"
   },
   "FIFER://ENGINE/NORMATIVA": {
-    "path": "src/app/(dashboard)/dashboard/dom/normativa",
+    "path": "src/app/(dashboard)/dom/normativa",
     "type": "SUB_APP",
     "targetAppOrEngine": "normativa"
   },
