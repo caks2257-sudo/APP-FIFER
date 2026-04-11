@@ -1,2 +1,7 @@
 1 - Subir Todo a Github
-        a. npm run subir
+        npm run subir
+2 - Activar Landing
+        npm run dev
+3 - Recargar v0_Pack
+        npm run v0-sync
+        

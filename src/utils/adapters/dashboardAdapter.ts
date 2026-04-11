@@ -55,6 +55,19 @@ type RawWidget =
         placeholder: string;
       };
       config?: Record<string, unknown>;
+    }
+  | {
+      id: string;
+      boxId: 'fifer-contratos-main';
+      colSpan: 6 | 12;
+      biome: Biome;
+      state?: {
+        isLoading?: boolean;
+        hasError?: boolean;
+        isLocked?: boolean;
+      };
+      data: Record<string, unknown>;
+      config?: Record<string, unknown>;
     };
 
 export type RawDashboardPayload = {

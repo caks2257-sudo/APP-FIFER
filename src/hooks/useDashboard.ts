@@ -1,32 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { toFiferBoxData, type RawDashboardPayload } from '@/utils/adapters/dashboardAdapter';
 import type { FiferDashboardState } from '@/utils/adapters/dashboardAdapter';
-import type { DashboardWidget } from '@/components/dashboard/mockDashboardConfig';
+import { DASHBOARD_REFERENCE_WIDGETS } from '@/config/dashboardReferenceWidgets';
 import { useLayoutStore } from '@/store/useLayoutStore';
 
-const baseWidgets: DashboardWidget[] = [
-  {
-    id: 'resumen-afiliados',
-    boxId: 'affiliate-hero-summary',
-    module: 'affiliates',
-    colSpan: 4,
-    data: {},
-  },
-  {
-    id: 'flujo-caja-finanzas',
-    boxId: 'finance-cashflow-chart',
-    module: 'finance',
-    colSpan: 8,
-    data: {},
-  },
-  {
-    id: 'ingesta-contenido',
-    boxId: 'content-ingestion-form',
-    module: 'content',
-    colSpan: 4,
-    data: {},
-  },
-];
+const baseWidgets = DASHBOARD_REFERENCE_WIDGETS;
 
 const emptyState: FiferDashboardState = {
   data: {

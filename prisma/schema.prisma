@@ -1,0 +1,105 @@
+// FIFER — persistencia Supabase vía Prisma (Ordenanza §8)
+// ADN multi-tenant: ownerId + mainApp (+ subApp opcional) + metadata Json.
+// Mantener alineado con _xray_DATABASE.md (misbots, contratos) y prisma/_xray_DATABASE_GLOBAL.md.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum InternalApiKeyScope {
+  READ_ONLY
+  FULL_ACCESS
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  role      String   @default("user")
+  tier      String   @default("free")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bots             Bot[]
+  contracts        Contract[]
+  documents        Document[]
+  internalApiKeys  InternalApiKey[]
+}
+
+// Llaves internas: qué App puede invocar qué Engine (Control de Flujo — .cursorrules §5).
+model InternalApiKey {
+  id                  String               @id @default(cuid())
+  name                String // ej. "Engine de Imágenes"
+  apiKey              String               @unique // secreto o hash almacenado; nunca reutilizar en texto plano en logs
+  scope               InternalApiKeyScope  @default(READ_ONLY)
+  targetAppOrEngine   String // slug del Engine o App autorizado como destinatario de esta llave
+  ownerId             String
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+  @@index([targetAppOrEngine])
+}
+
+model Bot {
+  id        String   @id @default(cuid())
+  name      String
+  status    String
+  modelId   String
+  avatarUrl String?
+  mainApp   String   @default("misbots")
+  subApp    String?
+  metadata  Json?
+  ownerId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+  @@index([mainApp])
+}
+
+model Contract {
+  id        String   @id @default(cuid())
+  title     String
+  status    String
+  mainApp   String   @default("contratos")
+  subApp    String?
+  metadata  Json?
+  ownerId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+  @@index([mainApp])
+}
+
+model Document {
+  id         String   @id @default(cuid())
+  name       String
+  fileUrl    String
+  fileType   String
+  size       Int
+  bucketPath String
+  mainApp    String
+  subApp     String?
+  metadata   Json?
+  ownerId    String
+  owner      User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([ownerId])
+  @@index([mainApp])
+}

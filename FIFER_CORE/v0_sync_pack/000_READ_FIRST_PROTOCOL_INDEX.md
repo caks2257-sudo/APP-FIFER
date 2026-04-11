@@ -19,11 +19,11 @@ Antes de cualquier implementacion:
 2. Verificar impacto en `xray_engines`.
 3. Verificar consistencia normativa en `knowledge_base`.
 
-## INSTRUCCION DE COMPORTAMIENTO PARA LA IA (v0.dev) - PRIORIDAD ZERO
+## 🛑 INSTRUCCIÓN OBLIGATORIA DE COMPORTAMIENTO PARA LA IA (HARD STOP)
 
-**Directiva de alta jerarquia para v0.dev (o cualquier IA generadora de UI):**
-
-1. Cuando este archivo sea cargado en el chat de v0.dev, tu unica tarea inicial es **mapear silenciosamente** los documentos X-Ray adjuntos (ADN del proyecto).
-2. **DEBES** asimilar de forma completa las reglas de diseno (`Deep Navy`, `Electric Yellow`, `Grid 12`, `BDUI`) y los contratos de componentes.
-3. Queda **ESTRICTAMENTE PROHIBIDO** generar codigo, layouts o interfaces en este paso.
-4. Una vez asimilado el contexto, responde **unicamente** confirmando que entiendes la arquitectura FIFER y declara que quedas a la espera del **PROMPT MAESTRO** para comenzar el desarrollo frontend.
+**IMPORTANTE: Si eres una IA (Gemini, v0, Cursor) y acabas de leer este archivo, DETENTE.**
+1. **NO asumas contexto:** Este archivo es solo el mapa, no el territorio.
+2. **TU PRIMERA RESPUESTA DEBE SER:** Analizar la solicitud inicial del usuario basándote en el "MAPA DE ENRUTAMIENTO" de arriba y **SOLICITAR EXPLÍCITAMENTE** que te adjunte los archivos adicionales estrictamente necesarios para entender y ejecutar la tarea.
+3. **Regla de Ahorro de Tokens:** Si la tarea es puramente visual, pide solo los archivos de UI/Styleguide. Si es de lógica, pide solo los de Backend/Resiliencia.
+4. **NO PROPORCIONES CÓDIGO NI SOLUCIONES** hasta que el usuario te haya entregado los archivos que solicitaste. Limítate a decir: *"Entendido. Para ejecutar esta tarea bajo el protocolo FIFER, por favor adjunta los siguientes archivos del índice: [Lista de archivos]"*.
+Restricción estricta: NO modifiques absolutamente nada del ## MAPA DE ENRUTAMIENTO, del ## FIFER_DNA_SEED ni del protocolo de interacción del sistema de ciclo.

@@ -1,0 +1,47 @@
+{
+  "FIFER://APP/CONTRATOS": {
+    "path": "src/app/(dashboard)/contratos",
+    "type": "APP"
+  },
+  "FIFER://APP/DASHBOARD": {
+    "path": "src/app/(dashboard)/dashboard",
+    "type": "APP"
+  },
+  "FIFER://APP/DASHBOARD_INMOBILIARIO": {
+    "path": "src/app/(dashboard)/dashboardinmobiliario",
+    "type": "APP"
+  },
+  "FIFER://APP/DESARROLLADOR": {
+    "path": "src/app/(dashboard)/desarrollador",
+    "type": "APP"
+  },
+  "FIFER://APP/MISBOTS": {
+    "path": "src/app/(dashboard)/misbots",
+    "type": "APP"
+  },
+  "FIFER://ENGINE/AI_FALLBACK_CASCADE": {
+    "path": "src/engines/ai-fallback-cascade",
+    "type": "ENGINE"
+  },
+  "FIFER://ENGINE/API_MANAGER": {
+    "path": "src/lib",
+    "type": "ENGINE"
+  },
+  "FIFER://ENGINE/NORMATIVA": {
+    "path": "src/app/(dashboard)/dashboard/dom/normativa",
+    "type": "SUB_APP",
+    "targetAppOrEngine": "normativa"
+  },
+  "FIFER://ENGINE/SYSTEM_HEALTH": {
+    "path": "src/engines/system-health",
+    "type": "ENGINE"
+  },
+  "FIFER://SUB_ENGINE/AI_FALLBACK_CASCADE/COMMS": {
+    "path": "src/engines/ai-fallback-cascade/sub-engines/comms",
+    "type": "SUB_ENGINE"
+  },
+  "FIFER://SUB_ENGINE/AI_FALLBACK_CASCADE/IMAGE_GEN": {
+    "path": "src/engines/ai-fallback-cascade/sub-engines/image-gen",
+    "type": "SUB_ENGINE"
+  }
+}

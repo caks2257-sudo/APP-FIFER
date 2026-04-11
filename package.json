@@ -2,12 +2,26 @@
   "name": "fifer-landing",
   "version": "0.1.0",
   "private": true,
+  "prisma": {
+    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
+  },
   "scripts": {
-    "dev": "next dev",
+    "dev": "node scripts/dev-with-cursorrules-live.mjs",
+    "dev:next": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "subir": "git add . && git commit -m \"chore: auto-sync arquitectonico\" && git push origin smart-dashboard-shell"
+    "sync:cursorrules": "node scripts/mirror-cursorrules-live.mjs",
+    "layout:sanity": "tsx --tsconfig tsconfig.json scripts/layout-sanity-report.ts",
+    "subir": "git add . && git commit -m \"chore: auto-sync arquitectonico\" && git push origin smart-dashboard-shell",
+    "fifer:create-app": "npx tsx scripts/create-fifer-app.ts",
+    "fifer:audit": "npx tsx scripts/audit-blueprints.ts",
+    "sync:gps": "npx ts-node --compiler-options \"{\\\"module\\\":\\\"CommonJS\\\"}\" scripts/sync-gps.ts",
+    "fifer:audit-engines": "npx tsx scripts/audit-engines.ts",
+    "fifer:create-engine": "npx tsx scripts/create-fifer-engine.ts",
+    "prisma:generate": "prisma generate",
+    "prisma:push": "prisma db push",
+    "prisma:seed": "node scripts/prisma-seed-pooler.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -15,6 +29,8 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@headlessui/react": "^2.1.8",
     "@next/third-parties": "^14.2.13",
+    "@prisma/client": "5.22.0",
+    "@supabase/supabase-js": "^2.103.0",
     "axios": "^1.15.0",
     "clsx": "^2.1.1",
     "dotenv": "^17.4.1",
@@ -24,6 +40,7 @@
     "react": "^18",
     "react-dom": "^18",
     "react-icons": "^5.3.0",
+    "zod": "^4.3.6",
     "zustand": "^5.0.12"
   },
   "devDependencies": {
@@ -33,7 +50,11 @@
     "eslint": "^8",
     "eslint-config-next": "14.2.13",
     "postcss": "^8",
+    "prisma": "5.22.0",
+    "supabase": "^2.89.1",
     "tailwindcss": "^3.4.1",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }

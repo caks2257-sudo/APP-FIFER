@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { RawDashboardPayload } from '@/utils/adapters/dashboardAdapter';
+import { STRESS_CONTRATOS_API_SABOTAGE } from '@/utils/fifer-box-data-bridge';
 import { fetchAffiliateData } from '../../../../../FIFER_CORE/xray_engines/xray_admitad.js';
 
 const XRAY_SOURCES = ['FIFER_CORE/xray_engines/xray_admitad.js', 'FIFER_CORE/xray_engines/xray_products.js'] as const;
@@ -70,6 +71,30 @@ async function buildDashboardPayload(): Promise<RawDashboardPayload> {
         },
         config: {
           source: XRAY_SOURCES[0],
+        },
+      },
+      {
+        id: 'contratos-finance-slot',
+        boxId: 'fifer-contratos-main',
+        colSpan: 12,
+        biome: 'finance',
+        data: STRESS_CONTRATOS_API_SABOTAGE
+          ? {
+              contratos: [
+                {
+                  id: 'stress-qa',
+                  localNombre: '',
+                  arrendatario: 'Stress QA',
+                  montoUF: 0,
+                  vencimiento: '2026-01-01',
+                  estado: 'Vigente',
+                },
+              ],
+            }
+          : { contratos: [] },
+        config: {
+          source: 'fifer-contratos-main',
+          title: 'Control de Contratos — Chicureo',
         },
       },
     ],

@@ -4,6 +4,7 @@ import { Source_Sans_3, Manrope, Inter, Montserrat } from "next/font/google";
 import Script from 'next/script'; 
 
 import { siteDetails } from '@/data/siteDetails';
+import DevDnaStorageMigration from '@/components/core/DevDnaStorageMigration';
 import UICommander from '@/components/core/UICommander';
 
 import "./globals.css";
@@ -58,6 +59,7 @@ export default function RootLayout({
         )}
         
         {children}
+        <DevDnaStorageMigration />
         <UICommander />
 
         {/* --- IMPACT STAT TAG VERIFICATION --- */}

@@ -1,0 +1,228 @@
+# Starter Kit universal — FIFER (App + Engine)
+
+Plantilla normativa para cualquier pieza nueva del ecosistema: **TIPO: APP** (UI / Next.js bajo dashboard) o **TIPO: ENGINE** (lógica pura, APIs, sin interfaz de producto). El scaffolding (`npm run fifer:create-app` u homólogo para motores) debe materializar la estructura sin omitir elementos obligatorios.
+
+Ambos tipos **heredan el mismo ADN de trazabilidad**: `mainApp`, `subApp` (opcional), `ownerId` (y `metadata` opcional en entidades persistidas), alineado con `prisma/schema.prisma` y `.cursorrules` (trazabilidad universal).
+
+---
+
+## 0. Matriz de tipos
+
+| Aspecto | TIPO: APP | TIPO: ENGINE |
+|--------|-----------|----------------|
+| **Rol** | Experiencia de usuario, rutas, Boxes, Sidebar | Contratos de entrada/salida, orquestación, llamadas a APIs externas |
+| **Ubicación típica** | `src/app/(dashboard)/<slug>/` | `src/engines/<nombre>/` (sub-motores: `.../sub-engines/<hijo>/`) |
+| **Planos X-Ray** | `_xray_UI`, `_xray_DATA`, `_xray_ROUTING`, `_xray_HEALING`, `_xray_DATABASE` | `_xray_CONTRACT`, `_xray_LOGIC`, `_xray_HEALING`, `_xray_DATABASE` |
+| **Registro** | `src/registry/app-registry.ts` | `EngineRegistry` (convención del monorepo) |
+| **Comunicación con otros motores** | Solo vía HTTP/fetch interno o bus acordado, **con** `InternalApiKey` válida documentada en `_xray_INTERNAL_COMMUNICATIONS.md` | Expone contrato; valida caller según política de llaves |
+| **ADN en datos** | `mainApp` = slug de la app cabecera; `subApp` opcional por módulo | `mainApp` / `subApp` en registros que persista el motor (mismo significado fractal) |
+
+---
+
+## 1. ADN de persistencia (Prisma)
+
+Toda entidad creada por usuario debe llevar trazabilidad **ownerId** + **mainApp** (+ **subApp** opcional) + **metadata** opcional (`Json`), salvo tablas de sistema explícitas documentadas en `_xray_DATABASE.md`.
+
+### Bloque estándar (modelo de referencia)
+
+```prisma
+// Ejemplo: modelo de dominio — mantener convención de tipos del monorepo
+model ExampleEntity {
+  id        String   @id @default(cuid())
+  // ... campos de negocio ...
+
+  mainApp   String   @default("nombre-de-tu-app") // app cabecera (ej. misbots, contratos, dom)
+  subApp    String?  // sub-módulo o ruta lógica (ej. recepcion, permisos)
+  metadata  Json?    // payload extensible (JSONB en Postgres)
+  ownerId   String
+
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+  @@index([mainApp])
+}
+```
+
+**Reglas:**
+
+- **mainApp:** aplicación FIFER de primer nivel que originó el registro (tanto en Apps como en datos producidos por Engines).
+- **subApp:** opcional; refina el contexto dentro de la misma `mainApp`.
+- **metadata:** JSON arbitrario versionado por convención de negocio; documentar claves en `_xray_DATA.md` o `_xray_CONTRACT.md`.
+- **ownerId:** siempre FK a `User.id` para filas multi-tenant (salvo tablas de sistema explícitas).
+
+### Llaves internas (App ↔ Engine)
+
+El modelo `InternalApiKey` en `prisma/schema.prisma` gobierna qué identidad (`ownerId`) puede usar una llave con qué destino (`targetAppOrEngine`) y con qué `scope`. Toda relación caller → motor debe estar reflejada en `docs/blueprints/_xray_INTERNAL_COMMUNICATIONS.md`.
+
+---
+
+## 2. Estructura de carpetas obligatoria
+
+### TIPO: APP (dashboard)
+
+```
+src/app/(dashboard)/<slug-de-la-app>/
+  page.tsx                    # o layout + segmentos hijos
+  _blueprints/
+    _xray_UI.md
+    _xray_DATA.md
+    _xray_ROUTING.md
+    _xray_HEALING.md
+    _xray_DATABASE.md         # obligatorio — Espejo técnico 1:1 (ver §3)
+```
+
+### TIPO: ENGINE
+
+```
+src/engines/<nombre-motor>/
+  ... código del motor ...
+  _blueprints/
+    _xray_CONTRACT.md
+    _xray_LOGIC.md
+    _xray_HEALING.md
+    _xray_DATABASE.md         # obligatorio — N/A + enlace al esquema compartido, o modelo propio
+```
+
+### Sub-engine (fractal)
+
+```
+src/engines/<padre>/sub-engines/<hijo>/
+  _blueprints/
+    (mismo conjunto que el motor, incluido _xray_DATABASE.md)
+```
+
+---
+
+## 3. `_xray_DATABASE.md` (Espejo técnico)
+
+Debe ser un **espejo 1:1** del diccionario de datos respecto a `prisma/schema.prisma` para las tablas que la App o el motor tocan (o el esquema compartido si no hay tablas propias).
+
+Cada plano debe incluir, como mínimo:
+
+1. **Tablas** (nombre SQL / modelo Prisma).
+2. **Columnas** con tipo Prisma y tipo SQL equivalente.
+3. **PK, FK, `onDelete`.**
+4. **Índices** (`@@index`, `@@unique`).
+5. **RLS** (estado y políticas objetivo en Supabase).
+6. **Migraciones** relevantes (`supabase/migrations/`, `prisma migrate`).
+
+Referencia viva del espejo global: `prisma/_xray_DATABASE_GLOBAL.md`.  
+Comunicaciones App ↔ Engine: `docs/blueprints/_xray_INTERNAL_COMMUNICATIONS.md`.
+
+### 3.1 Ancla lógica obligatoria (GPS)
+
+En **al menos un** plano del módulo (habitualmente `_xray_DATABASE.md` o el plano que encabece el dominio), incluir siempre:
+
+```markdown
+## UBICACIÓN LÓGICA
+
+`FIFER://<NAMESPACE>/<IDENTIFICADOR>`
+```
+
+Tras cambios de carpetas, ejecutar `npm run sync:gps` para regenerar `docs/registry/LOCATION_MAP.json`.
+
+Opcional (solo si aplica a llaves internas): en el mismo archivo o en `_xray_COMMS.md`, documentar explícitamente:
+
+```markdown
+**targetAppOrEngine:** `slug-interno`
+```
+
+---
+
+## 3 bis. Placeholders de Espejo (todas las categorías de X-ray)
+
+Cualquier plano nuevo debe seguir el formato **Reflejo de código**: sustituir los comentarios entre corchetes por datos reales verificados en el repo. No dejar listas genéricas sin anclar a rutas, tipos o nombres concretos.
+
+### Database (`_xray_DATABASE.md`)
+
+- Ancla `## UBICACIÓN LÓGICA` + `` `FIFER://...` ``.
+- Tabla de mapeo Prisma ↔ SQL; por cada modelo tocado: columnas, PK/FK, índices, RLS, migraciones (como en la sección 3 de este kit).
+
+### Logic / Contract (motores: `_xray_LOGIC.md`, `_xray_CONTRACT.md`)
+
+```markdown
+## UBICACIÓN LÓGICA
+`FIFER://...`
+
+## Reflejo de código
+| Entrada (Zod / tipo) | Origen en código |
+| Salida (Zod / tipo) | Handler / función |
+| Efectos secundarios | APIs externas, DB, colas |
+```
+
+### UI (`_xray_UI.md`)
+
+```markdown
+## UBICACIÓN LÓGICA
+`FIFER://...`
+
+## Reflejo de código
+| Pantalla / ruta | Archivo(s) TSX |
+| Componentes clave | Imports desde v0_pack/ o src/components/ |
+| Grid / tokens | Convenciones Tailwind del módulo |
+```
+
+### Routing (`_xray_ROUTING.md`)
+
+```markdown
+## UBICACIÓN LÓGICA
+`FIFER://...`
+
+## Reflejo de código
+| URL | segmento app | page.tsx / layout |
+| Sidebar | entrada en app-registry.ts |
+```
+
+### Healing (`_xray_HEALING.md`)
+
+```markdown
+## UBICACIÓN LÓGICA
+`FIFER://...`
+
+## Reflejo de código
+| Box / boundary | Archivo | umbral / circuit breaker |
+| Ghost mode | condición y fallback |
+```
+
+### Comms (`_xray_COMMS.md` o sección en plano de motor)
+
+```markdown
+## UBICACIÓN LÓGICA
+`FIFER://...`
+
+## Reflejo de código
+| Llamada interna | Ruta API o helper | InternalApiKey / scope |
+| Documentación cruzada | docs/blueprints/_xray_INTERNAL_COMMUNICATIONS.md |
+```
+
+### Location (si se añade un plano dedicado `_xray_LOCATION.md`)
+
+```markdown
+## UBICACIÓN LÓGICA
+`FIFER://...`
+
+## Reflejo de código
+| Ancla FIFER | Ruta física del módulo (tras último sync:gps) |
+| Tipo GPS | APP | SUB_APP | ENGINE | SUB_ENGINE |
+```
+
+**Norma:** si nace una categoría nueva de X-ray, debe incluir la misma pareja **Ancla + bloque «Reflejo de código»** con tablas enlazadas a artefactos reales; el GPS solo indexa anclas presentes bajo `_blueprints/`.
+
+---
+
+## 4. Registro en el ecosistema
+
+- **Apps:** entrada en `src/registry/app-registry.ts`.
+- **Engines:** registro en `EngineRegistry` según convención del monorepo.
+- Tras cambios estructurales: `npm run v0-sync` (o script equivalente) para `v0_pack/`.
+
+---
+
+## 5. Integración Supabase / código
+
+- Cliente de aplicación: **Prisma** centralizado; no SQL ad hoc en features.
+- Inserciones vía **Supabase JS** donde aplique: tipos en `src/types/supabase-database.ts` deben coincidir con columnas reales (`mainApp`, `subApp`, `metadata`).
+
+---
+
+**Fuentes normativas:** `.cursorrules` (Ordenanza §5 Control de Flujo, §8 persistencia, trazabilidad ADN), `prisma/schema.prisma`, `docs/blueprints/_xray_INTERNAL_COMMUNICATIONS.md`.

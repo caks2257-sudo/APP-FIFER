@@ -1,9 +1,18 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { DASHBOARD_REFERENCE_WIDGETS } from '@/config/dashboardReferenceWidgets';
 import { useLayoutStore } from '@/store/useLayoutStore';
 
-const knownCommands = ['/uf', '/status', '/refine all', '/lock finance', '/unlock finance', '/hero content'] as const;
+const knownCommands = [
+  '/uf',
+  '/status',
+  '/refine all',
+  '/lock finance',
+  '/unlock finance',
+  '/hero content',
+  '/limpiar-layout',
+] as const;
 
 export default function UICommander() {
   const [isOpen, setIsOpen] = useState(false);
@@ -12,6 +21,7 @@ export default function UICommander() {
   const triggerRefineAll = useLayoutStore((state) => state.triggerRefineAll);
   const setBoxLocked = useLayoutStore((state) => state.setBoxLocked);
   const setHeroMode = useLayoutStore((state) => state.setHeroMode);
+  const clearLayoutForCommander = useLayoutStore((state) => state.clearLayoutForCommander);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -48,6 +58,12 @@ export default function UICommander() {
 
     if (parsed === '/refine all') {
       triggerRefineAll(3000);
+    } else if (parsed === '/limpiar-layout') {
+      clearLayoutForCommander(DASHBOARD_REFERENCE_WIDGETS);
+      setToast('Layout limpio — applyLayoutSanityForCommander (grid 12).');
+      setQuery('');
+      setIsOpen(false);
+      return;
     } else if (parsed === '/lock finance') {
       setBoxLocked('finance-cashflow-chart', true);
     } else if (parsed === '/unlock finance') {
@@ -90,7 +106,7 @@ export default function UICommander() {
           onKeyDown={(event) => {
             if (event.key === 'Enter') runCommand();
           }}
-          placeholder="Escribe /refine all, /lock finance, /hero content..."
+          placeholder="/limpiar-layout, /refine all, /lock finance, /hero content..."
           className="w-full rounded-xl border border-white/10 bg-[#111827] px-4 py-3 text-sm text-[#F9FAFB] outline-none focus:border-[#EAB308]/60"
         />
         <div className="mt-3 space-y-1">
@@ -100,7 +116,12 @@ export default function UICommander() {
               type="button"
               onClick={() => {
                 setQuery(command);
-                setToast(`Comando ejecutado: ${command}`);
+                if (command === '/limpiar-layout') {
+                  clearLayoutForCommander(DASHBOARD_REFERENCE_WIDGETS);
+                  setToast('Layout limpio — applyLayoutSanityForCommander (grid 12).');
+                } else {
+                  setToast(`Comando ejecutado: ${command}`);
+                }
                 setIsOpen(false);
               }}
               className="block w-full rounded-lg px-3 py-2 text-left text-sm text-[#CBD5E1] hover:bg-[#1E293B]"
