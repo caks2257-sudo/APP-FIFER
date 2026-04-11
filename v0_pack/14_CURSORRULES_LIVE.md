@@ -1,4 +1,4 @@
-<!-- Espejo vivo — generado automáticamente (2026-04-11T07:39:38.877Z) — fuente: .cursorrules — no editar a mano -->
+<!-- Espejo vivo — generado automáticamente (2026-04-11T08:42:01.094Z) — fuente: .cursorrules — no editar a mano -->
 
 # 🏗️ FIFER ECOSYSTEM - MASTER SYSTEM INSTRUCTOR (v6.0 - Fractal Blueprint Era)
 
