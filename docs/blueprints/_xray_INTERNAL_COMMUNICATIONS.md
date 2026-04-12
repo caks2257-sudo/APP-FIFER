@@ -4,6 +4,8 @@ Fuente: `src/app/api/v1/**/route.ts`, `src/lib/api-manager.ts`, `src/engines/sys
 
 **InternalApiKey:** modelo Prisma `InternalApiKey` (`prisma/schema.prisma`); emisión y listado en `src/actions/api-key-actions.ts` vía `generateInternalKey` (`src/lib/api-manager.ts`). `validateInternalRequest` está definida en `src/lib/api-manager.ts`; `src/scripts/test-handshake.ts` la importa y la ejecuta. **Ningún** archivo bajo `src/app/api` importa ni llama a `validateInternalRequest`.
 
+**Excepción in-process (v1 — pronóstico de liquidez):** `GET /api/v1/finanzas/liquidity-forecast` resuelve el sub-motor con `EngineRegistry.use('forecast-core:cashflow-liquidity')` dentro del mismo proceso Node de la ruta Next.js; **no** exige `InternalApiKey`. Documentado para cumplir el control de flujo normativo sin forzar handshake en fachadas servidor-a-motor colocalizadas; revisar si en el futuro el motor se invoca vía HTTP entre servicios.
+
 ---
 
 ## Rutas Next.js App Router (origen → efecto)
@@ -19,6 +21,7 @@ Fuente: `src/app/api/v1/**/route.ts`, `src/lib/api-manager.ts`, `src/engines/sys
 | `/api/v1/misbots/test-comms` | `POST` | JSON: `botId`, `botNombre?`, `provider?` (`whatsapp`\|`email`), `core` | `EngineRegistry.use('ai-fallback:comms')`; destino admin: `FIFER_ADMIN_EMAIL`, `FIFER_ADMIN_WHATSAPP_E164` / `FIFER_ADMIN_WHATSAPP` o mocks si faltan. |
 | `/api/v1/fractal-insight/dual-stage` | `POST` | JSON: `moduleId`, `boxId`, `contextData`, `systemInstruction`, `dna` (`AppPreferences`), `core` (`CoreProfile`) | `EngineRegistry.use('ai-fallback')` → `processInsight`. Errores cascada → 503 `AiCascadeExhaustedError`. |
 | `/api/v1/system-health` | `GET` | Query `scope`: `external` \| `internal` \| `engines` \| (omitido = `full`) | `EngineRegistry.use('system-health')` → `getGlobalStatus({ origin })`; `origin` desde headers. Incluye sondas externas (OpenAI, Google) y **HTTP interno** a `GET ${origin}/api/v1/misbots` y `GET ${origin}/api/v1/contratos`. |
+| `/api/v1/finanzas/liquidity-forecast` | `GET` | — | Sesión Supabase → `FinancialAccount` + `Transaction` `COMPLETADO` → `EngineRegistry.use('forecast-core:cashflow-liquidity')` → `runLiquidityForecast` (in-process, sin `InternalApiKey` en v1). |
 | `/api/v1/test-connection` | `GET` | — | Cliente `supabase` (anon): `from('User').select('*').limit(1)`. |
 
 ---
@@ -44,4 +47,4 @@ Otros:
 
 ## Motores referenciados por ID (`EngineRegistry`)
 
-Rutas que resuelven motor por string: `system-health`, `ai-fallback`, `ai-fallback:image-gen`, `ai-fallback:comms` (código en archivos citados arriba).
+Rutas que resuelven motor por string: `system-health`, `forecast-core`, `forecast-core:cashflow-liquidity`, `ai-fallback`, `ai-fallback:image-gen`, `ai-fallback:comms` (código en archivos citados arriba y `src/app/api/v1/finanzas/liquidity-forecast/route.ts`).

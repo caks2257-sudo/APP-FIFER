@@ -1,37 +1,54 @@
-import { createServerClient } from '@supabase/ssr'
-import { NextResponse, type NextRequest } from 'next/server'
+import { createServerClient } from '@supabase/ssr';
+import createIntlMiddleware from 'next-intl/middleware';
+import { NextResponse, type NextRequest } from 'next/server';
 
-import type { Database } from '@/types/supabase-database'
+import { routing } from '@/i18n/routing';
+import type { Database } from '@/types/supabase-database';
+
+const intlMiddleware = createIntlMiddleware(routing);
 
 /**
  * Rutas del hub de trabajo (prefijos). Un path coincide si es exactamente el prefijo
- * o un subpath (`/prefijo/...`). No usar `startsWith` suelto para evitar que `/dashboard`
- * absorba `/dashboardinmobiliario`.
+ * o un subpath (`/prefijo/...`). Se evalúa sobre el pathname sin prefijo de locale (`/en-US/...` → `...`).
  */
 const HUB_PRIVATE_PREFIXES = [
   '/dashboard',
-  /** DOM (normativa, recepción, etc.) — ruta canónica v6 `/dom/...` bajo `(dashboard)`. */
   '/dom',
   '/contratos',
   '/misbots',
   '/desarrollador',
   '/dashboardinmobiliario',
-  /** App Finanzas: ruta canónica `/finanzas` bajo el grupo `(dashboard)`. */
   '/finanzas',
-  /** App Afiliados: ruta canónica `/afiliados` bajo el grupo `(dashboard)`. */
   '/afiliados',
-] as const
+] as const;
+
+function stripLocalePrefix(pathname: string): string {
+  if (pathname.startsWith('/en-US/')) {
+    return pathname.slice('/en-US'.length);
+  }
+  if (pathname === '/en-US') {
+    return '/';
+  }
+  return pathname;
+}
 
 function isHubPrivateRoute(pathname: string): boolean {
+  const path = stripLocalePrefix(pathname);
   return HUB_PRIVATE_PREFIXES.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
-  )
+    (prefix) => path === prefix || path.startsWith(`${prefix}/`),
+  );
+}
+
+function loginPathForRequest(pathname: string): string {
+  return pathname.startsWith('/en-US') ? '/en-US/login' : '/login';
+}
+
+function isBareLoginPath(pathname: string): boolean {
+  return stripLocalePrefix(pathname) === '/login';
 }
 
 export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  })
+  const response = intlMiddleware(request);
 
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -39,48 +56,42 @@ export async function middleware(request: NextRequest) {
     {
       cookies: {
         getAll() {
-          return request.cookies.getAll()
+          return request.cookies.getAll();
         },
-        setAll(cookiesToSet, headers) {
+        setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => {
-            request.cookies.set(name, value)
-          })
-          supabaseResponse = NextResponse.next({
-            request,
-          })
+            request.cookies.set(name, value);
+          });
           cookiesToSet.forEach(({ name, value, options }) => {
-            supabaseResponse.cookies.set(name, value, options)
-          })
-          Object.entries(headers).forEach(([key, value]) => {
-            supabaseResponse.headers.set(key, value)
-          })
+            response.cookies.set(name, value, options);
+          });
         },
       },
     },
-  )
+  );
 
   const {
     data: { user },
-  } = await supabase.auth.getUser()
+  } = await supabase.auth.getUser();
 
-  const path = request.nextUrl.pathname
-  const requiresAuth = isHubPrivateRoute(path)
+  const path = request.nextUrl.pathname;
+  const requiresAuth = isHubPrivateRoute(path);
 
-  if (!user && requiresAuth) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    const nextPath = `${request.nextUrl.pathname}${request.nextUrl.search}`
-    if (nextPath && nextPath !== '/login') {
-      url.searchParams.set('next', nextPath)
+  if (!user && requiresAuth && !isBareLoginPath(path)) {
+    const url = request.nextUrl.clone();
+    url.pathname = loginPathForRequest(path);
+    const nextPath = `${request.nextUrl.pathname}${request.nextUrl.search}`;
+    if (nextPath && !isBareLoginPath(request.nextUrl.pathname)) {
+      url.searchParams.set('next', nextPath);
     }
-    return NextResponse.redirect(url)
+    return NextResponse.redirect(url);
   }
 
-  return supabaseResponse
+  return response;
 }
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
-}
+};

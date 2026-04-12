@@ -22,6 +22,7 @@
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
     "prisma:seed": "node scripts/prisma-seed-pooler.mjs",
+    "db:seed-finanzas": "npx tsx src/scripts/seed-finanzas-test.ts",
     "fifer:admin-setup": "npx tsx src/scripts/force-sync-admin.ts",
     "fifer:sync-uuid": "npx tsx src/scripts/sync-uuid-admin.ts"
   },
@@ -41,6 +42,7 @@
     "framer-motion": "^11.11.9",
     "lucide-react": "^1.8.0",
     "next": "^14.2.13",
+    "next-intl": "^3.26.5",
     "react": "^18",
     "react-dom": "^18",
     "react-hook-form": "^7.72.1",

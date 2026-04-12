@@ -38,11 +38,43 @@ model User {
   updatedAt DateTime @updatedAt
 
   expediente       Expediente?
+  domExpedientes   DomExpediente[]
   financialAccount FinancialAccount?
   bots             Bot[]
   contracts        Contract[]
   documents        Document[]
   internalApiKeys  InternalApiKey[]
+}
+
+/// Credenciales de integraciones externas (Bridge) — valores cifrados en reposo; clave maestra vía `FIFER_BRIDGE_MASTER_KEY`.
+model ExternalBridgeCredential {
+  id            String   @id @default(cuid())
+  /// Nombre de variable de entorno lógica (ej. FLOW_API_KEY)
+  envKey        String   @unique
+  ciphertextB64 String
+  ivB64         String
+  authTagB64    String
+  updatedAt     DateTime @updatedAt
+  updatedBy     String?
+}
+
+/// Borradores de expediente DOM (formularios municipales generados vía `dom-engine:form-generator`).
+model DomExpediente {
+  id          String   @id @default(cuid())
+  userId      String
+  formType    String
+  /// JSON del borrador generado (salida `MinvuFormMapper` / motor) o payload acordado por `formType`.
+  projectData Json
+  status      String   @default("DRAFT")
+  mainApp     String   @default("dom")
+  subApp      String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 /// Expediente municipal 1:1 con `User` — identificación legal persistida (no sustituye `User.name` en flujos legacy).
@@ -76,19 +108,32 @@ model FinancialAccount {
 
 /// Movimiento contable asociado a una cuenta financiera.
 model Transaction {
-  id        String            @id @default(cuid())
-  accountId String
-  amount    Decimal           @db.Decimal(18, 2)
-  currency  String            @default("CLP")
-  type      TransactionType
-  concept   String
-  status    TransactionStatus
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
+  id             String            @id @default(cuid())
+  accountId      String
+  amount         Decimal           @db.Decimal(18, 2)
+  currency       String            @default("CLP")
+  type           TransactionType
+  concept        String
+  status         TransactionStatus
+  /// Origen del registro: manual o importación bancaria (reconciliación).
+  source         String            @default("manual")
+  /// Id estable del movimiento en el proveedor bancario (deduplicación).
+  bankExternalId String?
+  /// Fecha contable reportada por el banco (puede diferir de createdAt).
+  bankPostedAt   DateTime?
+  /// Facturación electrónica (SII / Bridge billing): folio DTE.
+  dteFolio       String?
+  /// URL del PDF (mock o proveedor).
+  dtePdfUrl      String?
+  /// pendiente | emitido | error
+  dteStatus      String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
 
   account FinancialAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
   @@index([accountId])
+  @@index([accountId, bankExternalId])
 }
 
 // Llaves internas: qué App puede invocar qué Engine (Control de Flujo — .cursorrules §5).

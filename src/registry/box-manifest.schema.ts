@@ -31,6 +31,7 @@ export const BoxManifestSchema = z.object({
     'contratos-main',
     'inmobiliario-main',
     'misbots-main',
+    'liquidity-forecast-box',
   ]),
   isResizable: z.boolean().optional().default(true),
 });

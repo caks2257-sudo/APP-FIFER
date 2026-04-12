@@ -3,7 +3,21 @@
  * Panóptico / App Desarrollador: pulso global de proveedores AI, APIs internas y EngineRegistry.
  */
 
+import "@/engines/bot-engine";
+import "@/engines/dom-engine";
+import "@/engines/external-bridge-engine";
+import "@/engines/finance-engine";
+import "@/engines/forecast-core";
+import "@/engines/system-engine";
+
 import { EngineRegistry } from "@/registry/engine-registry";
+
+import type {
+  AiProviderPulse,
+  EngineSlotSnapshot,
+  GlobalHealthStatus,
+  HealthEndpointSnapshot,
+} from "./public-types";
 
 const ENGINE_ID = "system-health" as const;
 
@@ -15,46 +29,30 @@ const GOOGLE_GENAI_DISCOVERY_URL =
   "https://generativelanguage.googleapis.com/$discovery/rest?version=v1";
 
 const ENGINE_PROBE_IDS = [
+  "bot-engine",
+  "dom-engine",
+  "dom-engine:form-generator",
+  "dom-engine:normative-analyzer",
+  "external-bridge-engine",
+  "system-engine",
+  "system-engine:env-manager",
+  "finance-engine",
+  "finance-engine:billing",
+  "finance-engine:reconciliation",
+  "finance-engine:payments",
+  "forecast-core",
+  "forecast-core:cashflow-liquidity",
   "ai-fallback",
   "ai-fallback:image-gen",
   "ai-fallback:comms",
 ] as const;
 
-export type AiProviderPulse = "up" | "degraded" | "down" | "unknown";
-
-export type HealthEndpointSnapshot = {
-  pulse: AiProviderPulse;
-  latencyMs: number | null;
-  note: string;
-  /** Solo APIs con clave configurada: 401/403 en sonda autenticada. */
-  invalidKey?: boolean;
-  /** Útil para rutas internas HTTP. */
-  httpStatus?: number;
-};
-
-export type EngineSlotSnapshot = {
-  registered: boolean;
-  inService: boolean;
-  loadHint: "loaded" | "not-mounted";
-  pulse: AiProviderPulse;
-  note: string;
-};
-
-export type GlobalHealthStatus = {
-  schemaVersion: "1.0-system-health";
-  capturedAt: string;
-  external: {
-    openai: HealthEndpointSnapshot;
-    google: HealthEndpointSnapshot;
-  };
-  internal: {
-    misbots: HealthEndpointSnapshot;
-    contratos: HealthEndpointSnapshot;
-  };
-  engines: {
-    byId: Record<string, EngineSlotSnapshot>;
-  };
-};
+export type {
+  AiProviderPulse,
+  EngineSlotSnapshot,
+  GlobalHealthStatus,
+  HealthEndpointSnapshot,
+} from "./public-types";
 
 async function timedFetch(
   url: string,

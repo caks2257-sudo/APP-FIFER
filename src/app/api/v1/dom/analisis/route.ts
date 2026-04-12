@@ -1,63 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import '@/engines/ai-fallback-cascade';
-import {
-  AiCascadeExhaustedError,
-  type AiFallbackCascadeEngine,
-} from '@/engines/ai-fallback-cascade';
+import '@/engines/dom-engine';
+import type { NormativeAnalyzerSubEngineApi } from '@/engines/dom-engine/sub-engines/normative-analyzer';
 import { createServerSupabaseClient } from '@/lib/supabase-ssr/server';
+import { loadDecryptedVault } from '@/lib/bridge-vault';
 import { prisma } from '@/lib/prisma';
 import { EngineRegistry } from '@/registry/engine-registry';
-import {
-  domAnalisisRequestSchema,
-  domAnalisisResponseSchema,
-} from '@/types/schemas';
-import type { CoreProfile } from '@/types/user-dna';
+import { domAnalisisRequestSchema } from '@/types/schemas';
 
 export const dynamic = 'force-dynamic';
 
-const DOM_AUDITOR_SYSTEM_PROMPT = [
-  'Eres un Auditor Normativo Chileno experto en OGUC (Ordenanza General de Urbanismo y Construcciones)',
-  'y LGUC (Ley General de Urbanismo y Construcciones).',
-  'Debes interpretar parámetros de predio de forma prudente, citar artículos o instrumentos cuando corresponda,',
-  'y distinguir entre cálculo geométrico básico y exigencias que requieren plan regulador o normativa local.',
-  'Superficie máxima edificable numérica = superficieTerreno × coeficienteConstructibilidad (expresa el resultado en las mismas unidades que superficieTerreno).',
-  'La ocupación de suelo (%) debe evaluarse respecto a coherencia con destino y límites urbanísticos típicos; si no es factible, factible=false.',
-  'Responde SIEMPRE en español técnico.',
-].join(' ');
-
-function parseJsonFromAiOutput(text: string): unknown {
-  const trimmed = text.trim();
-  const block = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  const candidate = block ? block[1].trim() : trimmed;
-  try {
-    return JSON.parse(candidate);
-  } catch {
-    const start = candidate.indexOf('{');
-    const end = candidate.lastIndexOf('}');
-    if (start >= 0 && end > start) {
-      return JSON.parse(candidate.slice(start, end + 1));
-    }
-    throw new Error('No se pudo extraer JSON de la respuesta del modelo');
-  }
-}
-
-function coreProfileFromUserRow(name: string, tier: string, role: string): CoreProfile {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  return {
-    nombres: parts[0] ?? 'Usuario',
-    apellidoPaterno: parts.slice(1).join(' ') || 'FIFER',
-    apellidoMaterno: '',
-    nacionalidad: 'Chilena',
-    fechaNacimiento: '1990-01-01',
-    rut: '12.345.678-5',
-    tier: tier === 'pro' ? 'pro' : 'free',
-    role,
-  };
-}
-
 /**
- * POST: análisis normativo paramétrico vía motor `ai-fallback-cascade`. Body validado con `domAnalisisRequestSchema`.
+ * POST: análisis normativo paramétrico vía `dom-engine:normative-analyzer` + `external-bridge-engine` (OpenAI / Anthropic; MOCK simulado).
  */
 export async function POST(request: NextRequest) {
   let body: unknown;
@@ -96,71 +50,12 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const core = coreProfileFromUserRow(dbUser.name, dbUser.tier, dbUser.role);
-
-  const superficieMaximaTeorica = input.superficieTerreno * input.coeficienteConstructibilidad;
-
-  const userPrompt = [
-    `### Rol del sistema`,
-    DOM_AUDITOR_SYSTEM_PROMPT,
-    ``,
-    `### Datos de entrada (JSON)`,
-    JSON.stringify(input, null, 2),
-    ``,
-    `### Cálculo obligatorio`,
-    `superficieMaximaEdificable (number) = superficieTerreno * coeficienteConstructibilidad = ${superficieMaximaTeorica} (verifica y redondea solo si aplicas criterio de redondeo explícito en observaciones).`,
-    `Valida ocupación de suelo ${input.ocupacionSuelo}% frente al destino "${input.destino}".`,
-    ``,
-    `### Formato de salida`,
-    `Devuelve ÚNICAMENTE un objeto JSON válido (sin markdown, sin texto antes o después) con exactamente estas claves:`,
-    `{"factible": boolean, "superficieMaximaEdificable": number, "observaciones": string | string[]}`,
-    `Las observaciones deben incluir citas normativas a OGUC/LGUC donde corresponda (artículos o referencias generales si no tienes número exacto).`,
-  ].join('\n');
-
-  const aiEngine = EngineRegistry.use<AiFallbackCascadeEngine>('ai-fallback');
-
   try {
-    const { finalOutput } = await aiEngine.processInsight(userPrompt, core, {
-      meta: { moduleId: 'dom-normativa', boxId: 'analisis-parametrico' },
-    });
-
-    let raw: unknown;
-    try {
-      raw = parseJsonFromAiOutput(finalOutput);
-    } catch (e) {
-      return NextResponse.json(
-        {
-          error: e instanceof Error ? e.message : 'Respuesta del modelo no interpretable',
-          raw: finalOutput.slice(0, 2000),
-        },
-        { status: 502 },
-      );
-    }
-
-    const outParsed = domAnalisisResponseSchema.safeParse(raw);
-    if (!outParsed.success) {
-      return NextResponse.json(
-        {
-          error: 'La respuesta del modelo no cumple el esquema esperado',
-          issues: outParsed.error.flatten(),
-          raw: finalOutput.slice(0, 2000),
-        },
-        { status: 502 },
-      );
-    }
-
-    return NextResponse.json(outParsed.data);
+    const vault = await loadDecryptedVault();
+    const engine = EngineRegistry.use<NormativeAnalyzerSubEngineApi>('dom-engine:normative-analyzer');
+    const out = await engine.runAnalysis(input, vault);
+    return NextResponse.json(out);
   } catch (error) {
-    if (error instanceof AiCascadeExhaustedError) {
-      return NextResponse.json(
-        {
-          error: error.message,
-          code: error.code,
-          tierErrors: error.tierErrors,
-        },
-        { status: 503 },
-      );
-    }
     console.error('[api/v1/dom/analisis]', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Error interno' },

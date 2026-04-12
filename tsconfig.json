@@ -20,7 +20,13 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@fifer/external-bridge-engine": [
+        "./packages/engines/external-bridge-engine/src/index.ts"
+      ],
+      "@fifer/external-bridge-engine/bridge-latency": [
+        "./packages/engines/external-bridge-engine/src/bridge-latency.ts"
+      ]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

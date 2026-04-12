@@ -1,36 +1,66 @@
 import { NextResponse } from 'next/server';
-import type { BotDataPayload } from '@/types/schemas';
+
+import '@/engines/bot-engine';
+import type { BotEngine } from '@/engines/bot-engine';
+import { mapBotStatusToEstado } from '@/engines/bot-engine';
+import { createServerSupabaseClient } from '@/lib/supabase-ssr/server';
+import { EngineRegistry } from '@/registry/engine-registry';
+import type { BotDataPayload, BotRow } from '@/types/schemas';
+
+function toBotRow(b: {
+  id: string;
+  name: string;
+  status: string;
+  modelId: string;
+  avatarUrl: string | null;
+}): BotRow {
+  return {
+    id: b.id,
+    nombre: b.name,
+    estado: mapBotStatusToEstado(b.status),
+    modeloAsignado: b.modelId,
+    costoPromedioUF: 0,
+    avatarUrl: b.avatarUrl ?? undefined,
+  };
+}
 
 /**
- * Stub Mis Bots — payload acorde a `BotDataSchema` (mock hasta orquestación real).
+ * Lista de bots del usuario autenticado (Prisma vía `bot-engine`).
+ * Sin sesión: lista vacía (compatible con bridge / health).
  */
 export async function GET() {
-  const body: BotDataPayload = {
-    schemaVersion: '1.0-misbots',
-    bots: [
-      {
-        id: 'bot-ventas-01',
-        nombre: 'Asistente Comercial Chicureo',
-        estado: 'activo',
-        modeloAsignado: 'gpt-4o',
-        costoPromedioUF: 2.45,
-      },
-      {
-        id: 'bot-soporte-02',
-        nombre: 'Soporte L1 — Inbox',
-        estado: 'pausado',
-        modeloAsignado: 'gemini-flash',
-        costoPromedioUF: 0.32,
-      },
-      {
-        id: 'bot-finops-03',
-        nombre: 'FinOps — Resúmenes UF',
-        estado: 'activo',
-        modeloAsignado: 'gpt-4o-mini',
-        costoPromedioUF: 0.78,
-      },
-    ],
-  };
+  const supabase = createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  return NextResponse.json(body, { status: 200 });
+  if (!user) {
+    const body: BotDataPayload = {
+      schemaVersion: '1.0-misbots',
+      bots: [],
+      degraded: false,
+    };
+    return NextResponse.json(body, { status: 200 });
+  }
+
+  try {
+    const engine = EngineRegistry.use<BotEngine>('bot-engine');
+    const rows = await engine.getUserBots(user.id);
+    const body: BotDataPayload = {
+      schemaVersion: '1.0-misbots',
+      bots: rows.map(toBotRow),
+      degraded: false,
+    };
+    return NextResponse.json(body, { status: 200 });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : 'Error al listar bots';
+    const body: BotDataPayload = {
+      schemaVersion: '1.0-misbots',
+      bots: [],
+      degraded: true,
+      errorMessage: message,
+      errorCode: 'BOT_ENGINE',
+    };
+    return NextResponse.json(body, { status: 200 });
+  }
 }

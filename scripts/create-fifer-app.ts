@@ -160,12 +160,14 @@ function toPageComponentBase(displayName: string): string {
 }
 
 function resolveDashboardDir(root: string): string {
+  const localeDashboard = path.join(root, 'src', 'app', '[locale]', '(dashboard)');
   const nested = path.join(root, 'fifer-landing', 'src', 'app', '(dashboard)');
   const flat = path.join(root, 'src', 'app', '(dashboard)');
+  if (existsSync(localeDashboard)) return localeDashboard;
   if (existsSync(nested)) return nested;
   if (existsSync(flat)) return flat;
   throw new Error(
-    'No se encontró la ruta del dashboard. Se esperaba src/app/(dashboard) o fifer-landing/src/app/(dashboard) desde la raíz del proyecto.',
+    'No se encontró la ruta del dashboard. Se esperaba src/app/[locale]/(dashboard), src/app/(dashboard) o fifer-landing/src/app/(dashboard) desde la raíz del proyecto.',
   );
 }
 
@@ -223,9 +225,11 @@ function pageTsxContent(
 import BaseBoxTemplate from '@/components/v0-ingestion/templates/BaseBoxTemplate';
 import BoxErrorBoundary from '@/components/core/BoxErrorBoundary';
 import SmartInsightWidget from '@/components/core/SmartInsightWidget';
+import { useExternalBridge } from '@/hooks/useExternalBridge';
 import { useUserDnaStore } from '@/store/useUserDnaStore';
 
 export default function ${fn}() {
+  const bridge = useExternalBridge();
   const profile = useUserDnaStore((s) => s.coreProfile);
   if (profile.role !== 'admin') {
     return (
@@ -238,7 +242,11 @@ export default function ${fn}() {
   return (
     <BoxErrorBoundary>
       {/* Const. v6.0 — inmunidad: el circuito registra fallos con boxCircuitBreaker.recordFailure (p. ej. useBoxData / shells de box). */}
-      {/* Ancho y centrado: heredado de src/app/(dashboard)/layout.tsx (max-w-7xl mx-auto). */}
+      {/* External Bridge (§12 + §14): MOCK/PROD + Macro-Pilares (5) en bridge.integrations — no exponer claves. */}
+      <p className="sr-only" aria-live="polite">
+        {bridge.loading ? 'bridge-loading' : \`bridge-\${bridge.summary.mockCount}-mock-\${bridge.summary.prodCount}-prod\`}
+      </p>
+      {/* Ancho y centrado: heredado de src/app/[locale]/(dashboard)/layout.tsx (max-w-7xl mx-auto). */}
       <BaseBoxTemplate config={{ title: ${JSON.stringify(displayName)} }} />
       <SmartInsightWidget
         moduleId="${folderSegment}"

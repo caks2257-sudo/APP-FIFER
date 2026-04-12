@@ -15,12 +15,40 @@ Ambos tipos **heredan el mismo ADN de trazabilidad**: `mainApp`, `subApp` (opcio
 | Aspecto | TIPO: APP | TIPO: ENGINE |
 |--------|-----------|----------------|
 | **Rol** | Experiencia de usuario, rutas, Boxes, Sidebar | Contratos de entrada/salida, orquestación, llamadas a APIs externas |
-| **Ubicación típica** | `src/app/(dashboard)/<slug>/` | `src/engines/<nombre>/` (sub-motores: `.../sub-engines/<hijo>/`) |
+| **Ubicación típica** | `src/app/[locale]/(dashboard)/<slug>/` (i18n: diccionarios en `messages/es-CL.json` y `messages/en-US.json`; motor `next-intl` en `src/i18n/`) | `src/engines/<nombre>/` (sub-motores: `.../sub-engines/<hijo>/`) |
 | **Planos X-Ray** | `_xray_UI`, `_xray_DATA`, `_xray_ROUTING`, `_xray_HEALING`, `_xray_DATABASE` | `_xray_CONTRACT`, `_xray_LOGIC`, `_xray_HEALING`, `_xray_DATABASE` |
 | **Registro** | `src/registry/app-registry.ts` | `EngineRegistry` (convención del monorepo) |
 | **Comunicación con otros motores** | Solo vía HTTP/fetch interno o bus acordado, **con** `InternalApiKey` válida documentada en `_xray_INTERNAL_COMMUNICATIONS.md` | Expone contrato; valida caller según política de llaves |
 | **ADN en datos** | `mainApp` = slug del **Hub**; `subApp` opcional por **Spoke** | `mainApp` / `subApp` en registros que persista el motor (mismo significado fractal) |
 | **Hub / Spoke** | Hub = carpeta raíz `<slug>/` + `app-registry`; Spokes = rutas anidadas + planos `_xray_*` | N/A en carpeta `engines/` (motores usan `FIFER://` y contratos; jerarquía fractal `sub-engines/`) |
+
+### 0.1 External Bridge (`external-bridge-engine` — §12 + §14 Macro-Pilares + §15 `.env`)
+
+- **Patrón:** paquete `packages/engines/external-bridge-engine/` + registro en `src/engines/external-bridge-engine/`; proxy central `BridgeProxy` y adaptadores Payments / Billing / Banking; MOCK automático si la clave es `INSERT_KEY_HERE` o falta (**Mock-First**).
+- **Macro-Pilares:** cada entrada en `BRIDGE_ENV_BINDINGS` lleva `category` en `BridgeConnectionCategory`: `INTELIGENCIA_ARTIFICIAL` | `FINANZAS_PAGOS` | `ECOMMERCE` | `INFRAESTRUCTURA` | `REDES_SOCIALES` (constante `BRIDGE_MACRO_PILLARS`). Las Apps nuevas leen `integrations[].category` desde `useExternalBridge` / `GET /api/v1/external-bridge/status` y el hub (`ExternalConnectionsPanel`) agrupa por estos cinco pilares por defecto.
+- **Apps nuevas:** el scaffolding (`npm run fifer:create-app`) incluye `useExternalBridge` en `page.tsx` (snapshot `v0_pack/templates/SNAPSHOT_useExternalBridge.md`).
+- **Espejo:** `docs/blueprints/_xray_EXTERNAL_BRIDGE.md`; GPS del motor bajo `src/engines/external-bridge-engine/_blueprints/`.
+- **`.env` local:** solo el Sub-Engine `system-engine:env-manager` (`NODE_ENV=development`); orden por bloques §15 documentado en `.cursorrules` y en el X-Ray External Bridge.
+
+### 0.2 Facturación Chile / Bridge (`finance-engine:billing` + IVA)
+
+- **IVA por defecto:** 19% en líneas afectas (mapeo OpenFactura-compatible en `src/engines/finance-engine/sub-engines/billing/openfactura-mapper.ts`).
+- **DTE:** campos `dteFolio`, `dtePdfUrl`, `dteStatus` en `Transaction`; emisión vía `EngineRegistry.use('external-bridge-engine').emitInvoice` (adaptador billing).
+- **Trigger:** al completar cobro `payment_checkout`, el webhook dispara facturación automática (ver `docs/blueprints/_xray_EXTERNAL_BRIDGE.md`).
+- Snapshot: `v0_pack/templates/SNAPSHOT_BILLING_IVA.md`.
+
+### 0.3 Motores de pronóstico analítico (`forecast-core`)
+
+- **Patrón:** motor padre bajo `src/engines/forecast-core/` con sub-motores en `sub-engines/<nombre>/` (IDs `forecast-core:<nombre>` en `EngineRegistry`).
+- **Contratos:** Zod de entrada/salida en `sub-engines/<nombre>/schemas.ts`; planos `_xray_CONTRACT` / `_xray_LOGIC` / `_xray_HEALING` / `_xray_DATABASE` obligatorios.
+- **Consumo desde API Next:** import del barrel `import '@/engines/forecast-core'` en la ruta y llamada **in-process** a `EngineRegistry.use('forecast-core:…')`. Si en una fase no se usa `InternalApiKey`, la excepción debe constar en `docs/blueprints/_xray_INTERNAL_COMMUNICATIONS.md`.
+- **Registro visible en health:** el motor `forecast-core` se importa desde `src/engines/system-health/index.ts` para que las sondas que listan IDs críticos vean el sub-motor montado sin depender de que el usuario haya llamado antes a una ruta de Finanzas.
+
+### 0.4 Internacionalización (i18n)
+
+- **Diccionarios:** `messages/es-CL.json` y `messages/en-US.json` (namespaces por App, p. ej. `finanzas`, `dom`). No hard-codear copy en componentes (`.cursorrules` §13).
+- **Rutas:** Apps de producto bajo `src/app/[locale]/(dashboard)/<slug>/`; `Link` / `useRouter` / `redirect` desde `@/i18n/navigation`.
+- **Mapa global:** `docs/blueprints/_xray_I18N.md` (GPS + convenciones de namespaces).
 
 ---
 
@@ -157,6 +185,26 @@ Cualquier plano nuevo debe seguir el formato **Reflejo de código**: sustituir l
 
 ### UI (`_xray_UI.md`)
 
+Cada App o motor con superficie visual debe mantener un plano **`_xray_UI.md`** que cumpla el **estándar X-RAY UI** (Fase 24 — vistas dinámicas y acoplamiento fluido). Por cada **vista o panel de datos** relevante, el plano debe incluir al menos una fila con:
+
+| Campo | Contenido esperado |
+|-------|---------------------|
+| **Componente** | Nombre del componente React y ruta de archivo. |
+| **Origen de datos** | Endpoint HTTP y/o forma del payload (tipos / claves). |
+| **Vista preferida** | p. ej. BarChart, lista, mapa de calor. |
+| **Vista fallback** | Lista plana o tabla raw ante error o datos incompatibles. |
+| **Opciones de visualización** | Conmutadores permitidos (ej. barras / líneas / torta) y qué requiere integración v0. |
+
+Plantilla mínima por vista:
+
+```markdown
+| Componente | Origen de datos (endpoint / payload) | Vista preferida | Vista fallback | Opciones de visualización |
+|------------|--------------------------------------|-----------------|----------------|---------------------------|
+| `MiPanel` | `GET /api/v1/...` · `{ items: [...] }` | LineChart | Tabla raw | barras · líneas (v0) |
+```
+
+Además del bloque normativo anterior:
+
 ```markdown
 ## UBICACIÓN LÓGICA
 `FIFER://...`
@@ -166,6 +214,8 @@ Cualquier plano nuevo debe seguir el formato **Reflejo de código**: sustituir l
 | Componentes clave | Imports desde v0_pack/ o src/components/ |
 | Grid / tokens | Convenciones Tailwind del módulo |
 ```
+
+**Reglas de layout (ADN §19):** en grids de paneles, preferir `items-start` o columnas con `break-inside-avoid` para evitar stretch vertical no deseado entre cajas de distinta altura.
 
 ### Routing (`_xray_ROUTING.md`)
 

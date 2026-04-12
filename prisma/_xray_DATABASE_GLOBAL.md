@@ -235,7 +235,7 @@ User (1) ──< InternalApiKey    ownerId
 
 | Recurso | Estado en repo | Diseño objetivo |
 |---------|----------------|-----------------|
-| Tablas `User`, `Expediente`, `FinancialAccount`, `Transaction`, `Bot`, `Contract`, `Document`, `InternalApiKey` | Políticas no versionadas en SQL en este repositorio | Owner-only en filas con `ownerId` / `userId` / `accountId` vía `User`: visibles/mutables según Route Handlers con Prisma + cookie de sesión. `FinancialAccount` y `Transaction` se leen en `GET /api/v1/finanzas` con el mismo criterio. Las filas `InternalApiKey` solo deben exponerse a servicios que validen el secreto fuera de lectura pública. |
+| Tablas `User`, `Expediente`, `FinancialAccount`, `Transaction`, `Bot`, `Contract`, `Document`, `InternalApiKey` | Políticas no versionadas en SQL en este repositorio | Owner-only en filas con `ownerId` / `userId` / `accountId` vía `User`: visibles/mutables según Route Handlers con Prisma + cookie de sesión. `FinancialAccount` y `Transaction` se leen en `GET /api/v1/finanzas` con el mismo criterio; `GET /api/v1/finanzas/liquidity-forecast` lee la misma cuenta y todas las `Transaction` con `status` `COMPLETADO` (pronóstico en caliente, sin tablas nuevas). Las filas `InternalApiKey` solo deben exponerse a servicios que validen el secreto fuera de lectura pública. |
 | Storage `fifer-documents`, `fifer-avatars` | Buckets creados vía migración; políticas detalladas en panel / futuras migraciones | Alinear prefijos de `bucketPath` con `ownerId`; backend con service role documentado (`supabaseAdmin`) para uploads servidor. |
 
 ---

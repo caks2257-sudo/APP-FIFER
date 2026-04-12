@@ -48,11 +48,13 @@ export const BaseBoxTemplate: FC<BoxProps> = ({
       )}
 
       <div className={`flex h-full flex-col ${isLoading ? 'opacity-30' : 'opacity-100'}`}>
-        <header className="mb-4 flex items-start justify-between">
-          <h3 className="font-title text-sm font-bold uppercase tracking-wider text-[#EAB308]">
-            {config?.title ?? 'Nuevo Módulo FIFER'}
-          </h3>
-        </header>
+        {(config?.title ?? '').trim() !== '' ? (
+          <header className="mb-4 flex items-start justify-between">
+            <h3 className="font-title text-sm font-bold uppercase tracking-wider text-[#EAB308]">
+              {config?.title ?? 'Nuevo Módulo FIFER'}
+            </h3>
+          </header>
+        ) : null}
 
         <main className="min-h-0 flex-1 overflow-auto">
           {hasData ? (

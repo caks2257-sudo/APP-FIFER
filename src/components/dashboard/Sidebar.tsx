@@ -23,8 +23,9 @@ import {
   User,
   Users,
 } from 'lucide-react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+
+import { Link, usePathname } from '@/i18n/navigation';
 import { useLayoutEffect, useMemo, useState } from 'react';
 import FiferIsotypeMark from '@/components/branding/FiferIsotypeMark';
 import {
@@ -113,6 +114,7 @@ function NavGroupRow({
   expanded: boolean;
   onToggle: () => void;
 }) {
+  const tSidebar = useTranslations('sidebar');
   const Icon = iconMap[group.iconKey] ?? LayoutGrid;
   const subtreeActive = group.children.some((c) => isActiveHref(pathname, c.href));
   const hubActive = isActiveHref(pathname, group.href) || subtreeActive;
@@ -134,7 +136,7 @@ function NavGroupRow({
         <button
           type="button"
           aria-expanded={expanded}
-          aria-label={expanded ? 'Ocultar submenú' : 'Mostrar submenú'}
+          aria-label={expanded ? tSidebar('hideSubmenu') : tSidebar('showSubmenu')}
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -168,13 +170,17 @@ function NavGroupRow({
   );
 }
 
-function footerRoleLabel(role: string | undefined): string {
-  if (!role) return 'Usuario';
-  if (role.toLowerCase() === 'admin' || role === 'Administrador') return 'Administrador';
+function footerRoleLabel(
+  role: string | undefined,
+  t: (key: 'userFallback' | 'roleAdmin') => string,
+): string {
+  if (!role) return t('userFallback');
+  if (role.toLowerCase() === 'admin' || role === 'Administrador') return t('roleAdmin');
   return role;
 }
 
 export default function Sidebar() {
+  const tSidebar = useTranslations('sidebar');
   const pathname = usePathname();
   const coreProfile = useUserDnaStore((s) => s.coreProfile);
   const [expandedLabel, setExpandedLabel] = useState<string | null>(null);
@@ -203,7 +209,7 @@ export default function Sidebar() {
 
       <nav className="flex-1 overflow-y-auto px-3 py-5">
         <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#9CA3AF]">
-          Modulos FIFER
+          {tSidebar('modulesTitle')}
         </p>
         <ul className="space-y-1">
           {navItems.map((item) => {
@@ -234,7 +240,7 @@ export default function Sidebar() {
       <div className="border-t border-[#1E293B] px-5 py-4">
         <p className="text-sm font-medium text-[#F9FAFB]">{displayName}</p>
         <p className="mt-0.5 text-xs text-[#9CA3AF]">
-          {footerRoleLabel(coreProfile.role)}
+          {footerRoleLabel(coreProfile.role, tSidebar)}
         </p>
       </div>
     </aside>

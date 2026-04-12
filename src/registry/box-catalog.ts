@@ -1,5 +1,6 @@
 export type BoxId =
   | 'finance-cashflow-chart'
+  | 'finance-liquidity-forecast'
   | 'content-ingestion-form'
   | 'affiliate-hero-summary'
   | 'system-health-monitor'
@@ -26,7 +27,8 @@ type BoxCatalogEntry = {
     | 'system-monitor'
     | 'contratos-main'
     | 'inmobiliario-main'
-    | 'misbots-main';
+    | 'misbots-main'
+    | 'liquidity-forecast-box';
 };
 
 /** Alias genómico — mismo objeto que `boxCatalog`. */
@@ -35,6 +37,11 @@ export const BOX_CATALOG: Record<BoxId, BoxCatalogEntry> = {
     boxId: 'finance-cashflow-chart',
     module: 'finance',
     component: 'chart-box',
+  },
+  'finance-liquidity-forecast': {
+    boxId: 'finance-liquidity-forecast',
+    module: 'finance',
+    component: 'liquidity-forecast-box',
   },
   'content-ingestion-form': {
     boxId: 'content-ingestion-form',

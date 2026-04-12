@@ -43,6 +43,18 @@
 
 ---
 
+## Sonda arquitectónica (`architecture-probe.ts`)
+
+| Símbolo | Rol |
+|---------|-----|
+| `runArchitectureProbe` | Lectura **no destructiva** con `fs/promises` + `path`: `.cursorrules` (versión ADN `vX.Y` en las dos primeras líneas), `docs/registry/LOCATION_MAP.json` (conteo de anclas), `docs/blueprints/AUTO_HEALING_COMPLIANCE.md` (`stat`: tamaño y `mtime`). |
+| `ARCHITECTURE_HEALTH_SCHEMA_VERSION` | `"1.0-architecture-health"`. |
+| `readMode` | `filesystem` si al menos un archivo se leyó desde `process.cwd()`; si no (p. ej. Vercel sin repo), `bundle` con `reason` en español — **no lanza** al caller. |
+
+**APIs:** `GET /api/v1/system-health/architecture` (admin) devuelve el snapshot; `GET /api/v1/war-room` lo inyecta como `architectureHealth` (§17).
+
+---
+
 ## Dependencias
 
 - `@/registry/engine-registry` — solo lectura de registro para `buildEngineSnapshots`.

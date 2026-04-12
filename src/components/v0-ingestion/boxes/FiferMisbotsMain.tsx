@@ -1,6 +1,7 @@
 'use client';
 
 import { Bot } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import BoxErrorBoundary from '@/components/core/BoxErrorBoundary';
 import BoxLoader from '@/components/core/BoxLoader';
@@ -25,6 +26,7 @@ export type FiferMisbotsMainProps = V0BoxProps & {
 
 function normalizeBotEstado(status: string): BotEstado {
   const s = status.trim().toLowerCase();
+  if (s === 'error' || s === 'fallido' || s === 'failed') return 'error';
   if (s === 'pausado' || s === 'paused' || s === 'inactive' || s === 'stopped') return 'pausado';
   return 'activo';
 }
@@ -92,6 +94,7 @@ type FiferMisbotsMainInnerProps = V0BoxProps & {
 };
 
 function FiferMisbotsMainInner({ onRequestHydrationRefetch, initialBots }: FiferMisbotsMainInnerProps) {
+  const t = useTranslations('bots.flota');
   const dna = useUserDnaStore((state) => state.fractalDNA.bots ?? EMPTY_BOTS_PREFS);
   const core = useUserDnaStore((state) => state.coreProfile);
 
@@ -130,27 +133,26 @@ function FiferMisbotsMainInner({ onRequestHydrationRefetch, initialBots }: Fifer
         if (isUpgradeHintCode(data.code) || res.status === 503) {
           setToast({
             kind: 'upgrade',
-            message:
-              'La generación premium está agotada para esta sesión. Actualiza a PRO para priorizar DALL·E 3 y rescates con Stable Diffusion.',
+            message: t('toastUpgradeBody'),
           });
           return;
         }
         setToast({
           kind: 'error',
           errorSource: 'avatar',
-          message: data.reason || 'No se pudo generar el avatar.',
+          message: data.reason || t('toastAvatarErr'),
         });
       } catch {
         setToast({
           kind: 'error',
           errorSource: 'avatar',
-          message: 'No hubo respuesta del servidor. Reintenta en unos segundos.',
+          message: t('toastNoResponse'),
         });
       } finally {
         setGeneratingBotId(null);
       }
     },
-    [core],
+    [core, t],
   );
 
   const handleTestNotify = useCallback(
@@ -171,26 +173,29 @@ function FiferMisbotsMainInner({ onRequestHydrationRefetch, initialBots }: Fifer
         if (data.ok) {
           setToast({
             kind: 'info',
-            message: `Notificación encolada vía motor comms (${data.channel}${data.detail ? `: ${data.detail}` : ''}).`,
+            message: t('toastNotifyOk', {
+              channel: data.channel,
+              detail: data.detail ? `: ${data.detail}` : '',
+            }),
           });
           return;
         }
         setToast({
           kind: 'error',
           errorSource: 'comms',
-          message: data.reason || 'No se pudo enviar la notificación de prueba.',
+          message: data.reason || t('toastNotifyErr'),
         });
       } catch {
         setToast({
           kind: 'error',
           errorSource: 'comms',
-          message: 'No hubo respuesta del servidor. Reintenta en unos segundos.',
+          message: t('toastNoResponse'),
         });
       } finally {
         setNotifyingBotId(null);
       }
     },
-    [core],
+    [core, t],
   );
 
   const circuitOpen = useSyncExternalStore(
@@ -249,7 +254,7 @@ function FiferMisbotsMainInner({ onRequestHydrationRefetch, initialBots }: Fifer
 
   return (
     <BaseBoxTemplate
-      config={{ title: 'Mis Bots — fifer-misbots-main' }}
+      config={{ title: t('boxTitle') }}
       data={boxData}
       isLoading={false}
       isRefining={false}
@@ -257,16 +262,16 @@ function FiferMisbotsMainInner({ onRequestHydrationRefetch, initialBots }: Fifer
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <Bot className="h-5 w-5 text-[#EAB308]" aria-hidden />
-          <p className="text-lg font-semibold text-[#F9FAFB]">Mis Bots</p>
+          <p className="text-lg font-semibold text-[#F9FAFB]">{t('heading')}</p>
         </div>
         <p className="text-sm text-[#94A3B8]">
-          Hola, {core.nombres}. Tier:{' '}
-          <span className="font-medium text-[#EAB308]">{core.tier ?? 'free'}</span>
+          {t('greeting', { name: core.nombres })}{' '}
+          <span className="font-medium text-[#EAB308]">{core.tier ?? t('tierUnknown')}</span>
         </p>
 
         {circuitOpen ? (
           <p className="rounded-lg border border-red-500/35 bg-[#0A0F1E]/90 p-4 text-sm text-red-200">
-            Circuito <span className="font-mono">{BOX_CIRCUIT_ID}</span> abierto.
+            {t('circuitOpen', { id: BOX_CIRCUIT_ID })}
             <button
               type="button"
               className="ml-3 rounded border border-[#EAB308]/40 px-2 py-1 text-xs text-[#EAB308] hover:bg-[#EAB308]/10"
@@ -275,14 +280,14 @@ function FiferMisbotsMainInner({ onRequestHydrationRefetch, initialBots }: Fifer
                 onRequestHydrationRefetch();
               }}
             >
-              Reintentar
+              {t('retry')}
             </button>
           </p>
         ) : null}
 
         {degraded && !bots.length ? (
           <p className="rounded-lg border border-[#EAB308]/35 bg-[#0A0F1E]/90 p-4 text-sm text-[#EAB308]">
-            {degradedMessage || 'BDUI en modo degradado (bridge §0.25).'}
+            {degradedMessage || t('degradedFallback')}
           </p>
         ) : null}
 
@@ -304,6 +309,7 @@ function FiferMisbotsMainInner({ onRequestHydrationRefetch, initialBots }: Fifer
                       disableNotify={Boolean(generatingBotId) || Boolean(notifyingBotId)}
                       onGenerateAvatar={() => handleGenerateAvatar({ id: row.id, name: row.name })}
                       onTestNotify={() => handleTestNotify({ id: row.id, name: row.name })}
+                      configHref={`/misbots/${row.id}/config`}
                     />
                   ))
                 : bots.map((b) => (
@@ -321,6 +327,7 @@ function FiferMisbotsMainInner({ onRequestHydrationRefetch, initialBots }: Fifer
                       disableNotify={Boolean(generatingBotId) || Boolean(notifyingBotId)}
                       onGenerateAvatar={() => handleGenerateAvatar({ id: b.id, name: b.nombre })}
                       onTestNotify={() => handleTestNotify({ id: b.id, name: b.nombre })}
+                      configHref={`/misbots/${b.id}/config`}
                     />
                   ))}
             </div>
@@ -329,17 +336,14 @@ function FiferMisbotsMainInner({ onRequestHydrationRefetch, initialBots }: Fifer
                 moduleId="bots"
                 boxId="fifer-misbots-main"
                 contextData={{ bots: botsForInsight, preferencias: dna }}
-                systemInstruction="Analiza la flota de bots. Considera el Tier del usuario y las preferencias de optimización. Genera un Insight de Valor sugiriendo si algún bot debería cambiar de modelo para ahorrar costos o mejorar el rendimiento."
+                systemInstruction={t('insightInstruction')}
               />
             </div>
           </div>
         ) : !degraded && !circuitOpen ? (
           <div className="rounded-lg border border-[#334155] bg-[#0A0F1E]/80 p-6 text-center">
-            <p className="text-base font-medium text-[#F9FAFB]">Aún no hay bots en tu flota</p>
-            <p className="mt-2 text-sm leading-relaxed text-[#94A3B8]">
-              Crea tu primer asistente para automatizar consultas y la gestión de permisos municipales: tendrás un
-              punto central para permisos, seguimiento y comunicación con vecinos y oficinas.
-            </p>
+            <p className="text-base font-medium text-[#F9FAFB]">{t('emptyTitle')}</p>
+            <p className="mt-2 text-sm leading-relaxed text-[#94A3B8]">{t('emptyBody')}</p>
           </div>
         ) : null}
 
@@ -356,25 +360,23 @@ function FiferMisbotsMainInner({ onRequestHydrationRefetch, initialBots }: Fifer
           >
             <p className="font-medium text-[#EAB308]">
               {toast.kind === 'upgrade'
-                ? 'Límite FinOps alcanzado'
+                ? t('toastUpgradeTitle')
                 : toast.kind === 'info'
-                  ? 'Comms — prueba'
+                  ? t('toastCommsTitle')
                   : toast.errorSource === 'comms'
-                    ? 'Notificación no enviada'
-                    : 'Avatar no generado'}
+                    ? t('toastNotifyErrTitle')
+                    : t('toastAvatarErrTitle')}
             </p>
             <p className="mt-2 leading-relaxed text-[#CBD5E1]">{toast.message}</p>
             {toast.kind === 'upgrade' ? (
-              <p className="mt-2 text-xs text-[#94A3B8]">
-                Con PRO mantienes cascada DALL·E 3 → Stable Diffusion antes del fallback público.
-              </p>
+              <p className="mt-2 text-xs text-[#94A3B8]">{t('toastUpgradeHint')}</p>
             ) : null}
             <button
               type="button"
               className="mt-3 text-xs font-medium text-[#EAB308] underline-offset-2 hover:underline"
               onClick={() => setToast(null)}
             >
-              Cerrar
+              {t('close')}
             </button>
           </div>
         ) : null}

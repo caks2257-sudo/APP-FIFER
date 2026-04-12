@@ -1,0 +1,317 @@
+{
+  "common": {
+    "dash": "—",
+    "openArrow": "Abrir →"
+  },
+  "landing": {
+    "login": "Iniciar sesión",
+    "dashboard": "Ir al panel"
+  },
+  "sidebar": {
+    "modulesTitle": "Modulos FIFER",
+    "hideSubmenu": "Ocultar submenú",
+    "showSubmenu": "Mostrar submenú",
+    "userFallback": "Usuario",
+    "roleAdmin": "Administrador"
+  },
+  "topbar": {
+    "panelLabel": "Panel operativo",
+    "searchPlaceholder": "Buscar expedientes, trámites, proyectos...",
+    "kbdSearch": "Ctrl K"
+  },
+  "login": {
+    "eyebrow": "Acceso",
+    "title": "Iniciar sesión",
+    "subtitle": "Credenciales corporativas. El acceso al panel está restringido.",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "emailPlaceholder": "nombre@organizacion.com",
+    "submit": "Entrar al panel",
+    "submitLoading": "Entrando…",
+    "backHome": "Volver al sitio público"
+  },
+  "finanzas": {
+    "hub": {
+      "title": "Hub de Finanzas - Visión General",
+      "subtitle": "Resumen del módulo Finanzas: saldo, movimientos y contratos relacionados en FIFER.",
+      "registerCta": "Registrar movimiento",
+      "insightInstruction": "Genera insights de valor operativo para el módulo «Finanzas» (id: finanzas). Prioriza riesgos, oportunidades y próximos pasos concretos alineados con FIFER v6.0."
+    },
+    "billing": {
+      "title": "Facturación (DTE)",
+      "description": "Documentos emitidos vía Bridge (IVA 19% por defecto). Emisión automática al completar cobros con checkout; aquí puedes emitir manualmente otros ingresos completados.",
+      "loading": "Cargando movimientos…",
+      "noIncome": "No hay ingresos para facturar.",
+      "downloadPdf": "Descargar PDF",
+      "emitting": "Emitiendo…",
+      "emitInvoice": "Emitir factura",
+      "emitError": "Error al emitir",
+      "dteEmpty": "—",
+      "dteIssued": "Emitido · Folio {folio}",
+      "dtePending": "Pendiente de SII",
+      "dteError": "Error de emisión",
+      "dteNone": "Sin factura"
+    },
+    "transactions": {
+      "title": "Últimos movimientos",
+      "subtitle": "Hasta 10 operaciones recientes",
+      "colDate": "Fecha",
+      "colConcept": "Concepto",
+      "colType": "Tipo",
+      "colAmount": "Monto",
+      "colStatus": "Estado",
+      "empty": "No hay movimientos registrados."
+    },
+    "balance": {
+      "label": "Saldo actual",
+      "baseCurrency": "Moneda base: {currency}"
+    },
+    "bankSync": {
+      "mockBadge": "Datos de simulación",
+      "prodBadge": "Modo producción",
+      "fetchError": "Error al consultar el banco",
+      "syncError": "Error al sincronizar",
+      "upToDate": "Banco al día — no hay movimientos nuevos pendientes.",
+      "title": "Sincronización bancaria",
+      "pendingLine": "Hay {count} movimiento(s) del banco aún no registrados en tu cuenta FIFER.",
+      "clpSuffix": "CLP",
+      "syncing": "Sincronizando…",
+      "syncNow": "Sincronizar ahora"
+    },
+    "checkout": {
+      "title": "Checkout externo",
+      "description": "Genera un link de pago (Flow / simulación vía External Bridge). Se abre en una pestaña nueva.",
+      "amountLabel": "Monto (CLP)",
+      "amountPlaceholder": "ej. 25000",
+      "descriptionLabel": "Descripción",
+      "mockBadge": "Datos de simulación",
+      "prodBadge": "Modo producción",
+      "defaultDescription": "Cobro FIFER",
+      "amountError": "Ingresa un monto válido.",
+      "generateError": "Error al generar cobro",
+      "noCheckoutUrl": "Sin URL de checkout",
+      "generating": "Generando…",
+      "generateCta": "Generar link y abrir",
+      "hint": "Tras completar el pago en la otra pestaña, vuelve aquí y actualiza la vista o espera unos segundos para ver el saldo actualizado."
+    },
+    "modal": {
+      "title": "Registrar movimiento",
+      "subtitle": "Ingreso o egreso contable en su cuenta FIFER.",
+      "amount": "Monto",
+      "type": "Tipo",
+      "concept": "Concepto",
+      "conceptPlaceholder": "Ej. Honorarios arquitectura",
+      "amountError": "Ingrese un monto válido mayor a 0",
+      "submitError": "No se pudo registrar",
+      "saving": "Guardando…",
+      "confirm": "Confirmar movimiento",
+      "cancel": "Cancelar",
+      "typeIngreso": "INGRESO",
+      "typeEgreso": "EGRESO"
+    },
+    "liquidity": {
+      "circuitTitle": "Pronóstico de liquidez · circuito abierto",
+      "circuitBody": "Tras varios fallos de red o de API, esta tarjeta queda aislada para no bloquear el resto del panel. Puede reintentarse cuando el circuito se enfríe o sanar desde el monitor de sistema.",
+      "circuitId": "ID de circuito: {id}",
+      "title": "Pronóstico de liquidez · 30 días",
+      "engineHint": "Motor forecast-core · cashflow-liquidity",
+      "insufficientTitle": "Aún no hay datos suficientes",
+      "observedTx": "Transacciones observadas",
+      "gapDays": "Días entre primera y última",
+      "requirement": "Requisito: al menos {minTx} movimientos completados o {minDays} días de historial entre el primero y el último.",
+      "warnHeadline": "Atención: la proyección indica presión de liquidez o flujo neto negativo en el horizonte.",
+      "okHeadline": "La proyección no muestra alertas de liquidez en el horizonte de 30 días.",
+      "metricNet30": "Flujo neto proyectado (30 días)",
+      "metricEndBalance": "Saldo proyectado al cierre",
+      "metricMeanDaily": "Media diaria (ventana observada)",
+      "subNetNegative": "Flujo neto negativo proyectado",
+      "subNetOk": "Flujo neto no negativo",
+      "subBalanceNegative": "Saldo final podría ser inferior a cero",
+      "subBalanceOk": "Según patrón histórico observado",
+      "windowLine": "Ventana: {obsDays} día(s) · Horizonte: {horizon} días",
+      "disclaimer": "Basado en movimientos completados y modelo determinista v1; no constituye asesoría financiera."
+    }
+  },
+  "dom": {
+    "hub": {
+      "title": "Hub DOM - Panel de Arquitecto",
+      "subtitle": "Punto de entrada al trámite DOM: elija un módulo (Spoke) o use el insight para orientación.",
+      "insightInstruction": "Genera orientación para el Hub DOM (trámites municipales). Prioriza el siguiente paso según el tipo de trámite.",
+      "cabida": {
+        "title": "Simulador de cabida (referencia OGUC / LGUC)",
+        "subtitle": "Parámetros de terreno y viabilidad orientativa. Usa el motor DOM (`dom-engine:normative-analyzer`) vía Bridge.",
+        "superficie": "Superficie terreno (m²)",
+        "coef": "Coef. constructibilidad",
+        "ocupacion": "Ocupación de suelo (%)",
+        "destino": "Destino",
+        "analyze": "Analizar viabilidad",
+        "running": "Analizando…",
+        "resultLabel": "Resultado",
+        "factible": "Factible (referencia)",
+        "notFactible": "No factible (referencia)",
+        "maxSup": "Sup. máx. edificable",
+        "obs": "Observaciones",
+        "errorAuth": "Inicie sesión para analizar.",
+        "errorGeneric": "No se pudo completar el análisis.",
+        "errorShape": "Respuesta inesperada del servidor.",
+        "errorNetwork": "Error de red al contactar el motor DOM."
+      },
+      "expedientesActivos": {
+        "title": "Archivador de expedientes",
+        "subtitle": "Borradores guardados en su cuenta (persistencia Prisma). Se actualiza al generar un nuevo JSON desde el constructor.",
+        "empty": "No hay expedientes guardados aún.",
+        "colForm": "Formulario",
+        "colDate": "Creado",
+        "colStatus": "Estado",
+        "formType21": "MINVU 2.1 · Edificación",
+        "statusDraft": "Borrador",
+        "statusSubmitted": "Enviado",
+        "errorAuth": "Inicie sesión para ver sus expedientes.",
+        "errorGeneric": "No se pudo cargar el archivador.",
+        "errorNetwork": "Error de red al cargar expedientes."
+      },
+      "expediente": {
+        "title": "Constructor de expedientes",
+        "subtitle": "Borrador JSON del Formulario 2.1 (solicitud de permiso de edificación, referencia MINVU). Complete los campos faltantes en el archivo antes de presentación municipal.",
+        "tramiteLabel": "Trámite",
+        "tramite21": "Formulario 2.1: Permiso de Edificación",
+        "rol": "Rol Avalúo",
+        "propietario": "Nombre propietario",
+        "superficie": "Superficie terreno (m²)",
+        "destino": "Destino principal",
+        "destinoPlaceholder": "Residencial, comercial…",
+        "generate": "Generar borrador JSON",
+        "generating": "Generando…",
+        "errorAuth": "Inicie sesión para generar el borrador.",
+        "errorGeneric": "No se pudo generar el borrador.",
+        "errorNetwork": "Error de red al contactar el motor DOM."
+      },
+      "spokes": {
+        "recepcion": {
+          "label": "Recepción Municipal",
+          "description": "Flujo de recepción municipal."
+        },
+        "permisos": {
+          "label": "Permisos de Edificación",
+          "description": "Permisos y revisión documental."
+        },
+        "regularizaciones": {
+          "label": "Regularizaciones",
+          "description": "Regularización de obras y normativa."
+        },
+        "normativa": {
+          "label": "Normativa OGUC/LGUC",
+          "description": "Consulta y análisis normativo."
+        }
+      }
+    },
+    "recepcion": {
+      "title": "Recepción Municipal (DOM)",
+      "body": "Módulo en construcción. Aquí centralizaremos el ingreso y seguimiento de expedientes en recepción para Chicureo."
+    },
+    "permisos": {
+      "title": "Permisos de Edificación (DOM)",
+      "body": "Módulo en construcción. Aquí vivirá el flujo técnico de permisos, revisiones y estados de edificación en terreno DOM."
+    },
+    "regularizaciones": {
+      "title": "Regularizaciones (DOM)",
+      "body": "Módulo en construcción. Aquí irán las herramientas para Chicureo."
+    },
+    "normativa": {
+      "pageTitle": "Normativa OGUC / LGUC (DOM)",
+      "pageSubtitle": "Análisis paramétrico orientativo con motor IA en cascada (referencia normativa; no sustituye informe de arquitecto ni revisión municipal).",
+      "errors": {
+        "sessionExpired": "Sesión expirada. Inicie sesión de nuevo.",
+        "invalidData": "Datos inválidos",
+        "analysisFailed": "No se pudo completar el análisis normativo.",
+        "unexpectedResponse": "Respuesta del servidor en formato inesperado.",
+        "network": "Error de red al contactar el motor de análisis."
+      },
+      "form": {
+        "title": "Parámetros del predio",
+        "subtitle": "Ingrese datos para el análisis normativo (referencia OGUC / LGUC).",
+        "superficie": "Superficie terreno (m²)",
+        "coef": "Coef. constructibilidad",
+        "ocupacion": "Ocupación de suelo (%)",
+        "destino": "Destino",
+        "destinoPlaceholder": "Residencial, Comercial…",
+        "submitRunning": "Ejecutando…",
+        "submit": "Ejecutar Análisis Normativo"
+      },
+      "report": {
+        "errorTitle": "Error en el análisis",
+        "empty": "Ejecute el análisis para ver el reporte de factibilidad.",
+        "title": "Reporte de factibilidad",
+        "factible": "Factible",
+        "notFactible": "No factible",
+        "superficieLabel": "Superficie máxima edificable (referencia calculada / modelo)",
+        "observations": "Observaciones normativas"
+      }
+    }
+  },
+  "bots": {
+    "hub": {
+      "title": "Cockpit Mis Bots",
+      "subtitle": "Control centralizado de la flota: estado operativo, avatares y comunicaciones de prueba.",
+      "docSectionTitle": "Gestor de documentos (test)",
+      "apiKeysAria": "Gestor de llaves API internas",
+      "noSessionTitle": "Sesión no disponible",
+      "noSessionBody": "No se pudo resolver el usuario en este render (p. ej. build estático). Al cargar con sesión, verás tu flota.",
+      "loadingShell": "Preparando cockpit…"
+    },
+    "status": {
+      "active": "Activo",
+      "paused": "Pausado",
+      "error": "Error"
+    },
+    "card": {
+      "state": "Estado",
+      "model": "Modelo",
+      "avgCostUf": "Costo prom. UF",
+      "openConfig": "Abrir configuración",
+      "genAvatarTitle": "Generar avatar",
+      "genAvatarAria": "Generar avatar para {name}",
+      "testNotifyTitle": "Notificación de prueba al administrador (motor comms)",
+      "testNotifyAria": "Enviar notificación de prueba para {name}"
+    },
+    "flota": {
+      "boxTitle": "Mis Bots — fifer-misbots-main",
+      "heading": "Mis Bots",
+      "greeting": "Hola, {name}. Tier:",
+      "tierUnknown": "free",
+      "circuitOpen": "Circuito {id} abierto.",
+      "retry": "Reintentar",
+      "degradedFallback": "BDUI en modo degradado (bridge §0.25).",
+      "emptyTitle": "Aún no hay bots en tu flota",
+      "emptyBody": "Crea tu primer asistente para automatizar consultas y la gestión de permisos municipales: tendrás un punto central para permisos, seguimiento y comunicación con vecinos y oficinas.",
+      "toastUpgradeTitle": "Límite FinOps alcanzado",
+      "toastUpgradeHint": "Con PRO mantienes cascada DALL·E 3 → Stable Diffusion antes del fallback público.",
+      "toastCommsTitle": "Comms — prueba",
+      "toastNotifyErrTitle": "Notificación no enviada",
+      "toastAvatarErrTitle": "Avatar no generado",
+      "close": "Cerrar",
+      "toastUpgradeBody": "La generación premium está agotada para esta sesión. Actualiza a PRO para priorizar DALL·E 3 y rescates con Stable Diffusion.",
+      "toastAvatarErr": "No se pudo generar el avatar.",
+      "toastNoResponse": "No hubo respuesta del servidor. Reintenta en unos segundos.",
+      "toastNotifyErr": "No se pudo enviar la notificación de prueba.",
+      "toastNotifyOk": "Notificación encolada vía motor comms ({channel}{detail}).",
+      "insightInstruction": "Analiza la flota de bots. Considera el Tier del usuario y las preferencias de optimización. Genera un Insight de Valor sugiriendo si algún bot debería cambiar de modelo para ahorrar costos o mejorar el rendimiento."
+    },
+    "configPicker": {
+      "title": "Configuración de bots",
+      "subtitle": "Elige un bot para editar su configuración (Spoke).",
+      "empty": "No tienes bots registrados. Crea uno desde el cockpit o vía datos de prueba.",
+      "backHub": "Volver al cockpit"
+    },
+    "configSpoke": {
+      "title": "Configuración del bot",
+      "subtitle": "Identidad, modelo y metadatos (solo lectura básica en esta fase).",
+      "back": "Volver al selector",
+      "owner": "Propietario",
+      "mainApp": "App principal",
+      "updated": "Última actualización",
+      "subApp": "Sub-app",
+      "metadata": "Metadatos"
+    }
+  }
+}

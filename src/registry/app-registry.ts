@@ -257,7 +257,7 @@ const sidebarNavigationSource = [
   {
     type: 'group',
     label: 'Mis Bots',
-    href: '/dashboard/mis-bots',
+    href: '/misbots',
     iconKey: 'Bot',
     permission: 'public',
     children: [
@@ -267,6 +267,13 @@ const sidebarNavigationSource = [
         href: '/misbots',
         iconKey: 'Bot',
         appId: 'misbots',
+      },
+      {
+        type: 'link',
+        label: 'Configuración de bots',
+        href: '/misbots/config',
+        iconKey: 'Bot',
+        permission: 'public',
       },
       {
         type: 'link',
@@ -297,6 +304,13 @@ const sidebarNavigationSource = [
         href: '/desarrollador',
         iconKey: 'Code2',
         appId: 'desarrollador',
+      },
+      {
+        type: 'link',
+        label: 'Conexiones externas',
+        href: '/desarrollador/conexiones-externas',
+        iconKey: 'Terminal',
+        permission: 'admin',
       },
     ],
   },

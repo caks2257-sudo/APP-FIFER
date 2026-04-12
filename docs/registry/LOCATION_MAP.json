@@ -1,35 +1,35 @@
 {
   "FIFER://APP/AFILIADOS": {
-    "path": "src/app/(dashboard)/afiliados",
-    "type": "APP"
+    "path": "src/app/[locale]/(dashboard)/afiliados",
+    "type": "ENGINE"
   },
   "FIFER://APP/CONTRATOS": {
-    "path": "src/app/(dashboard)/contratos",
-    "type": "APP"
+    "path": "src/app/[locale]/(dashboard)/contratos",
+    "type": "ENGINE"
   },
   "FIFER://APP/DASHBOARD": {
-    "path": "src/app/(dashboard)/dashboard",
-    "type": "APP"
+    "path": "src/app/[locale]/(dashboard)/dashboard",
+    "type": "ENGINE"
   },
   "FIFER://APP/DASHBOARD_INMOBILIARIO": {
-    "path": "src/app/(dashboard)/dashboardinmobiliario",
-    "type": "APP"
+    "path": "src/app/[locale]/(dashboard)/dashboardinmobiliario",
+    "type": "ENGINE"
   },
   "FIFER://APP/DESARROLLADOR": {
-    "path": "src/app/(dashboard)/desarrollador",
-    "type": "APP"
+    "path": "src/app/[locale]/(dashboard)/desarrollador",
+    "type": "ENGINE"
   },
   "FIFER://APP/DOM": {
-    "path": "src/app/(dashboard)/dom",
-    "type": "APP"
+    "path": "src/app/[locale]/(dashboard)/dom",
+    "type": "ENGINE"
   },
   "FIFER://APP/FINANZAS": {
-    "path": "src/app/(dashboard)/finanzas",
-    "type": "APP"
+    "path": "src/app/[locale]/(dashboard)/finanzas",
+    "type": "ENGINE"
   },
   "FIFER://APP/MISBOTS": {
-    "path": "src/app/(dashboard)/misbots",
-    "type": "APP"
+    "path": "src/app/[locale]/(dashboard)/misbots",
+    "type": "ENGINE"
   },
   "FIFER://ENGINE/AI_FALLBACK_CASCADE": {
     "path": "src/engines/ai-fallback-cascade",
@@ -40,12 +40,16 @@
     "type": "ENGINE"
   },
   "FIFER://ENGINE/NORMATIVA": {
-    "path": "src/app/(dashboard)/dom/normativa",
-    "type": "SUB_APP",
+    "path": "src/app/[locale]/(dashboard)/dom/normativa",
+    "type": "ENGINE",
     "targetAppOrEngine": "normativa"
   },
   "FIFER://ENGINE/SYSTEM_HEALTH": {
     "path": "src/engines/system-health",
+    "type": "ENGINE"
+  },
+  "FIFER://ENGINE/forecast-core": {
+    "path": "src/engines/forecast-core",
     "type": "ENGINE"
   },
   "FIFER://SUB_ENGINE/AI_FALLBACK_CASCADE/COMMS": {
@@ -54,6 +58,58 @@
   },
   "FIFER://SUB_ENGINE/AI_FALLBACK_CASCADE/IMAGE_GEN": {
     "path": "src/engines/ai-fallback-cascade/sub-engines/image-gen",
+    "type": "SUB_ENGINE"
+  },
+  "FIFER://SUB_ENGINE/dom-engine/form-generator": {
+    "path": "src/engines/dom-engine/sub-engines/form-generator",
+    "type": "SUB_ENGINE"
+  },
+  "FIFER://SUB_ENGINE/dom-engine/normative-analyzer": {
+    "path": "src/engines/dom-engine/sub-engines/normative-analyzer",
+    "type": "SUB_ENGINE"
+  },
+  "FIFER://SUB_ENGINE/forecast-core/cashflow-liquidity": {
+    "path": "src/engines/forecast-core/sub-engines/cashflow-liquidity",
+    "type": "SUB_ENGINE"
+  },
+  "FIFER://app/desarrollador/conexiones-externas": {
+    "path": "src/app/[locale]/(dashboard)/desarrollador/conexiones-externas",
+    "type": "ENGINE"
+  },
+  "FIFER://engines/bot-engine": {
+    "path": "src/engines/bot-engine",
+    "type": "ENGINE"
+  },
+  "FIFER://engines/dom-engine": {
+    "path": "src/engines/dom-engine",
+    "type": "ENGINE"
+  },
+  "FIFER://engines/external-bridge-engine": {
+    "path": "src/engines/external-bridge-engine",
+    "type": "ENGINE"
+  },
+  "FIFER://engines/finance-engine": {
+    "path": "src/engines/finance-engine",
+    "type": "ENGINE"
+  },
+  "FIFER://engines/finance-engine/billing": {
+    "path": "src/engines/finance-engine/sub-engines/billing",
+    "type": "SUB_ENGINE"
+  },
+  "FIFER://engines/finance-engine/payments": {
+    "path": "src/engines/finance-engine/sub-engines/payments",
+    "type": "SUB_ENGINE"
+  },
+  "FIFER://engines/finance-engine/reconciliation": {
+    "path": "src/engines/finance-engine/sub-engines/reconciliation",
+    "type": "SUB_ENGINE"
+  },
+  "FIFER://engines/system-engine": {
+    "path": "src/engines/system-engine",
+    "type": "ENGINE"
+  },
+  "FIFER://engines/system-engine/sub-engines/env-manager": {
+    "path": "src/engines/system-engine/sub-engines/env-manager",
     "type": "SUB_ENGINE"
   }
 }

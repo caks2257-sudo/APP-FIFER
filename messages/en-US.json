@@ -1,0 +1,317 @@
+{
+  "common": {
+    "dash": "—",
+    "openArrow": "Open →"
+  },
+  "landing": {
+    "login": "Sign in",
+    "dashboard": "Open dashboard"
+  },
+  "sidebar": {
+    "modulesTitle": "FIFER modules",
+    "hideSubmenu": "Hide submenu",
+    "showSubmenu": "Show submenu",
+    "userFallback": "User",
+    "roleAdmin": "Administrator"
+  },
+  "topbar": {
+    "panelLabel": "Operations panel",
+    "searchPlaceholder": "Search cases, procedures, projects...",
+    "kbdSearch": "Ctrl K"
+  },
+  "login": {
+    "eyebrow": "Access",
+    "title": "Sign in",
+    "subtitle": "Corporate credentials. Dashboard access is restricted.",
+    "email": "Email",
+    "password": "Password",
+    "emailPlaceholder": "name@organization.com",
+    "submit": "Enter dashboard",
+    "submitLoading": "Signing in…",
+    "backHome": "Back to public site"
+  },
+  "finanzas": {
+    "hub": {
+      "title": "Finance hub — Overview",
+      "subtitle": "Finance module snapshot: balance, movements, and related contracts in FIFER.",
+      "registerCta": "Record movement",
+      "insightInstruction": "Generate operational insights for the «Finanzas» module (id: finanzas). Prioritize risks, opportunities, and concrete next steps aligned with FIFER v6.0."
+    },
+    "billing": {
+      "title": "Invoicing (DTE)",
+      "description": "Documents issued via Bridge (VAT 19% by default). Automatic issuance when checkout payments complete; here you can manually issue other completed income items.",
+      "loading": "Loading movements…",
+      "noIncome": "No income items available to invoice.",
+      "downloadPdf": "Download PDF",
+      "emitting": "Issuing…",
+      "emitInvoice": "Issue invoice",
+      "emitError": "Could not issue",
+      "dteEmpty": "—",
+      "dteIssued": "Issued · Folio {folio}",
+      "dtePending": "Pending SII",
+      "dteError": "Issuance error",
+      "dteNone": "No invoice"
+    },
+    "transactions": {
+      "title": "Latest movements",
+      "subtitle": "Up to 10 recent operations",
+      "colDate": "Date",
+      "colConcept": "Description",
+      "colType": "Type",
+      "colAmount": "Amount",
+      "colStatus": "Status",
+      "empty": "No movements recorded."
+    },
+    "balance": {
+      "label": "Current balance",
+      "baseCurrency": "Base currency: {currency}"
+    },
+    "bankSync": {
+      "mockBadge": "Simulation data",
+      "prodBadge": "Production mode",
+      "fetchError": "Could not query bank",
+      "syncError": "Could not sync",
+      "upToDate": "Bank is up to date — no new pending movements.",
+      "title": "Bank synchronization",
+      "pendingLine": "There are {count} bank movement(s) not yet recorded in your FIFER account.",
+      "clpSuffix": "CLP",
+      "syncing": "Syncing…",
+      "syncNow": "Sync now"
+    },
+    "checkout": {
+      "title": "External checkout",
+      "description": "Generate a payment link (Flow / simulation via External Bridge). Opens in a new tab.",
+      "amountLabel": "Amount (CLP)",
+      "amountPlaceholder": "e.g. 25000",
+      "descriptionLabel": "Description",
+      "mockBadge": "Simulation data",
+      "prodBadge": "Production mode",
+      "defaultDescription": "FIFER charge",
+      "amountError": "Enter a valid amount.",
+      "generateError": "Could not generate charge",
+      "noCheckoutUrl": "No checkout URL",
+      "generating": "Generating…",
+      "generateCta": "Generate link and open",
+      "hint": "After completing payment in the other tab, return here and refresh or wait a few seconds for the updated balance."
+    },
+    "modal": {
+      "title": "Record movement",
+      "subtitle": "Income or expense in your FIFER account.",
+      "amount": "Amount",
+      "type": "Type",
+      "concept": "Description",
+      "conceptPlaceholder": "e.g. Architecture fees",
+      "amountError": "Enter a valid amount greater than 0",
+      "submitError": "Could not save",
+      "saving": "Saving…",
+      "confirm": "Confirm movement",
+      "cancel": "Cancel",
+      "typeIngreso": "INCOME",
+      "typeEgreso": "EXPENSE"
+    },
+    "liquidity": {
+      "circuitTitle": "Liquidity forecast · circuit open",
+      "circuitBody": "After several network or API failures, this card is isolated so it does not block the rest of the dashboard. Retry when the circuit cools down or heal from the system monitor.",
+      "circuitId": "Circuit ID: {id}",
+      "title": "Liquidity forecast · 30 days",
+      "engineHint": "Engine forecast-core · cashflow-liquidity",
+      "insufficientTitle": "Not enough data yet",
+      "observedTx": "Observed transactions",
+      "gapDays": "Days between first and last",
+      "requirement": "Requirement: at least {minTx} completed movements or {minDays} days of history between first and last.",
+      "warnHeadline": "Warning: the projection shows liquidity pressure or negative net flow in the horizon.",
+      "okHeadline": "The projection shows no liquidity alerts in the 30-day horizon.",
+      "metricNet30": "Projected net flow (30 days)",
+      "metricEndBalance": "Projected closing balance",
+      "metricMeanDaily": "Daily average (observed window)",
+      "subNetNegative": "Negative net flow projected",
+      "subNetOk": "Net flow not negative",
+      "subBalanceNegative": "Closing balance could fall below zero",
+      "subBalanceOk": "Based on observed historical pattern",
+      "windowLine": "Window: {obsDays} day(s) · Horizon: {horizon} days",
+      "disclaimer": "Based on completed movements and deterministic model v1; not financial advice."
+    }
+  },
+  "dom": {
+    "hub": {
+      "title": "DOM hub — Architect panel",
+      "subtitle": "Entry point to DOM procedures: pick a module (spoke) or use the insight for guidance.",
+      "insightInstruction": "Generate guidance for the DOM hub (municipal procedures). Prioritize the next step according to procedure type.",
+      "cabida": {
+        "title": "Cabida simulator (OGUC / LGUC reference)",
+        "subtitle": "Site parameters and indicative viability. Uses the DOM engine (`dom-engine:normative-analyzer`) via Bridge.",
+        "superficie": "Lot area (m²)",
+        "coef": "Constructibility coefficient",
+        "ocupacion": "Land occupancy (%)",
+        "destino": "Zoning / use",
+        "analyze": "Analyze viability",
+        "running": "Analyzing…",
+        "resultLabel": "Result",
+        "factible": "Feasible (reference)",
+        "notFactible": "Not feasible (reference)",
+        "maxSup": "Max buildable floor area",
+        "obs": "Notes",
+        "errorAuth": "Sign in to run the analysis.",
+        "errorGeneric": "Analysis could not be completed.",
+        "errorShape": "Unexpected server response.",
+        "errorNetwork": "Network error contacting the DOM engine."
+      },
+      "expedientesActivos": {
+        "title": "Saved expedientes",
+        "subtitle": "Drafts stored for your account (Prisma persistence). Refreshes when you generate a new JSON from the builder.",
+        "empty": "No saved expedientes yet.",
+        "colForm": "Form",
+        "colDate": "Created",
+        "colStatus": "Status",
+        "formType21": "MINVU 2.1 · Building",
+        "statusDraft": "Draft",
+        "statusSubmitted": "Submitted",
+        "errorAuth": "Sign in to view your expedientes.",
+        "errorGeneric": "Could not load the archive.",
+        "errorNetwork": "Network error loading expedientes."
+      },
+      "expediente": {
+        "title": "Expediente builder",
+        "subtitle": "JSON draft for Form 2.1 (building permit application, MINVU reference). Fill any remaining fields in the file before municipal filing.",
+        "tramiteLabel": "Procedure",
+        "tramite21": "Form 2.1: Building permit",
+        "rol": "Tax roll ID (Rol Avalúo)",
+        "propietario": "Owner name",
+        "superficie": "Lot area (m²)",
+        "destino": "Primary land use",
+        "destinoPlaceholder": "Residential, commercial…",
+        "generate": "Generate JSON draft",
+        "generating": "Generating…",
+        "errorAuth": "Sign in to generate the draft.",
+        "errorGeneric": "Could not generate the draft.",
+        "errorNetwork": "Network error contacting the DOM engine."
+      },
+      "spokes": {
+        "recepcion": {
+          "label": "Municipal intake",
+          "description": "Municipal intake workflow."
+        },
+        "permisos": {
+          "label": "Building permits",
+          "description": "Permits and document review."
+        },
+        "regularizaciones": {
+          "label": "Regularizations",
+          "description": "Works regularization and regulations."
+        },
+        "normativa": {
+          "label": "OGUC/LGUC regulations",
+          "description": "Consultation and normative analysis."
+        }
+      }
+    },
+    "recepcion": {
+      "title": "Municipal intake (DOM)",
+      "body": "Module under construction. Here we will centralize intake and tracking of cases for Chicureo."
+    },
+    "permisos": {
+      "title": "Building permits (DOM)",
+      "body": "Module under construction. Technical permit flow, reviews, and on-site building status will live here."
+    },
+    "regularizaciones": {
+      "title": "Regularizations (DOM)",
+      "body": "Module under construction. Tools for Chicureo will land here."
+    },
+    "normativa": {
+      "pageTitle": "OGUC / LGUC regulations (DOM)",
+      "pageSubtitle": "Parametric orientation analysis with cascaded AI engine (regulatory reference; does not replace an architect report or municipal review).",
+      "errors": {
+        "sessionExpired": "Session expired. Please sign in again.",
+        "invalidData": "Invalid data",
+        "analysisFailed": "Could not complete normative analysis.",
+        "unexpectedResponse": "Unexpected server response format.",
+        "network": "Network error contacting the analysis engine."
+      },
+      "form": {
+        "title": "Site parameters",
+        "subtitle": "Enter data for normative analysis (OGUC / LGUC reference).",
+        "superficie": "Lot area (m²)",
+        "coef": "Buildability coefficient",
+        "ocupacion": "Lot coverage (%)",
+        "destino": "Use / zoning",
+        "destinoPlaceholder": "Residential, Commercial…",
+        "submitRunning": "Running…",
+        "submit": "Run normative analysis"
+      },
+      "report": {
+        "errorTitle": "Analysis error",
+        "empty": "Run the analysis to see the feasibility report.",
+        "title": "Feasibility report",
+        "factible": "Feasible",
+        "notFactible": "Not feasible",
+        "superficieLabel": "Maximum buildable area (calculated reference / model)",
+        "observations": "Normative observations"
+      }
+    }
+  },
+  "bots": {
+    "hub": {
+      "title": "Mis Bots cockpit",
+      "subtitle": "Central control for your fleet: operational status, avatars, and test communications.",
+      "docSectionTitle": "Document manager (test)",
+      "apiKeysAria": "Internal API key manager",
+      "noSessionTitle": "Session unavailable",
+      "noSessionBody": "User could not be resolved in this render (e.g. static build). With an active session you will see your fleet.",
+      "loadingShell": "Preparing cockpit…"
+    },
+    "status": {
+      "active": "Active",
+      "paused": "Paused",
+      "error": "Error"
+    },
+    "card": {
+      "state": "Status",
+      "model": "Model",
+      "avgCostUf": "Avg. cost (UF)",
+      "openConfig": "Open configuration",
+      "genAvatarTitle": "Generate avatar",
+      "genAvatarAria": "Generate avatar for {name}",
+      "testNotifyTitle": "Test notification to admin (comms engine)",
+      "testNotifyAria": "Send test notification for {name}"
+    },
+    "flota": {
+      "boxTitle": "Mis Bots — fifer-misbots-main",
+      "heading": "Mis Bots",
+      "greeting": "Hello, {name}. Tier:",
+      "tierUnknown": "free",
+      "circuitOpen": "Circuit {id} is open.",
+      "retry": "Retry",
+      "degradedFallback": "BDUI in degraded mode (bridge §0.25).",
+      "emptyTitle": "No bots in your fleet yet",
+      "emptyBody": "Create your first assistant to automate inquiries and municipal permit workflows: a single hub for permits, tracking, and communication.",
+      "toastUpgradeTitle": "FinOps limit reached",
+      "toastUpgradeHint": "On PRO you keep the DALL·E 3 → Stable Diffusion cascade before the public fallback.",
+      "toastCommsTitle": "Comms — test",
+      "toastNotifyErrTitle": "Notification not sent",
+      "toastAvatarErrTitle": "Avatar not generated",
+      "close": "Close",
+      "toastUpgradeBody": "Premium generation is exhausted for this session. Upgrade to PRO to prioritize DALL·E 3 and Stable Diffusion fallbacks.",
+      "toastAvatarErr": "Could not generate the avatar.",
+      "toastNoResponse": "No server response. Try again in a few seconds.",
+      "toastNotifyErr": "Could not send the test notification.",
+      "toastNotifyOk": "Notification queued via comms engine ({channel}{detail}).",
+      "insightInstruction": "Analyze the bot fleet. Consider user tier and optimization preferences. Deliver a value insight on whether any bot should switch models to save cost or improve performance."
+    },
+    "configPicker": {
+      "title": "Bot configuration",
+      "subtitle": "Pick a bot to edit its configuration (spoke).",
+      "empty": "You have no registered bots. Create one from the cockpit or via test data.",
+      "backHub": "Back to cockpit"
+    },
+    "configSpoke": {
+      "title": "Bot configuration",
+      "subtitle": "Identity, model, and metadata (read-only basics in this phase).",
+      "back": "Back to picker",
+      "owner": "Owner",
+      "mainApp": "Main app",
+      "updated": "Last updated",
+      "subApp": "Sub-app",
+      "metadata": "Metadata"
+    }
+  }
+}

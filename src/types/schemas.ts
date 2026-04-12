@@ -83,6 +83,25 @@ export const domAnalisisResponseSchema = z.object({
 
 export type DomAnalisisResponse = z.infer<typeof domAnalisisResponseSchema>;
 
+/** Generación de borrador expediente DOM — Form Generator (MINVU 2.1). */
+export const domExpedienteGenerateRequestSchema = z.object({
+  formType: z.literal('minvu-2.1-edificacion'),
+  projectData: z
+    .object({
+      rolAvaluo: z.string().trim().max(120).optional().nullable(),
+      nombrePropietario: z.string().trim().max(240).optional().nullable(),
+      superficieTerreno: z.union([z.coerce.number().positive(), z.null()]).optional(),
+      destinoPrincipal: z.string().trim().max(200).optional().nullable(),
+      nombreArquitecto: z.string().trim().max(200).optional().nullable(),
+      comuna: z.string().trim().max(120).optional().nullable(),
+      region: z.string().trim().max(120).optional().nullable(),
+      direccionObra: z.string().trim().max(300).optional().nullable(),
+    })
+    .default({}),
+});
+
+export type DomExpedienteGenerateRequest = z.infer<typeof domExpedienteGenerateRequestSchema>;
+
 /** Estado comercial canónico de un proyecto inmobiliario (BDUI DashboardInmobiliario). */
 export const inmobiliarioEstadoSchema = z.enum(['Disponible', 'En construcción', 'Comercialización', 'Agotado']);
 
@@ -112,7 +131,7 @@ export const InmobiliarioDataSchema = z.object({
 export type InmobiliarioDataPayload = z.infer<typeof InmobiliarioDataSchema>;
 
 /** Estado operativo de un bot en el cockpit Mis Bots. */
-export const botEstadoSchema = z.enum(['activo', 'pausado']);
+export const botEstadoSchema = z.enum(['activo', 'pausado', 'error']);
 
 export type BotEstado = z.infer<typeof botEstadoSchema>;
 

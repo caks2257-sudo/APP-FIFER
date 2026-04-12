@@ -1,6 +1,6 @@
-<!-- Espejo vivo — generado automáticamente (2026-04-11T22:07:13.783Z) — fuente: .cursorrules — no editar a mano -->
+<!-- Espejo vivo — generado automáticamente (2026-04-12T01:39:16.910Z) — fuente: .cursorrules — no editar a mano -->
 
-# 🏗️ FIFER ECOSYSTEM - MASTER SYSTEM INSTRUCTOR (v6.1 — Fractal Blueprint + Ley de Sincronización Retroactiva)
+# 🏗️ FIFER ECOSYSTEM - MASTER SYSTEM INSTRUCTOR (v6.3 — Observabilidad Total + Salud Arquitectónica)
 
 ## 0. CONSTITUCIÓN — LEYES FUNDAMENTALES
 1. **Zero-Trust Visual:** Toda UI debe usar estrictamente Tailwind inline. Prohibido CSS Modules o Styled Components. El ADN visual inmutable es el "Nevado Técnico" (Fondo Deep Navy `#0A0F1E` y acento Electric Yellow `#EAB308`).
@@ -10,6 +10,7 @@
    * Queda ESTRICTAMENTE PROHIBIDO que Cursor modifique, purgue, limpie o altere el archivo `.env` de forma autónoma durante procesos de refactorización o "auto-sanación".
    * Cursor solo podrá interactuar con el `.env` bajo una ORDEN DIRECTA Y EXPLÍCITA del usuario (ej: "Agrega la Key de Eleven Labs al .env").
    * En caso de duda, Cursor debe preguntar antes de realizar cualquier cambio en este archivo.
+   * **Escritura programática (solo desarrollo):** la única superficie de código autorizada para leer/escribir el `.env` físico es el Sub-Engine `system-engine:env-manager`, y solo cuando `NODE_ENV === 'development'`. Cualquier otra ruta debe rechazarse en tiempo de ejecución.
 
 ## 1. EL NUEVO PARADIGMA X-RAY (Planos Especializados)
 
@@ -107,3 +108,56 @@ Las aplicaciones de nivel "Master" (como la App Desarrollador) tienen privilegio
 
 ### 11.3 PROTOCOLO DE AUTO-HEALING EVOLUTIVO (GPS + compliance)
 El script `npm run sync:gps` (`scripts/sync-gps.ts`) y los procesos de **Auto-Healing** del ecosistema deben validar **no solo** la ubicación y unicidad de las anclas GPS, sino la **compliance** con el ADN vigente: planos obligatorios bajo `_blueprints/`, coherencia de tipos de módulo (`APP` / `SUB_APP` / `ENGINE` / `SUB_ENGINE`), presencia de **Hub** documentado para cada App de producto (ruta raíz del módulo + registro), y estándar de Sub-Engines (carpeta `sub-engines/`, planos, registro). Si una App no tiene declarado su rol de Hub en los planos o un Sub-Engine incumple el estándar, el sistema debe **marcarlo** para **refactorización inmediata** (deuda bloqueante hasta alinear). La norma operativa detallada vive en `docs/blueprints/AUTO_HEALING_COMPLIANCE.md`.
+
+## 12. LEY DE ORQUESTACIÓN EXTERNA (External Bridge Engine)
+
+1. **Centralización vía Bridge Engine:** Toda integración con proveedores externos (pagos, facturación, banca abierta, etc.) se resuelve **exclusivamente** a través del motor `external-bridge-engine` y su `BridgeProxy`. Las Apps y rutas de producto **no** leen ni inyectan claves de API de terceros de forma directa en componentes o hooks de UI.
+2. **Proxy seguro para API Keys:** Las variables sensibles (`FLOW_API_KEY`, `FINTOC_SECRET_KEY`, `STRIPE_SECRET_KEY`, etc.) viven en el plano servidor (`.env` y/o credenciales cifradas en base de datos vía API de sistema). El cliente solo consume **estado agregado** (p. ej. MOCK vs PROD) y formularios de rotación bajo rol admin; nunca el valor en claro de la llave.
+3. **Fallback automático a mocks:** Si una clave está ausente, vacía o coincide con el marcador de plantilla `INSERT_KEY_HERE`, el Bridge Engine **debe** operar en modo MOCK devolviendo datos de prueba coherentes y deterministas para desarrollo y demos, sin llamar a redes externas con credenciales inválidas.
+4. **Propagación ADN:** Nuevo patrón de orquestación externa → actualizar `docs/blueprints/_xray_EXTERNAL_BRIDGE.md`, el Starter Kit (`docs/blueprints/STARTER_KIT_UNIVERSAL.md`, `v0_pack/templates/`) y ejecutar `npm run sync:gps` para anclas GPS del motor.
+
+## 13. INTERNACIONALIZACIÓN (i18n — texto de producto)
+
+1. **Fuente única de copy:** Todo texto estático en la UI debe residir en archivos de diccionario (`messages/<locale>.json` o namespaces acordados). Queda estrictamente prohibido el hard-coding de strings de interfaz en componentes (salvo identificadores técnicos, claves de telemetría o datos dinámicos del backend sin alternativa).
+2. **Motor:** El ecosistema usa `next-intl` alineado con App Router; locales soportados y prefijos de URL se definen en `src/i18n/routing.ts`. Enlaces y navegación deben usar `@/i18n/navigation` (`Link`, `useRouter`, `redirect`) para conservar el locale activo.
+3. **Nuevas Apps:** Toda App creada con el scaffolding debe añadir sus claves bajo un namespace estable en `messages/es-CL.json` y `messages/en-US.json` (o split por archivo si el equipo lo define en `docs/blueprints/_xray_I18N.md`) y documentar el namespace en `_xray_ROUTING.md` o `_xray_UI.md`.
+
+## 14. LEY DE SOBERANÍA DE CONEXIONES (Gestión unificada de secretos e integraciones)
+
+1. **Macro-Pilares obligatorios (taxonomía única):** Toda conexión externa debe clasificarse en **exactamente una** de estas cinco familias y registrarse en el External Bridge / hub con el mismo identificador de categoría que el motor (`BridgeConnectionCategory`): **INTELIGENCIA_ARTIFICIAL**, **FINANZAS_PAGOS**, **ECOMMERCE**, **INFRAESTRUCTURA**, **REDES_SOCIALES**.
+2. **Auto-Descubrimiento (mapeo dinámico):** El sistema debe mapear dinámicamente cualquier variable del `.env` a estos Macro-Pilares según **prefijos y patrones** reconocidos por `describeDiscoveredKey` / `discoverIntegrationsFromEnv` en `external-bridge-engine` (p. ej. `OPENAI_`, `ANTHROPIC_` → INTELIGENCIA_ARTIFICIAL; `STRIPE_`, `FLOW_`, `FINTOC_` → FINANZAS_PAGOS; `SHOPIFY_`, `ALI_`, `WOOCOMMERCE_` → ECOMMERCE; `SUPABASE_`, `VERCEL_` → INFRAESTRUCTURA; `FB_`, `META_`, `INSTAGRAM_` → REDES_SOCIALES). El mapa canónico de prefijos vive en `docs/blueprints/_xray_EXTERNAL_BRIDGE.md` y debe mantenerse alineado al código.
+3. **Soporte Multi-Key:** Las conexiones complejas (p. ej. **Supabase**) se tratan como **una sola entidad lógica con múltiples llaves** (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, variantes `NEXT_PUBLIC_*`) dentro del **mismo Box** de integración: comparten `groupId` / `groupLabel` en el estado unificado y en la UI del hub.
+4. **Agrupación Multi-Key obligatoria:** Cuando una integración externa requiere múltiples variables (ej. Supabase: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET`, etc.), el motor de descubrimiento **DEBE** agruparlas bajo un mismo `groupId`. La interfaz UI **DEBE** renderizar todas estas llaves dentro de un único Box contenedor, nunca en cajas separadas.
+5. **Soberanía de edición:** Las llaves y secretos son **editables solo en localhost** (`hostname` localhost o 127.0.0.1) y con el servidor en modo desarrollo donde aplique. En **producción**, la UI de gestión de conexiones es **solo lectura y monitoreo** (sin rotación vía HTTP desde el despliegue público).
+6. **Mock-First:** Toda nueva conexión **nace en modo simulación** hasta que un Admin inyecte la llave real (entorno seguro o variable de despliegue); el Bridge Engine continúa aplicando `INSERT_KEY_HERE` / vacío como MOCK coherente (véase §12).
+7. **Coherencia:** Cualquier ampliación de prefijos, Macro-Pilares o del motor `env-manager` debe reflejarse en `docs/blueprints/_xray_EXTERNAL_BRIDGE.md`, en plantillas `v0_pack/templates/` (incl. `SNAPSHOT_useExternalBridge.md`) y ejecutar `npm run sync:gps` para anclas GPS del motor.
+
+## 15. ORDENAMIENTO FÍSICO DEL ADN (`.env` — bloques por Macro-Pilar)
+
+1. **Formato obligatorio de bloques:** El archivo `.env` debe mantenerse **estrictamente organizado** por bloques de comentarios con el formato: `# === [NOMBRE_DEL_MACRO_PILAR] ===`, usando los nombres: `INTELIGENCIA ARTIFICIAL`, `FINANZAS & PAGOS`, `E-COMMERCE`, `INFRAESTRUCTURA`, `REDES SOCIALES` (espacios y ampersand según se muestra; coherente con la taxonomía §14).
+2. **Prohibición de llaves huérfanas:** Queda **prohibido** dejar variables de integración **fuera** de estos bloques cuando se edita el `.env` en un contexto autorizado (véase Constitución §0, punto 3: sin modificaciones autónomas no solicitadas). Si se detecta una nueva integración o una variable suelta, el agente debe **moverla físicamente** al bloque del Macro-Pilar que corresponda **sin alterar el valor** de la variable.
+3. **Superficie de escritura:** La reorganización física por bloques en disco queda acotada a la misma política que la Constitución §0, punto 3, y el Sub-Engine `env-manager`: **orden explícito del usuario** o `system-engine:env-manager` con `NODE_ENV=development`. El Auto-Healing y los agentes no reordenan el `.env` sin ese marco.
+
+## 16. MONITOREO DE SALUD Y MICRO-MÉTRICAS (Sala de Guerra — Apps de Sistema)
+
+1. **Vista obligatoria:** Toda **App de Sistema** (p. ej. Desarrollador) debe incluir una **Sala de Guerra** (Health Dashboard) que monitoree, como mínimo: **latencia de APIs externas** (sondas vía `external-bridge-engine` / Bridge), **estado de motores internos** (`system-health` + `EngineRegistry`), y **registros de seguridad / auditoría del Sub-Engine `env-manager`** (lecturas/escrituras `.env` en desarrollo, sin exponer secretos).
+2. **Observabilidad:** La Sala de Guerra debe consumir las APIs de agregación existentes (`/api/v1/war-room`, `system-health`) y mantener el tema visual **Nevado Técnico** (§0).
+3. **Propagación:** Nuevas sondas o columnas de la Sala de Guerra deben reflejarse en `docs/blueprints/` y ejecutar `npm run sync:gps` cuando afecten anclas GPS.
+4. **Micro-latencia por conexión (APIs externas):** Los **Boxes individuales** de APIs externas **DEBEN** incluir un **micro-indicador de latencia (ms)** específico para esa conexión. Esta métrica se usará a futuro para **enrutamiento dinámico de IA (Fallback Cascade)** (priorización y salto entre proveedores según salud medida).
+5. **Cabeceras de telemetría (`TelemetryHeaderBox`):** Las cabeceras de telemetría **DEBEN** mostrar de forma **explícita** tanto el **conteo de elementos `LIVE` / `ONLINE`** como el de **`MOCK` / `OFFLINE`** (no solo un agregado ambiguo).
+
+## 17. SALUD ARQUITECTÓNICA VISUAL (Sala de Guerra — integridad del ADN)
+
+El sistema **DEBE** exponer **visualmente** su propia **integridad estructural** en la **Sala de Guerra**. Esto incluye, como mínimo: **estado de sincronización del X-Ray** (mapa GPS / `LOCATION_MAP.json` y coherencia con anclas `FIFER://...`), **versión actual del ADN** (referencia al ADN maestro `.cursorrules` y su espejo `v0_pack/templates/14_CURSORRULES_LIVE.md`), y el **estado de la matriz de Auto-Healing** (compliance §11.3 / `docs/blueprints/AUTO_HEALING_COMPLIANCE.md`). Los datos de esta capa **DEBEN** ser **consumibles vía API** (p. ej. `/api/v1/system-health/architecture`) para que la UI y futuros paneles operen sobre una fuente única.
+
+## 18. DATA-DRIVEN UI (Telemetría y paneles operativos)
+
+**Regla Data-Driven:** El frontend tiene estrictamente prohibido hardcodear listas de motores, conexiones o métricas. Debe iterar dinámicamente sobre los arrays (Data-Driven UI) generados por los payloads del backend. Si el backend añade una nueva IA o motor, la UI debe renderizarlo automáticamente.
+
+## 19. LAYOUT AUTÓNOMO (Acoplamiento fluido)
+
+**Prohibido el "stretch" vertical forzado** entre componentes de distinta longitud. Los layouts deben usar `items-start` en CSS Grid, o configuraciones Masonry (p. ej. columnas CSS) para que cada caja ocupe estrictamente el alto de su contenido (**Acoplamiento fluido**). No igualar artificialmente la altura de tarjetas vecinas salvo requisito explícito de diseño.
+
+## 20. VISTAS DINÁMICAS Y FALLBACKS (Auto-Healing visual)
+
+Los paneles de datos deben preparar soporte para **múltiples vistas** (Gráfico, Lista, Ping Live). Todo componente de visualización debe implementar **Graceful Degradation**: si un gráfico falla o la data no es compatible, debe mutar automáticamente a un formato de **Lista plana** o **Tabla raw** en lugar de romper el layout (**Auto-Healing visual**).

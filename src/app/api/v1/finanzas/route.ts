@@ -15,6 +15,12 @@ function serializeTx(t: {
   type: 'INGRESO' | 'EGRESO';
   concept: string;
   status: 'PENDIENTE' | 'COMPLETADO' | 'FALLIDO';
+  source?: string;
+  bankExternalId?: string | null;
+  bankPostedAt?: Date | null;
+  dteFolio?: string | null;
+  dtePdfUrl?: string | null;
+  dteStatus?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }) {
@@ -26,6 +32,12 @@ function serializeTx(t: {
     type: t.type,
     concept: t.concept,
     status: t.status,
+    source: t.source ?? 'manual',
+    bankExternalId: t.bankExternalId ?? null,
+    bankPostedAt: t.bankPostedAt?.toISOString() ?? null,
+    dteFolio: t.dteFolio ?? null,
+    dtePdfUrl: t.dtePdfUrl ?? null,
+    dteStatus: t.dteStatus ?? null,
     createdAt: t.createdAt.toISOString(),
     updatedAt: t.updatedAt.toISOString(),
   };
@@ -71,7 +83,7 @@ export async function GET() {
     include: {
       transactions: {
         orderBy: { createdAt: 'desc' },
-        take: 10,
+        take: 50,
       },
     },
   });
@@ -89,17 +101,7 @@ export async function GET() {
       createdAt: account.createdAt.toISOString(),
       updatedAt: account.updatedAt.toISOString(),
     },
-    transactions: account.transactions.map((t) => ({
-      id: t.id,
-      accountId: t.accountId,
-      amount: t.amount.toString(),
-      currency: t.currency,
-      type: t.type,
-      concept: t.concept,
-      status: t.status,
-      createdAt: t.createdAt.toISOString(),
-      updatedAt: t.updatedAt.toISOString(),
-    })),
+    transactions: account.transactions.map((t) => serializeTx(t)),
   });
 }
 

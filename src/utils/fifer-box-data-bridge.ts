@@ -27,6 +27,8 @@ export const FIFER_BOX_DATA_ROUTES = {
   fiferDevInternal: '/api/v1/system-health?scope=internal',
   /** App Desarrollador — matriz de motores (`ai-fallback`, `ai-fallback:image-gen`, `ai-fallback:comms`). */
   fiferDevEngines: '/api/v1/system-health?scope=engines',
+  /** App Desarrollador — Sala de Guerra (motores + latencias Bridge + log env-manager). */
+  fiferDevWarRoom: '/api/v1/war-room',
 } as const;
 
 export type FiferBoxDataRouteKey = keyof typeof FIFER_BOX_DATA_ROUTES;
@@ -89,6 +91,34 @@ export function buildDegradedSystemHealthNormalized(
 }
 
 type SystemHealthDevRouteKey = 'fiferDevExternal' | 'fiferDevInternal' | 'fiferDevEngines';
+
+function normalizeWarRoomPayload(json: unknown): Record<string, unknown> {
+  if (json == null || typeof json !== 'object') {
+    return buildDegradedSystemHealthNormalized('Payload war-room vacío', 'EMPTY');
+  }
+  const root = json as Record<string, unknown>;
+  if (root.degraded === true) {
+    return {
+      degraded: true,
+      errorMessage: typeof root.errorMessage === 'string' ? root.errorMessage : 'Degradado',
+      errorCode: typeof root.errorCode === 'string' ? root.errorCode : 'HTTP_ERROR',
+      schemaVersion:
+        typeof root.schemaVersion === 'string' ? root.schemaVersion : '1.0-war-room-degraded',
+    };
+  }
+  if (root.schemaVersion !== '1.0-war-room') {
+    return buildDegradedSystemHealthNormalized('schemaVersion war-room inválido', 'SHAPE');
+  }
+  return {
+    schemaVersion: root.schemaVersion,
+    capturedAt: root.capturedAt,
+    tab: 'war-room',
+    engines: root.engines,
+    bridgeLatencies: root.bridgeLatencies,
+    envManagerLog: root.envManagerLog,
+    architectureHealth: root.architectureHealth,
+  };
+}
 
 function normalizeSystemHealthTabPayload(
   routeKey: SystemHealthDevRouteKey,
@@ -318,6 +348,8 @@ export function routeApiResponseToFiferBoxData(
     case 'fiferDevInternal':
     case 'fiferDevEngines':
       return normalizeSystemHealthTabPayload(routeKey, json);
+    case 'fiferDevWarRoom':
+      return normalizeWarRoomPayload(json);
     default:
       return {};
   }
@@ -391,6 +423,9 @@ export async function fetchRealBoxDataForBridge(
           'HTTP_ERROR',
         );
       }
+      if (routeKey === 'fiferDevWarRoom') {
+        return buildDegradedSystemHealthNormalized(`API war-room HTTP ${res.status}`, 'HTTP_ERROR');
+      }
       return buildDegradedNormalized(`API contratos HTTP ${res.status}`, 'HTTP_ERROR');
     }
 
@@ -406,6 +441,8 @@ export async function fetchRealBoxDataForBridge(
       case 'fiferDevInternal':
       case 'fiferDevEngines':
         return normalizeSystemHealthTabPayload(routeKey, json ?? {});
+      case 'fiferDevWarRoom':
+        return normalizeWarRoomPayload(json ?? {});
       default:
         return {};
     }
@@ -423,15 +460,19 @@ export async function fetchRealBoxDataForBridge(
     ) {
       return buildDegradedSystemHealthNormalized('Red o parseo JSON system-health', 'FETCH_ERROR');
     }
+    if (routeKey === 'fiferDevWarRoom') {
+      return buildDegradedSystemHealthNormalized('Red o parseo JSON war-room', 'FETCH_ERROR');
+    }
     return buildDegradedNormalized('Red o parseo JSON contratos', 'FETCH_ERROR');
   }
 }
 
 const FIFER_DEV_BOX_ID_TO_ROUTE: Record<
-  'fifer-dev-external' | 'fifer-dev-internal' | 'fifer-dev-engines',
-  SystemHealthDevRouteKey
+  'fifer-dev-external' | 'fifer-dev-war-room' | 'fifer-dev-internal' | 'fifer-dev-engines',
+  SystemHealthDevRouteKey | 'fiferDevWarRoom'
 > = {
   'fifer-dev-external': 'fiferDevExternal',
+  'fifer-dev-war-room': 'fiferDevWarRoom',
   'fifer-dev-internal': 'fiferDevInternal',
   'fifer-dev-engines': 'fiferDevEngines',
 };

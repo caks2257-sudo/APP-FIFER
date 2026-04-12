@@ -29,6 +29,16 @@ const RAW_MANIFESTS: unknown[] = [
     isResizable: true,
   },
   {
+    boxId: 'finance-liquidity-forecast',
+    module: 'finance',
+    minWidth: 6,
+    minHeight: 4,
+    biome: { primary: '#0A0F1E', accent: '#EAB308' },
+    permissions: [],
+    component: 'liquidity-forecast-box',
+    isResizable: true,
+  },
+  {
     boxId: 'fifer-contratos-main',
     module: 'finance',
     minWidth: 6,
