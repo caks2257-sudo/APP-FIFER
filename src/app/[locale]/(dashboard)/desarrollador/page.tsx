@@ -13,8 +13,12 @@ import { useBoxData } from '@/hooks/useBoxData';
 import { useExternalBridge } from '@/hooks/useExternalBridge';
 import { useIsLocalhostClient } from '@/hooks/useIsLocalhostClient';
 import { useUserDnaStore } from '@/store/useUserDnaStore';
-import type { ArchitectureHealthSnapshot } from '@/engines/system-health/architecture-types';
-import type { EngineSlotSnapshot, HealthEndpointSnapshot } from '@/engines/system-health/public-types';
+import { INTERNAL_HEALTH_API_PROBES } from '@/config/internal-health-probes';
+import type {
+  ArchitectureHealthSnapshot,
+  EngineSlotSnapshot,
+  HealthEndpointSnapshot,
+} from '@/types/system-health-ui';
 import {
   telemetryFromEngines,
   telemetryFromExternalBridge,
@@ -158,15 +162,16 @@ const TABS: { id: DevTab; label: string; title: string; boxId: string }[] = [
 
 function parseInternal(
   data: Record<string, unknown> | null,
-): { misbots?: HealthEndpointSnapshot; contratos?: HealthEndpointSnapshot } | null {
+): Record<string, HealthEndpointSnapshot> | null {
   if (!data || data.degraded === true) return null;
   const int = data.internal;
   if (!int || typeof int !== 'object') return null;
-  const o = int as Record<string, unknown>;
-  return {
-    misbots: o.misbots as HealthEndpointSnapshot | undefined,
-    contratos: o.contratos as HealthEndpointSnapshot | undefined,
-  };
+  return int as Record<string, HealthEndpointSnapshot>;
+}
+
+function internalPayloadComplete(int: Record<string, HealthEndpointSnapshot> | null): boolean {
+  if (!int) return false;
+  return INTERNAL_HEALTH_API_PROBES.every((p) => int[p.id] != null);
 }
 
 function parseEngines(data: Record<string, unknown> | null): Record<string, EngineSlotSnapshot> | null {
@@ -290,8 +295,8 @@ export default function DesarrolladorPage() {
 
   const internalTelemetry = useMemo(() => {
     const int = parseInternal(data);
-    const ok = int?.misbots && int.contratos;
-    return telemetryFromInternalApis(ok ? (int as { misbots: HealthEndpointSnapshot; contratos: HealthEndpointSnapshot }) : null, degradedPayload || !ok);
+    const ok = internalPayloadComplete(int);
+    return telemetryFromInternalApis(ok ? int : null, degradedPayload || !ok);
   }, [data, degradedPayload]);
 
   const enginesTelemetry = useMemo(() => {
@@ -425,7 +430,7 @@ export default function DesarrolladorPage() {
 
     if (activeTab === 'internal') {
       const int = parseInternal(data);
-      if (!int?.misbots || !int.contratos) {
+      if (!internalPayloadComplete(int)) {
         return (
           <>
             <TelemetryHeaderBox
@@ -449,18 +454,15 @@ export default function DesarrolladorPage() {
             healthStats={internalTelemetry}
           />
           <div className="grid gap-3 sm:grid-cols-2">
-            <HealthCard
-              title="GET /api/v1/misbots"
-              snapshot={int.misbots}
-              kind="internal"
-              onOpenKeyModal={() => setKeyModalOpen(true)}
-            />
-            <HealthCard
-              title="GET /api/v1/contratos"
-              snapshot={int.contratos}
-              kind="internal"
-              onOpenKeyModal={() => setKeyModalOpen(true)}
-            />
+            {INTERNAL_HEALTH_API_PROBES.map((probe) => (
+              <HealthCard
+                key={probe.id}
+                title={probe.label}
+                snapshot={int![probe.id]}
+                kind="internal"
+                onOpenKeyModal={() => setKeyModalOpen(true)}
+              />
+            ))}
           </div>
         </>
       );

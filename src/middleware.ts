@@ -19,7 +19,6 @@ const HUB_PRIVATE_PREFIXES = [
   '/desarrollador',
   '/dashboardinmobiliario',
   '/finanzas',
-  '/afiliados',
 ] as const;
 
 function stripLocalePrefix(pathname: string): string {

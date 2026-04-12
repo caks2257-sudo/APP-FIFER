@@ -42,7 +42,10 @@ export default function SystemHealthMonitor({
     () => [...boxCircuitBreaker.listOpenCircuitIds()].sort().join('|'),
     () => '',
   );
-  const openIds = openIdsSignature ? openIdsSignature.split('|') : [];
+  const openIds = useMemo(
+    () => (openIdsSignature ? openIdsSignature.split('|') : []),
+    [openIdsSignature],
+  );
   const prevSig = useRef('');
 
   const push = useCallback((msg: string) => {

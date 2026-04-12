@@ -27,8 +27,8 @@ function mapPrismaToTableRow(b: Bot): BotTableRow {
     subApp: b.subApp,
     metadata: b.metadata,
     ownerId: b.ownerId,
-    createdAt: b.createdAt,
-    updatedAt: b.updatedAt,
+    createdAt: b.createdAt.toISOString(),
+    updatedAt: b.updatedAt.toISOString(),
   };
 }
 

@@ -1,35 +1,35 @@
 {
-  "FIFER://APP/AFILIADOS": {
-    "path": "src/app/[locale]/(dashboard)/afiliados",
-    "type": "ENGINE"
-  },
   "FIFER://APP/CONTRATOS": {
     "path": "src/app/[locale]/(dashboard)/contratos",
-    "type": "ENGINE"
+    "type": "APP"
   },
   "FIFER://APP/DASHBOARD": {
     "path": "src/app/[locale]/(dashboard)/dashboard",
-    "type": "ENGINE"
+    "type": "APP"
   },
   "FIFER://APP/DASHBOARD_INMOBILIARIO": {
     "path": "src/app/[locale]/(dashboard)/dashboardinmobiliario",
-    "type": "ENGINE"
+    "type": "APP"
   },
   "FIFER://APP/DESARROLLADOR": {
     "path": "src/app/[locale]/(dashboard)/desarrollador",
-    "type": "ENGINE"
+    "type": "APP"
   },
   "FIFER://APP/DOM": {
     "path": "src/app/[locale]/(dashboard)/dom",
-    "type": "ENGINE"
+    "type": "APP"
   },
   "FIFER://APP/FINANZAS": {
     "path": "src/app/[locale]/(dashboard)/finanzas",
-    "type": "ENGINE"
+    "type": "APP"
   },
   "FIFER://APP/MISBOTS": {
     "path": "src/app/[locale]/(dashboard)/misbots",
-    "type": "ENGINE"
+    "type": "APP"
+  },
+  "FIFER://APP/PERFIL": {
+    "path": "src/app/[locale]/(dashboard)/dashboard/perfil",
+    "type": "SUB_APP"
   },
   "FIFER://ENGINE/AI_FALLBACK_CASCADE": {
     "path": "src/engines/ai-fallback-cascade",
@@ -41,7 +41,7 @@
   },
   "FIFER://ENGINE/NORMATIVA": {
     "path": "src/app/[locale]/(dashboard)/dom/normativa",
-    "type": "ENGINE",
+    "type": "SUB_APP",
     "targetAppOrEngine": "normativa"
   },
   "FIFER://ENGINE/SYSTEM_HEALTH": {
@@ -74,7 +74,7 @@
   },
   "FIFER://app/desarrollador/conexiones-externas": {
     "path": "src/app/[locale]/(dashboard)/desarrollador/conexiones-externas",
-    "type": "ENGINE"
+    "type": "SUB_APP"
   },
   "FIFER://engines/bot-engine": {
     "path": "src/engines/bot-engine",

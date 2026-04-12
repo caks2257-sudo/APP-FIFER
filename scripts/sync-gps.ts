@@ -44,6 +44,16 @@ function classifyModule(moduleRoot: string): ModuleKind {
   if (rel.includes('/sub-engines/')) return 'SUB_ENGINE'
   if (rel.startsWith('src/engines/')) return 'ENGINE'
 
+  /** Next-Intl + App Router: apps bajo `src/app/[locale]/(dashboard)/…` */
+  const localeDashboardPrefix = 'src/app/[locale]/(dashboard)/'
+  if (rel.startsWith(localeDashboardPrefix)) {
+    const rest = rel.slice(localeDashboardPrefix.length)
+    const segments = rest.split('/').filter(Boolean)
+    if (segments.length <= 1) return 'APP'
+    return 'SUB_APP'
+  }
+
+  /** Legado sin prefijo de locale (si existiera en el árbol) */
   if (rel.startsWith('src/app/(dashboard)/')) {
     const rest = rel.slice('src/app/(dashboard)/'.length)
     const segments = rest.split('/').filter(Boolean)

@@ -33,7 +33,6 @@ export type SidebarIconKey =
   | 'LineChart'
   | 'FileText'
   | 'Sparkles'
-  | 'Users'
   | 'LayoutGrid'
   | 'Box'
   | 'Bot'
@@ -104,14 +103,6 @@ export const appRegistry: FiferAppDefinition[] = [
     iconKey: 'LineChart',
     permission: 'pro',
     category: 'finanzas',
-  },
-  {
-    id: 'afiliados',
-    label: 'Red de Afiliados',
-    href: '/afiliados',
-    iconKey: 'Users',
-    permission: 'pro',
-    category: 'network',
   },
 ];
 
@@ -230,13 +221,6 @@ const sidebarNavigationSource = [
     href: '/dashboard/contenido-ai',
     iconKey: 'Sparkles',
     permission: 'public',
-  },
-  {
-    type: 'link',
-    label: 'Red de Afiliados',
-    href: '/afiliados',
-    iconKey: 'Users',
-    appId: 'afiliados',
   },
   {
     type: 'group',

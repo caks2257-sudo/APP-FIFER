@@ -2,7 +2,6 @@ export type BoxId =
   | 'finance-cashflow-chart'
   | 'finance-liquidity-forecast'
   | 'content-ingestion-form'
-  | 'affiliate-hero-summary'
   | 'system-health-monitor'
   | 'fifer-contratos-main'
   | 'fifer-inmobiliario-main'
@@ -11,7 +10,6 @@ export type BoxId =
 export type BoxModule =
   | 'finance'
   | 'content'
-  | 'affiliates'
   | 'contracts'
   | 'system'
   | 'inmobiliario'
@@ -23,7 +21,6 @@ type BoxCatalogEntry = {
   component:
     | 'chart-box'
     | 'activity-box'
-    | 'stat-card'
     | 'system-monitor'
     | 'contratos-main'
     | 'inmobiliario-main'
@@ -47,11 +44,6 @@ export const BOX_CATALOG: Record<BoxId, BoxCatalogEntry> = {
     boxId: 'content-ingestion-form',
     module: 'content',
     component: 'activity-box',
-  },
-  'affiliate-hero-summary': {
-    boxId: 'affiliate-hero-summary',
-    module: 'affiliates',
-    component: 'stat-card',
   },
   'system-health-monitor': {
     boxId: 'system-health-monitor',

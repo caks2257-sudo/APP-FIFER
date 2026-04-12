@@ -10,14 +10,10 @@ import "@/engines/finance-engine";
 import "@/engines/forecast-core";
 import "@/engines/system-engine";
 
+import { INTERNAL_HEALTH_API_PROBES } from "@/config/internal-health-probes";
 import { EngineRegistry } from "@/registry/engine-registry";
 
-import type {
-  AiProviderPulse,
-  EngineSlotSnapshot,
-  GlobalHealthStatus,
-  HealthEndpointSnapshot,
-} from "./public-types";
+import type { AiProviderPulse, GlobalHealthStatus, HealthEndpointSnapshot } from "./public-types";
 
 const ENGINE_ID = "system-health" as const;
 
@@ -27,25 +23,6 @@ const OPENAI_STATUS_URL = "https://status.openai.com/api/v2/status.json";
 /** Discovery REST público (no requiere API key) — latencia y disponibilidad del plano Gemini. */
 const GOOGLE_GENAI_DISCOVERY_URL =
   "https://generativelanguage.googleapis.com/$discovery/rest?version=v1";
-
-const ENGINE_PROBE_IDS = [
-  "bot-engine",
-  "dom-engine",
-  "dom-engine:form-generator",
-  "dom-engine:normative-analyzer",
-  "external-bridge-engine",
-  "system-engine",
-  "system-engine:env-manager",
-  "finance-engine",
-  "finance-engine:billing",
-  "finance-engine:reconciliation",
-  "finance-engine:payments",
-  "forecast-core",
-  "forecast-core:cashflow-liquidity",
-  "ai-fallback",
-  "ai-fallback:image-gen",
-  "ai-fallback:comms",
-] as const;
 
 export type {
   AiProviderPulse,
@@ -243,7 +220,8 @@ async function probeInternalRoute(
 
 function buildEngineSnapshots(): GlobalHealthStatus["engines"] {
   const byId: GlobalHealthStatus["engines"]["byId"] = {};
-  for (const engineId of ENGINE_PROBE_IDS) {
+  const probeIds = EngineRegistry.listRegisteredIds().filter((id) => id !== ENGINE_ID);
+  for (const engineId of probeIds) {
     const registered = EngineRegistry.isRegistered(engineId);
     const inService = registered && EngineRegistry.isInService(engineId);
     let pulse: AiProviderPulse = "down";
@@ -274,12 +252,22 @@ export class SystemHealthEngine {
    */
   async getGlobalStatus(options: { origin: string }): Promise<GlobalHealthStatus> {
     const origin = options.origin.replace(/\/$/, "");
-    const [openai, google, misbots, contratos] = await Promise.all([
+    const [openai, google, internalEntries] = await Promise.all([
       probeOpenAiStatus(),
       probeGoogleStatus(),
-      probeInternalRoute(`${origin}/api/v1/misbots`, "GET /api/v1/misbots"),
-      probeInternalRoute(`${origin}/api/v1/contratos`, "GET /api/v1/contratos"),
+      Promise.all(
+        INTERNAL_HEALTH_API_PROBES.map(async (probe) => {
+          const snap = await probeInternalRoute(
+            `${origin}${probe.path}`,
+            probe.label,
+          );
+          return [probe.id, snap] as const;
+        }),
+      ),
     ]);
+
+    const internal: Record<string, HealthEndpointSnapshot> =
+      Object.fromEntries(internalEntries);
 
     const engines = buildEngineSnapshots();
 
@@ -287,7 +275,7 @@ export class SystemHealthEngine {
       schemaVersion: "1.0-system-health",
       capturedAt: new Date().toISOString(),
       external: { openai, google },
-      internal: { misbots, contratos },
+      internal,
       engines,
     };
   }

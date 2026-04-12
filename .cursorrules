@@ -1,4 +1,4 @@
-# 🏗️ FIFER ECOSYSTEM - MASTER SYSTEM INSTRUCTOR (v6.3 — Observabilidad Total + Salud Arquitectónica)
+# 🏗️ FIFER ECOSYSTEM - MASTER SYSTEM INSTRUCTOR (v6.4 — Starter Kit obligatorio + Depuración estricta + Auto-Healing visual)
 
 ## 0. CONSTITUCIÓN — LEYES FUNDAMENTALES
 1. **Zero-Trust Visual:** Toda UI debe usar estrictamente Tailwind inline. Prohibido CSS Modules o Styled Components. El ADN visual inmutable es el "Nevado Técnico" (Fondo Deep Navy `#0A0F1E` y acento Electric Yellow `#EAB308`).
@@ -37,6 +37,7 @@ El "ADN" ya NO es un archivo Markdown para que el programador lo lea (`_xray_USE
 Queda ESTRICTAMENTE PROHIBIDO crear aplicaciones, módulos o X-Rays a mano.
 * Toda nueva App debe nacer ejecutando el comando estructurado de scaffolding (ej. `npm run fifer:create-app`).
 * Este motor es el único autorizado para generar la carpeta `_blueprints/` y registrar la App en el ecosistema.
+* El alcance íntegro (apps, motores, sub-motores, planos y prohibición de scaffolding manual) está definido en **§21**.
 
 ## 4. PROTOCOLO DE CIERRE Y VISIBILIDAD
 Tras cualquier cambio estructural, debes ejecutar el script de sincronización (`npm run v0-sync` o equivalente) para asegurar que la carpeta `v0_pack/` mantenga una copia actualizada en tiempo real de todos los planos y configuraciones maestras para uso del usuario.
@@ -159,3 +160,34 @@ El sistema **DEBE** exponer **visualmente** su propia **integridad estructural**
 ## 20. VISTAS DINÁMICAS Y FALLBACKS (Auto-Healing visual)
 
 Los paneles de datos deben preparar soporte para **múltiples vistas** (Gráfico, Lista, Ping Live). Todo componente de visualización debe implementar **Graceful Degradation**: si un gráfico falla o la data no es compatible, debe mutar automáticamente a un formato de **Lista plana** o **Tabla raw** en lugar de romper el layout (**Auto-Healing visual**).
+
+## 21. PROTOCOLO DE STARTER KIT OBLIGATORIO
+
+Queda **ESTRICTAMENTE PROHIBIDA** la creación manual de carpetas, archivos base o planos sueltos (`_xray_*.md`) para nuevas aplicaciones, motores o sub-motores. Todo nuevo módulo **DEBE** nacer exclusivamente a través del motor de scaffolding oficial (p. ej. `npm run fifer:create-app` o el generador de motores del repo). El Starter Kit garantiza la inyección inmediata del módulo en la estructura base y evita código huérfano o planos desconectados del ADN.
+
+## 22. PRINCIPIO "NACIDO CONECTADO"
+
+Ninguna entidad arquitectónica en FIFER existe en aislamiento. Al inicializar un nuevo módulo o refactorizar uno existente, el agente **DEBE** asegurar automáticamente:
+
+1. Su registro en el `EngineRegistry` cuando se trate de lógica/motor.
+2. La declaración de su ancla `` `FIFER://...` `` bajo `## UBICACIÓN LÓGICA` en sus planos X-Ray.
+3. La ejecución inmediata de `npm run sync:gps` para inyectarlo en `docs/registry/LOCATION_MAP.json`.
+4. Su exposición a la **Sala de Guerra** (War Room) de forma que la telemetría lo capture mediante **descubrimiento dinámico** (sin listas estáticas en frontend; coherente con **§18**).
+
+## 23. DEPURACIÓN ESTRICTA Y CÓDIGO MUERTO
+
+### 23.1 Erradicación de falsos positivos (rutas y bundle)
+
+El sistema principal de UI vive en `src/app/[locale]/(dashboard)`. Cualquier ruta antigua de dashboard que resida **directamente** en `src/app/(dashboard)` (sin `[locale]`), así como rutas obsoletas de `/afiliados` e implementaciones antiguas de `/contratos` que **no** utilicen `@/i18n/navigation`, deben **eliminarse o migrarse** en cuanto se toquen esas áreas, para no engordar el bundle ni confundir al GPS. No mantener duplicados paralelos salvo transición documentada en X-Ray.
+
+### 23.2 Ley de tolerancia cero al código muerto
+
+Al modificar código: eliminar variables no utilizadas y dependencias huérfanas en el momento en que se detecten. No dejar código comentado como "respaldo" salvo que esté documentado bajo un proceso de **deprecación explícita** en los planos X-Ray correspondientes.
+
+## 24. PROTOCOLO DE AUTO-HEALING VISUAL (AUDITORÍA OBLIGATORIA EN UI)
+
+En cada componente UI que se toque o refactorice, el agente debe auditar y aplicar lo siguiente (además de **§18**, **§19** y **§20**):
+
+1. **Acoplamiento fluido:** Eliminar clases `items-stretch` no justificadas en contenedores de tarjetas/dashboards y sustituirlas por `items-start` salvo requisito de diseño explícito. La UI debe fluir con el contenido.
+2. **Graceful Degradation (telemetría y conexiones):** Los Boxes de telemetría y conexiones —especialmente en la Sala de Guerra— **no** deben romper la pantalla si la API falla o el render gráfico errordea: deben mutar a **lista simple** o **tabla** y mantener estados de error legibles.
+3. **Data-Driven obligatorio:** Utilizar siempre datos dinámicos desde backend/API; prohibido reintroducir arreglos o métricas hardcodeadas en el frontend para inventario de motores, conexiones o filas operativas.

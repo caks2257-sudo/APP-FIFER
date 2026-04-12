@@ -17,16 +17,9 @@ const canonicalDashboardPayload: RawDashboardPayload = {
   isRefining: true,
   widgets: [
     {
-      id: 'resumen-afiliados',
-      boxId: 'affiliate-hero-summary',
-      colSpan: 4,
-      biome: 'affiliates',
-      data: { title: '—', value: '—', caption: '—' },
-    },
-    {
       id: 'flujo-caja-finanzas',
       boxId: 'finance-cashflow-chart',
-      colSpan: 8,
+      colSpan: 12,
       biome: 'finance',
       data: {
         title: 'Flujo de Caja Operativo',
@@ -71,8 +64,7 @@ const stress = applyLayoutSanityForCommander({
   widgets,
   slotOrder: [
     'slot-huérfano',
-    'resumen-afiliados',
-    'resumen-afiliados',
+    'flujo-caja-finanzas',
     'flujo-caja-finanzas',
     'ingesta-contenido',
   ],

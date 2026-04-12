@@ -53,6 +53,11 @@ export class EngineRegistry {
     return Boolean(slot?.enabled);
   }
 
+  /** Ids registrados en runtime (orden estable para sondas / telemetría). */
+  static listRegisteredIds(): string[] {
+    return [...slots.keys()].sort((a, b) => a.localeCompare(b));
+  }
+
   /**
    * Resuelve el motor tipado. Si no existe o está fuera de servicio, lanza Error explícito
    * (no assert ni excepciones no documentadas).

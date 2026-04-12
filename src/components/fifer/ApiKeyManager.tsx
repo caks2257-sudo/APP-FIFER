@@ -274,7 +274,7 @@ export function ApiKeyManager() {
               Copia esta llave ahora. No volverá a mostrarse en este panel; solo verás un prefijo en
               la lista.
             </p>
-            <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-stretch">
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-start">
               <code className="block flex-1 break-all rounded-lg border border-slate-500/25 bg-slate-950/90 px-3 py-2.5 font-mono text-xs leading-relaxed text-sky-100/90">
                 {oneTimeSecret}
               </code>

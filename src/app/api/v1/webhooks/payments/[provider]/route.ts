@@ -71,6 +71,7 @@ export async function POST(
     ) {
       return NextResponse.json({ ok: true, skipped: true });
     }
+    const { transactionId } = flowParsed.data;
     return finalizePendingTransaction(transactionId, request.nextUrl.origin);
   }
 

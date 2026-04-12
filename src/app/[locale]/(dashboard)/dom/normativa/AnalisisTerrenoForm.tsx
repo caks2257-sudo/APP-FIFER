@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslations } from 'next-intl';
-import { useForm } from 'react-hook-form';
+import { useForm, type Resolver } from 'react-hook-form';
 
 import {
   domAnalisisRequestSchema,
@@ -26,7 +26,9 @@ export default function AnalisisTerrenoForm({ onSubmit, loading }: Props) {
     handleSubmit,
     formState: { errors },
   } = useForm<DomAnalisisRequest>({
-    resolver: zodResolver(domAnalisisRequestSchema),
+    resolver: zodResolver(
+      domAnalisisRequestSchema,
+    ) as Resolver<DomAnalisisRequest>,
     defaultValues: {
       superficieTerreno: 500,
       coeficienteConstructibilidad: 1,

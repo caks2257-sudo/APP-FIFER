@@ -236,16 +236,25 @@ function FiferMisbotsMainInner({ onRequestHydrationRefetch, initialBots }: Fifer
     return o;
   }, [circuitOpen, data, dna]);
 
-  const bots = data?.bots ?? [];
+  const bots = useMemo(() => data?.bots ?? [], [data]);
+
   const botsForInsight = useMemo(
-    () => bots.map((b) => ({ ...b, avatarUrl: avatarByBotId[b.id] ?? b.avatarUrl })),
+    () =>
+      bots.map((b) => ({
+        ...b,
+        avatarUrl: avatarByBotId[b.id] ?? b.avatarUrl,
+      })),
     [bots, avatarByBotId],
   );
   const degraded = Boolean(data?.degraded);
   const degradedMessage = String(data?.errorMessage ?? '');
 
   if (!circuitOpen && isLoading) {
-    return <BoxLoader module="bots" isLoading children={null} />;
+    return (
+      <BoxLoader module="bots" isLoading>
+        {null}
+      </BoxLoader>
+    );
   }
 
   if (!circuitOpen && error) {

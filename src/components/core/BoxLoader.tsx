@@ -5,7 +5,6 @@ import DiscoveryBox from './DiscoveryBox';
 const moduleColor: Record<BoxModule, string> = {
   finance: '#10B981',
   content: '#3B82F6',
-  affiliates: '#EAB308',
   contracts: '#EAB308',
   system: '#ef4444',
   inmobiliario: '#0F172A',

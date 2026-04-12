@@ -5,7 +5,7 @@ import { useSyncExternalStore } from 'react';
 import { useLocale } from 'next-intl';
 import { useTranslations } from 'next-intl';
 
-import type { CashflowLiquidityOutput } from '@/engines/forecast-core/sub-engines/cashflow-liquidity/schemas';
+import type { CashflowLiquidityOutput } from '@/types/forecast-liquidity';
 import { boxCircuitBreaker, subscribeBoxCircuitSnapshots } from '@/utils/box-circuit-breaker';
 
 import { formatMoneyAmount } from './formatMoney';

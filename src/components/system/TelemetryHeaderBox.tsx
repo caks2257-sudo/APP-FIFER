@@ -124,7 +124,7 @@ export default function TelemetryHeaderBox({
 
   return (
     <div className="mb-6 rounded-xl border border-[#EAB308]/25 bg-[#0A0F1E] p-4 shadow-[inset_0_1px_0_0_rgba(234,179,8,0.08)] md:p-5">
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-stretch lg:justify-between lg:gap-8">
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#EAB308]/90">
             Telemetría

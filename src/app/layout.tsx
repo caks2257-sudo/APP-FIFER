@@ -14,7 +14,12 @@ const sourceSans = Source_Sans_3({ subsets: ['latin'], variable: '--font-source-
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const montserrat = Montserrat({ subsets: ['latin'], variable: '--font-montserrat' });
 
+const metadataBase = new URL(
+  process.env.NEXT_PUBLIC_APP_URL?.trim() || 'http://localhost:3000',
+);
+
 export const metadata: Metadata = {
+  metadataBase,
   title: siteDetails.metadata.title,
   description: siteDetails.metadata.description,
   openGraph: {

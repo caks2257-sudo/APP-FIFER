@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import type { BoxId } from '@/registry/box-catalog';
 import type { V0BoxProps } from './box-types';
-import AffiliateHeroSummary from './boxes/AffiliateHeroSummary';
 import ContentIngestionForm from './boxes/ContentIngestionForm';
 import ContratosBox from './boxes/ContratosBox';
 import FiferContratosMain from './boxes/FiferContratosMain';
@@ -19,7 +18,6 @@ const renderers: Record<BoxId, BoxRenderer> = {
   'finance-cashflow-chart': (props) => FinanceCashflowChart(props),
   'finance-liquidity-forecast': (props) => FinanceLiquidityForecastBox(props),
   'content-ingestion-form': (props) => ContentIngestionForm(props),
-  'affiliate-hero-summary': (props) => AffiliateHeroSummary(props),
   'system-health-monitor': (props) => SystemHealthMonitor(props),
   'fifer-contratos-main': (props) => FiferContratosMain(props),
   'fifer-inmobiliario-main': (props) => FiferInmobiliarioMain(props),
@@ -34,7 +32,6 @@ export {
   FinanceCashflowChart,
   FinanceLiquidityForecastBox,
   ContentIngestionForm,
-  AffiliateHeroSummary,
   SystemHealthMonitor,
   FiferContratosMain,
   FiferInmobiliarioMain,

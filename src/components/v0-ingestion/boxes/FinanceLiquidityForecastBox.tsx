@@ -10,6 +10,7 @@ import type { BoxProps } from '../registry';
  * Hidrata el mismo UI que el Hub de Finanzas vía `useLiquidityForecast`.
  */
 export default function FinanceLiquidityForecastBox(_props: BoxProps) {
+  void _props;
   const liquidity = useLiquidityForecast();
   return (
     <LiquidityForecastBox

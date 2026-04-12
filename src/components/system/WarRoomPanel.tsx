@@ -5,8 +5,7 @@ import { BarChart3, LineChart, PieChart } from 'lucide-react';
 import type { BridgeActivePing } from '@fifer/external-bridge-engine/bridge-latency';
 
 import TelemetryHeaderBox from '@/components/system/TelemetryHeaderBox';
-import type { ArchitectureHealthSnapshot } from '@/engines/system-health/architecture-types';
-import type { EngineSlotSnapshot } from '@/engines/system-health/public-types';
+import type { ArchitectureHealthSnapshot, EngineSlotSnapshot } from '@/types/system-health-ui';
 import type { TelemetryHealthStats } from '@/utils/developer-telemetry';
 
 export type WarRoomEnvLogLine = {

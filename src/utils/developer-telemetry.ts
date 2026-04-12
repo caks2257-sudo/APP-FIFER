@@ -1,6 +1,6 @@
 import type { BridgeActivePing } from '@fifer/external-bridge-engine/bridge-latency';
 
-import type { EngineSlotSnapshot, HealthEndpointSnapshot } from '@/engines/system-health/public-types';
+import type { EngineSlotSnapshot, HealthEndpointSnapshot } from '@/types/system-health-ui';
 
 /** Métricas agregadas para micro-gráficos (SRE / Sala de Guerra). */
 export type TelemetryHealthStats = {
@@ -56,22 +56,32 @@ export function telemetryFromExternalBridge(
   };
 }
 
-/** Resumen pestaña APIs internas — system-health `internal`. */
+/** Resumen pestaña APIs internas — system-health `internal` (payload data-driven). */
 export function telemetryFromInternalApis(
-  internal: { misbots: HealthEndpointSnapshot; contratos: HealthEndpointSnapshot } | null,
+  internal: Record<string, HealthEndpointSnapshot> | null,
   degradedPayload: boolean,
 ): TelemetryHealthStats {
   if (degradedPayload || !internal) {
     return {
       uptimePercent: 0,
       uptimeLabel: '% OK',
-      errorCount: 2,
+      errorCount: 0,
       errorLabel: 'Offline',
       avgLatencyMs: null,
       latencyBarMaxMs: 2000,
     };
   }
-  const eps = [internal.misbots, internal.contratos];
+  const eps = Object.values(internal);
+  if (eps.length === 0) {
+    return {
+      uptimePercent: 0,
+      uptimeLabel: '% OK',
+      errorCount: 0,
+      errorLabel: 'Offline',
+      avgLatencyMs: null,
+      latencyBarMaxMs: 2000,
+    };
+  }
   const tiers = eps.map(tierEndpoint);
   const ok = tiers.filter((t) => t === 'online').length;
   const uptimePercent = Math.round((100 * ok) / eps.length);

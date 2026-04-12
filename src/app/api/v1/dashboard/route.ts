@@ -1,46 +1,17 @@
 import { NextResponse } from 'next/server';
 import type { RawDashboardPayload } from '@/utils/adapters/dashboardAdapter';
 import { STRESS_CONTRATOS_API_SABOTAGE } from '@/utils/fifer-box-data-bridge';
-import { fetchAffiliateData } from '../../../../../FIFER_CORE/xray_engines/xray_admitad.js';
 
 const XRAY_SOURCES = ['FIFER_CORE/xray_engines/xray_admitad.js', 'FIFER_CORE/xray_engines/xray_products.js'] as const;
 
-async function getAffiliateSummaryFromEngine() {
-  if (typeof fetchAffiliateData !== 'function') {
-    throw new Error('xray_admitad no exporta fetchAffiliateData');
-  }
-
-  const result = await fetchAffiliateData();
-  if (!result?.summary) {
-    throw new Error('xray_admitad devolvio payload invalido (summary ausente)');
-  }
-
-  return result.summary as {
-    title: string;
-    value: string;
-    caption: string;
-  };
-}
-
 async function buildDashboardPayload(): Promise<RawDashboardPayload> {
-  const affiliateSummary = await getAffiliateSummaryFromEngine();
   return {
     isRefining: true,
     widgets: [
       {
-        id: 'resumen-afiliados',
-        boxId: 'affiliate-hero-summary',
-        colSpan: 4,
-        biome: 'affiliates',
-        data: affiliateSummary,
-        config: {
-          source: XRAY_SOURCES[0],
-        },
-      },
-      {
         id: 'flujo-caja-finanzas',
         boxId: 'finance-cashflow-chart',
-        colSpan: 8,
+        colSpan: 12,
         biome: 'finance',
         data: {
           title: 'Flujo de Caja Operativo',

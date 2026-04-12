@@ -1,5 +1,9 @@
 # Persistencia Nativa (Supabase & Prisma) — dashboard/perfil
 
+## UBICACIÓN LÓGICA
+
+`FIFER://APP/PERFIL`
+
 Ordenanza §8 — **Prohibido SQL manual** en aplicación; toda interacción vía **Prisma Client** centralizado. Documentar aquí SCHEMA (Prisma), reglas **RLS** y **MIGRATIONS**.
 
 Mantener este plano alineado con `prisma/schema.prisma`, migraciones aplicadas y políticas desplegadas en Supabase.

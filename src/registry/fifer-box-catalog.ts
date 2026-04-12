@@ -59,16 +59,6 @@ const RAW_MANIFESTS: unknown[] = [
     isResizable: true,
   },
   {
-    boxId: 'affiliate-hero-summary',
-    module: 'affiliates',
-    minWidth: 4,
-    minHeight: 3,
-    biome: { primary: '#EAB308', accent: '#FDE047' },
-    permissions: [],
-    component: 'stat-card',
-    isResizable: true,
-  },
-  {
     boxId: 'fifer-inmobiliario-main',
     module: 'inmobiliario',
     minWidth: 6,

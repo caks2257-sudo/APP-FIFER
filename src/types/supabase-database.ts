@@ -98,6 +98,7 @@ export type Database = {
           modelId: string
           avatarUrl: string | null
           mainApp: string
+          sourceApp: string | null
           subApp: string | null
           metadata: Json | null
           ownerId: string
@@ -111,6 +112,7 @@ export type Database = {
           modelId: string
           avatarUrl?: string | null
           mainApp?: string
+          sourceApp?: string | null
           subApp?: string | null
           metadata?: Json | null
           ownerId: string
@@ -124,6 +126,7 @@ export type Database = {
           modelId?: string
           avatarUrl?: string | null
           mainApp?: string
+          sourceApp?: string | null
           subApp?: string | null
           metadata?: Json | null
           ownerId?: string
