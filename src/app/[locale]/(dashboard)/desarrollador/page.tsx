@@ -34,7 +34,9 @@ type HealthCardTier = 'online' | 'degraded' | 'offline';
 type HealthCardKind = 'external' | 'internal' | 'engine';
 
 function tierFromEndpoint(s: HealthEndpointSnapshot): HealthCardTier {
-  if (s.invalidKey || s.pulse === 'down') return 'offline';
+  if (s.credentialStatus === 'missing_key') return 'degraded';
+  if (s.invalidKey || s.credentialStatus === 'invalid_key' || s.pulse === 'down')
+    return 'offline';
   if (s.pulse === 'degraded' || s.pulse === 'unknown') return 'degraded';
   if (s.latencyMs != null && s.latencyMs > 500) return 'degraded';
   return 'online';
@@ -87,7 +89,8 @@ function HealthCard({
         : 'bg-red-400';
 
   const showKeyButton =
-    tier === 'offline' && (Boolean(ep?.invalidKey) || kind === 'external');
+    Boolean(ep?.credentialStatus === 'missing_key') ||
+    (tier === 'offline' && (Boolean(ep?.invalidKey) || kind === 'external'));
 
   return (
     <div
@@ -104,7 +107,12 @@ function HealthCard({
             <p className="mt-1 font-mono text-[11px] text-[#64748B]">
               Latencia: {latencyLabel}
               {ep.httpStatus ? ` · HTTP ${ep.httpStatus}` : ''}
-              {ep.invalidKey ? ' · clave inválida' : ''}
+              {ep.credentialStatus === 'missing_key'
+                ? ' · falta credencial'
+                : ''}
+              {ep.invalidKey || ep.credentialStatus === 'invalid_key'
+                ? ' · clave inválida'
+                : ''}
             </p>
           ) : (
             <p className="mt-1 font-mono text-[11px] text-[#64748B]">
@@ -134,9 +142,13 @@ function HealthCard({
         <button
           type="button"
           onClick={onOpenKeyModal}
-          className="mt-3 w-full rounded-md border border-red-400/40 bg-[#0A0F1E]/80 px-3 py-1.5 text-xs font-semibold text-red-100 transition hover:border-red-300/60 hover:bg-red-500/15 sm:w-auto"
+          className={
+            ep?.credentialStatus === 'missing_key'
+              ? 'mt-3 w-full rounded-md border border-amber-400/45 bg-[#0A0F1E]/80 px-3 py-1.5 text-xs font-semibold text-amber-100 transition hover:border-amber-300/55 hover:bg-amber-500/10 sm:w-auto'
+              : 'mt-3 w-full rounded-md border border-red-400/40 bg-[#0A0F1E]/80 px-3 py-1.5 text-xs font-semibold text-red-100 transition hover:border-red-300/60 hover:bg-red-500/15 sm:w-auto'
+          }
         >
-          Actualizar Key
+          {ep?.credentialStatus === 'missing_key' ? 'Completar credencial' : 'Actualizar Key'}
         </button>
       )}
     </div>

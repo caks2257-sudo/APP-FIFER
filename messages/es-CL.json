@@ -30,6 +30,13 @@
     "submitLoading": "Entrando…",
     "backHome": "Volver al sitio público"
   },
+  "iaOrchestrator": {
+    "hub": {
+      "title": "AODS — Orquestador autónomo de desarrollo",
+      "subtitle": "Plan maestro → NotebookLM → blueprint → activador Cursor. Sesión autenticada requerida.",
+      "insightInstruction": "Genera insights operativos para el módulo «AODS» (id: ia-orchestrator). Prioriza riesgos de integración de motores, deuda técnica y próximos pasos alineados con .cursorrules §25–§26."
+    }
+  },
   "finanzas": {
     "hub": {
       "title": "Hub de Finanzas - Visión General",

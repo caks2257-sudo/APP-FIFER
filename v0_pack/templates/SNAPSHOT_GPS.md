@@ -76,4 +76,4 @@ El script `scripts/sync-gps.ts` recorre `src/`, localiza carpetas de módulo con
 
 ## Lectura normativa ampliada
 
-Ver también `v0_pack/14_CURSORRULES_LIVE.md` sección **COORDENADAS LÓGICAS — GPS ACTIVO** (§10).
+Ver también `v0_pack/templates/14_CURSORRULES_LIVE.md` sección **COORDENADAS LÓGICAS — GPS ACTIVO** (§10).

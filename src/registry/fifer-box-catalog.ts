@@ -78,6 +78,16 @@ const RAW_MANIFESTS: unknown[] = [
     component: 'misbots-main',
     isResizable: true,
   },
+  {
+    boxId: 'ai-orchestrator-box',
+    module: 'system',
+    minWidth: 6,
+    minHeight: 4,
+    biome: { primary: '#0A0F1E', accent: '#EAB308' },
+    permissions: ['system:admin'],
+    component: 'ai-orchestrator-box',
+    isResizable: true,
+  },
 ];
 
 export const FIFER_BOX_CATALOG: BoxManifest[] = RAW_MANIFESTS.map((raw) =>

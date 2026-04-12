@@ -4,7 +4,7 @@
  */
 
 import type { BridgeIntegrationId } from './keys';
-import { BRIDGE_MACRO_PILLARS } from './keys';
+import { AODS_INFRA_DECLARED_ENV_KEYS, BRIDGE_MACRO_PILLARS } from './keys';
 import { isPlaceholderSecret } from './keys';
 import type { UnifiedIntegrationPublicStatus } from './integration-types';
 import type { IntegrationPublicStatus } from './integration-types';
@@ -230,7 +230,8 @@ export function describeDiscoveredKey(envKey: string): DiscoveryMeta | null {
   return null;
 }
 
-function resolveDiscoveredMode(
+/** Resolución MOCK/PROD para una clave concreta (descubrimiento + declaración §25.2.2). */
+export function resolveDiscoveredMode(
   envKey: string,
   env: Record<string, string>,
   vault: Partial<Record<string, string>>,
@@ -306,6 +307,26 @@ export function buildUnifiedIntegrationStatuses(
   const unifiedBridge = bridgeRows.map(bridgeRowToUnified);
   const discovered = discoverIntegrationsFromEnv(env, vault, bridgeKeys);
   const merged = [...unifiedBridge, ...discovered];
+  const mergedKeys = new Set(merged.map((r) => r.envKey));
+  for (const envKey of AODS_INFRA_DECLARED_ENV_KEYS) {
+    if (mergedKeys.has(envKey)) continue;
+    const meta = describeDiscoveredKey(envKey);
+    if (!meta) continue;
+    const { mode, source } = resolveDiscoveredMode(envKey, env, vault);
+    merged.push({
+      integrationId: `discovered:${envKey}`,
+      envKey,
+      label: meta.label,
+      category: meta.category,
+      mode,
+      source,
+      iconKey: meta.iconKey,
+      groupId: meta.groupId,
+      groupLabel: meta.groupLabel,
+      fromDiscovery: true,
+    });
+    mergedKeys.add(envKey);
+  }
   merged.sort((a, b) => {
     const cat =
       categoryOrder(a.category) - categoryOrder(b.category);

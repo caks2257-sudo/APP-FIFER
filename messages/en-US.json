@@ -30,6 +30,13 @@
     "submitLoading": "Signing in…",
     "backHome": "Back to public site"
   },
+  "iaOrchestrator": {
+    "hub": {
+      "title": "AODS — Autonomous development orchestrator",
+      "subtitle": "Master plan → NotebookLM → blueprint → Cursor activator. Authenticated session required.",
+      "insightInstruction": "Generate operational insights for the «AODS» module (id: ia-orchestrator). Prioritize engine integration risks, technical debt, and next steps aligned with .cursorrules §25–§26."
+    }
+  },
   "finanzas": {
     "hub": {
       "title": "Finance hub — Overview",

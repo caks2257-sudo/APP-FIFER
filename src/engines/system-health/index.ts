@@ -3,6 +3,7 @@
  * Panóptico / App Desarrollador: pulso global de proveedores AI, APIs internas y EngineRegistry.
  */
 
+import "@/engines/ai-orchestrator-engine";
 import "@/engines/bot-engine";
 import "@/engines/dom-engine";
 import "@/engines/external-bridge-engine";
@@ -12,6 +13,7 @@ import "@/engines/system-engine";
 
 import { INTERNAL_HEALTH_API_PROBES } from "@/config/internal-health-probes";
 import { EngineRegistry } from "@/registry/engine-registry";
+import { isPlaceholderSecret } from "@fifer/external-bridge-engine";
 
 import type { AiProviderPulse, GlobalHealthStatus, HealthEndpointSnapshot } from "./public-types";
 
@@ -197,6 +199,127 @@ async function probeGoogleStatus(): Promise<HealthEndpointSnapshot> {
   };
 }
 
+function hasVercelDeployCredentials(): {
+  hasHook: boolean;
+  hasToken: boolean;
+  hasOidc: boolean;
+} {
+  const hook = process.env.VERCEL_DEPLOY_HOOK?.trim() ?? "";
+  const token = process.env.VERCEL_TOKEN?.trim() ?? "";
+  const oidc = process.env.VERCEL_OIDC_TOKEN?.trim() ?? "";
+  return {
+    hasHook: Boolean(hook) && !isPlaceholderSecret(hook),
+    hasToken: Boolean(token) && !isPlaceholderSecret(token),
+    hasOidc: Boolean(oidc) && !isPlaceholderSecret(oidc),
+  };
+}
+
+/**
+ * Sonda configuración Vercel (no dispara deploy): hook, token u OIDC en entorno.
+ */
+async function probeVercelStatus(): Promise<HealthEndpointSnapshot> {
+  const { hasHook, hasToken, hasOidc } = hasVercelDeployCredentials();
+  if (!hasHook && !hasToken && !hasOidc) {
+    return {
+      pulse: "unknown",
+      latencyMs: null,
+      credentialStatus: "missing_key",
+      note:
+        "Sin credenciales Vercel efectivas (VERCEL_DEPLOY_HOOK, VERCEL_TOKEN o VERCEL_OIDC_TOKEN). Declárelas en .env o Sala de Guerra — no es modo MOCK hasta completar.",
+    };
+  }
+  const parts: string[] = [];
+  if (hasHook) parts.push("VERCEL_DEPLOY_HOOK");
+  if (hasToken) parts.push("VERCEL_TOKEN");
+  if (hasOidc) parts.push("VERCEL_OIDC_TOKEN");
+  return {
+    pulse: "up",
+    latencyMs: null,
+    credentialStatus: "ok",
+    note: `Credenciales Vercel presentes (${parts.join(", ")}).`,
+  };
+}
+
+/**
+ * Sonda proyecto Supabase vía REST (anon) + comprobación declarada de JWT server-side (AODS §25.2.2).
+ */
+async function probeSupabaseStatus(): Promise<HealthEndpointSnapshot> {
+  const baseUrl = (
+    process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ||
+    process.env.SUPABASE_URL?.trim() ||
+    ""
+  ).replace(/\/$/, "");
+  const anon =
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() ||
+    process.env.SUPABASE_ANON_KEY?.trim() ||
+    "";
+  const jwtSecret = process.env.SUPABASE_JWT_SECRET?.trim() ?? "";
+
+  const missingUrlOrAnon =
+    !baseUrl ||
+    isPlaceholderSecret(baseUrl) ||
+    !anon ||
+    isPlaceholderSecret(anon);
+
+  if (missingUrlOrAnon) {
+    return {
+      pulse: "unknown",
+      latencyMs: null,
+      credentialStatus: "missing_key",
+      note:
+        "Faltan NEXT_PUBLIC_SUPABASE_URL (o SUPABASE_URL) y/o NEXT_PUBLIC_SUPABASE_ANON_KEY con valor efectivo. Declárelos en .env o Sala de Guerra.",
+    };
+  }
+
+  const restUrl = `${baseUrl}/rest/v1/`;
+  const r = await timedFetch(restUrl, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      apikey: anon,
+      Authorization: `Bearer ${anon}`,
+    },
+  });
+
+  let pulse: AiProviderPulse = r.ok ? "up" : "degraded";
+  if (r.status === 401 || r.status === 403) {
+    pulse = "down";
+    return {
+      pulse,
+      latencyMs: r.latencyMs,
+      httpStatus: r.status || undefined,
+      invalidKey: true,
+      credentialStatus: "invalid_key",
+      note: `Clave anon rechazada por Supabase REST (HTTP ${r.status}).`,
+    };
+  }
+  if (!r.ok && r.status >= 500) {
+    pulse = "down";
+  }
+  pulse = latencyTier(pulse, r.latencyMs);
+
+  const jwtMissing = !jwtSecret || isPlaceholderSecret(jwtSecret);
+  if (r.ok && jwtMissing) {
+    return {
+      pulse: "degraded",
+      latencyMs: r.latencyMs,
+      httpStatus: r.status || undefined,
+      credentialStatus: "missing_key",
+      note: `REST Supabase accesible (${r.latencyMs} ms); falta SUPABASE_JWT_SECRET para validación server-side / AODS.`,
+    };
+  }
+
+  return {
+    pulse,
+    latencyMs: r.latencyMs,
+    httpStatus: r.status || undefined,
+    credentialStatus: "ok",
+    note: r.ok
+      ? `REST Supabase accesible (${r.latencyMs} ms); JWT server declarado.`
+      : `Supabase REST no OK (HTTP ${r.status || "—"}${r.error ? `: ${r.error}` : ""}).`,
+  };
+}
+
 async function probeInternalRoute(
   absoluteUrl: string,
   label: string
@@ -252,9 +375,11 @@ export class SystemHealthEngine {
    */
   async getGlobalStatus(options: { origin: string }): Promise<GlobalHealthStatus> {
     const origin = options.origin.replace(/\/$/, "");
-    const [openai, google, internalEntries] = await Promise.all([
+    const [openai, google, vercel, supabase, internalEntries] = await Promise.all([
       probeOpenAiStatus(),
       probeGoogleStatus(),
+      probeVercelStatus(),
+      probeSupabaseStatus(),
       Promise.all(
         INTERNAL_HEALTH_API_PROBES.map(async (probe) => {
           const snap = await probeInternalRoute(
@@ -272,9 +397,9 @@ export class SystemHealthEngine {
     const engines = buildEngineSnapshots();
 
     return {
-      schemaVersion: "1.0-system-health",
+      schemaVersion: "1.2-system-health",
       capturedAt: new Date().toISOString(),
-      external: { openai, google },
+      external: { openai, google, vercel, supabase },
       internal,
       engines,
     };

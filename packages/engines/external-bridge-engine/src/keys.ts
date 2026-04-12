@@ -27,6 +27,17 @@ export type BridgeEnvBinding = {
   category: BridgeConnectionCategory;
 };
 
+/**
+ * Declaración explícita §25.2.2 (AODS / infra): variables que el War Room debe listar
+ * aunque no aparezcan en `process.env` hasta que el admin las complete.
+ */
+export const AODS_INFRA_DECLARED_ENV_KEYS: readonly string[] = [
+  'VERCEL_OIDC_TOKEN',
+  'NEXT_PUBLIC_SUPABASE_URL',
+  'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+  'SUPABASE_JWT_SECRET',
+] as const;
+
 export const BRIDGE_ENV_BINDINGS: BridgeEnvBinding[] = [
   {
     integrationId: 'payments',

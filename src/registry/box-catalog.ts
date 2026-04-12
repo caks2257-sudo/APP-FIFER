@@ -5,7 +5,8 @@ export type BoxId =
   | 'system-health-monitor'
   | 'fifer-contratos-main'
   | 'fifer-inmobiliario-main'
-  | 'fifer-misbots-main';
+  | 'fifer-misbots-main'
+  | 'ai-orchestrator-box';
 
 export type BoxModule =
   | 'finance'
@@ -25,7 +26,8 @@ type BoxCatalogEntry = {
     | 'contratos-main'
     | 'inmobiliario-main'
     | 'misbots-main'
-    | 'liquidity-forecast-box';
+    | 'liquidity-forecast-box'
+    | 'ai-orchestrator-box';
 };
 
 /** Alias genómico — mismo objeto que `boxCatalog`. */
@@ -64,6 +66,11 @@ export const BOX_CATALOG: Record<BoxId, BoxCatalogEntry> = {
     boxId: 'fifer-misbots-main',
     module: 'bots',
     component: 'misbots-main',
+  },
+  'ai-orchestrator-box': {
+    boxId: 'ai-orchestrator-box',
+    module: 'system',
+    component: 'ai-orchestrator-box',
   },
 };
 

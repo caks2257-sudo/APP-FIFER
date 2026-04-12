@@ -35,6 +35,10 @@
     "path": "src/engines/ai-fallback-cascade",
     "type": "ENGINE"
   },
+  "FIFER://ENGINE/AI_ORCHESTRATOR": {
+    "path": "src/engines/ai-orchestrator-engine",
+    "type": "ENGINE"
+  },
   "FIFER://ENGINE/API_MANAGER": {
     "path": "src/lib",
     "type": "ENGINE"

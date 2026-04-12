@@ -16,7 +16,9 @@ export type TelemetryHealthStats = {
 };
 
 function tierEndpoint(s: HealthEndpointSnapshot): 'online' | 'degraded' | 'offline' {
-  if (s.invalidKey || s.pulse === 'down') return 'offline';
+  if (s.credentialStatus === 'missing_key') return 'degraded';
+  if (s.invalidKey || s.credentialStatus === 'invalid_key' || s.pulse === 'down')
+    return 'offline';
   if (s.pulse === 'degraded' || s.pulse === 'unknown') return 'degraded';
   if (s.latencyMs != null && s.latencyMs > 500) return 'degraded';
   return 'online';

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import AiOrchestratorBox from '@/components/boxes/ai-orchestrator/AiOrchestratorBox';
 import type { BoxId } from '@/registry/box-catalog';
 import type { V0BoxProps } from './box-types';
 import ContentIngestionForm from './boxes/ContentIngestionForm';
@@ -22,6 +23,7 @@ const renderers: Record<BoxId, BoxRenderer> = {
   'fifer-contratos-main': (props) => FiferContratosMain(props),
   'fifer-inmobiliario-main': (props) => FiferInmobiliarioMain(props),
   'fifer-misbots-main': (props) => FiferMisbotsMain(props),
+  'ai-orchestrator-box': (props) => AiOrchestratorBox(props),
 };
 
 export function renderBoxById(boxId: BoxId, props: BoxProps) {
@@ -29,6 +31,7 @@ export function renderBoxById(boxId: BoxId, props: BoxProps) {
 }
 
 export {
+  AiOrchestratorBox,
   FinanceCashflowChart,
   FinanceLiquidityForecastBox,
   ContentIngestionForm,

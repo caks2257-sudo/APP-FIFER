@@ -23,6 +23,7 @@ export const BoxManifestSchema = z.object({
     'inmobiliario-main',
     'misbots-main',
     'liquidity-forecast-box',
+    'ai-orchestrator-box',
   ]),
   isResizable: z.boolean().optional().default(true),
 });

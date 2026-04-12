@@ -97,6 +97,14 @@ export const appRegistry: FiferAppDefinition[] = [
     category: 'master',
   },
   {
+    id: 'ia-orchestrator',
+    label: 'AODS — Orquestador IA',
+    href: '/ia-orchestrator',
+    iconKey: 'Sparkles',
+    permission: 'admin',
+    category: 'master',
+  },
+  {
     id: 'finanzas',
     label: 'Finanzas',
     href: '/finanzas',
@@ -288,6 +296,13 @@ const sidebarNavigationSource = [
         href: '/desarrollador',
         iconKey: 'Code2',
         appId: 'desarrollador',
+      },
+      {
+        type: 'link',
+        label: 'AODS Orquestador',
+        href: '/ia-orchestrator',
+        iconKey: 'Sparkles',
+        appId: 'ia-orchestrator',
       },
       {
         type: 'link',

@@ -44,6 +44,92 @@ model User {
   contracts        Contract[]
   documents        Document[]
   internalApiKeys  InternalApiKey[]
+  aodsSessions     AodsSession[]
+}
+
+// --- AODS (AI Orchestrator Data System) — .cursorrules §25.4 ---
+
+enum AodsSessionStatus {
+  INIT
+  NOTEBOOK
+  GEMINI
+  LOOP
+  TEST
+  DEPLOY
+  DONE
+}
+
+enum AodsDocType {
+  NOTEBOOK_PROMPT
+  GEMINI_DOC
+  UPDATE_DOC
+}
+
+enum AodsMessageRole {
+  USER
+  SYSTEM
+  GEMINI
+  CHATGPT
+}
+
+model AodsSession {
+  id           String            @id @default(uuid())
+  ownerId      String
+  status       AodsSessionStatus @default(INIT)
+  currentPhase String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  documents AodsDocument[]
+  messages  AodsMessage[]
+  state     AodsState?
+
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+}
+
+model AodsDocument {
+  id        String      @id @default(uuid())
+  sessionId String
+  type      AodsDocType
+  /// Postgres JSONB: estructuras del Masterplan y artefactos versionados.
+  content   Json
+  version   Int         @default(1)
+  createdAt DateTime    @default(now())
+
+  session AodsSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+}
+
+model AodsMessage {
+  id        String          @id @default(uuid())
+  sessionId String
+  role      AodsMessageRole
+  content   String          @db.Text
+  /// Tokens, ids de sub-llamadas, trazas, etc.
+  metadata  Json?
+  createdAt DateTime        @default(now())
+
+  session AodsSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+}
+
+model AodsState {
+  id               String   @id @default(uuid())
+  sessionId        String   @unique
+  currentStep      String?
+  lastPrompt       String?  @db.Text
+  lastResponse     String?  @db.Text
+  /// Fase -1: historial { role, content }[] persistido al init (opcional).
+  ideationHistory  Json?
+  needsNotebook    Boolean  @default(false)
+  needsUserAction  Boolean  @default(false)
+  updatedAt        DateTime @updatedAt
+
+  session AodsSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 }
 
 /// Credenciales de integraciones externas (Bridge) — valores cifrados en reposo; clave maestra vía `FIFER_BRIDGE_MASTER_KEY`.

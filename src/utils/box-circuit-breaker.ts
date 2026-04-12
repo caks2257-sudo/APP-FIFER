@@ -67,6 +67,7 @@ registerBoxCircuit(createCountedCircuit('fifer-contratos-main'));
 registerBoxCircuit(createCountedCircuit('fifer-inmobiliario-main'));
 registerBoxCircuit(createCountedCircuit('fifer-misbots-main'));
 registerBoxCircuit(createCountedCircuit('finance-liquidity-forecast'));
+registerBoxCircuit(createCountedCircuit('fifer-aods-orchestrator'));
 
 export const boxCircuitBreaker = {
   /** Circuitos con `isOpen() === true` (IDs registrados). */

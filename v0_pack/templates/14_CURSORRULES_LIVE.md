@@ -1,6 +1,4 @@
-<!-- Espejo vivo — alineado con .cursorrules (2026-04-12) — fuente maestra: .cursorrules -->
-
-# 🏗️ FIFER ECOSYSTEM - MASTER SYSTEM INSTRUCTOR (v6.4 — Starter Kit obligatorio + Depuración estricta + Auto-Healing visual)
+# 🏗️ FIFER ECOSYSTEM - MASTER SYSTEM INSTRUCTOR (v6.5 — Starter Kit obligatorio + Depuración estricta + Auto-Healing visual + AODS + Zero Technical Debt)
 
 ## 0. CONSTITUCIÓN — LEYES FUNDAMENTALES
 1. **Zero-Trust Visual:** Toda UI debe usar estrictamente Tailwind inline. Prohibido CSS Modules o Styled Components. El ADN visual inmutable es el "Nevado Técnico" (Fondo Deep Navy `#0A0F1E` y acento Electric Yellow `#EAB308`).
@@ -193,3 +191,39 @@ En cada componente UI que se toque o refactorice, el agente debe auditar y aplic
 1. **Acoplamiento fluido:** Eliminar clases `items-stretch` no justificadas en contenedores de tarjetas/dashboards y sustituirlas por `items-start` salvo requisito de diseño explícito. La UI debe fluir con el contenido.
 2. **Graceful Degradation (telemetría y conexiones):** Los Boxes de telemetría y conexiones —especialmente en la Sala de Guerra— **no** deben romper la pantalla si la API falla o el render gráfico errordea: deben mutar a **lista simple** o **tabla** y mantener estados de error legibles.
 3. **Data-Driven obligatorio:** Utilizar siempre datos dinámicos desde backend/API; prohibido reintroducir arreglos o métricas hardcodeadas en el frontend para inventario de motores, conexiones o filas operativas.
+
+## 25. AODS (ORQUESTADOR AUTÓNOMO DE DESARROLLO CON IA)
+
+El **AODS** es el subsistema de orquestación autónoma de desarrollo asistido por IA. Las siguientes normas son **obligatorias** y se integran con **§5** (motores), **§12** / **§14** (bridge externo), **§8** (persistencia) y **§18** (UI data-driven).
+
+### 25.1 Aislamiento del motor
+
+Toda la lógica **core** del orquestador AODS **DEBE** residir en `src/engines/ai-orchestrator-engine/`. Queda **estrictamente prohibida** la lógica de orquestación (planes de iteración, encadenamiento de herramientas, decisión de flujos) en componentes de UI, páginas de dashboard o hooks de vista salvo una capa mínima de adaptación presentacional.
+
+### 25.2 Seguridad y conexión externa (sin HTTP directo a APIs de IA)
+
+El AODS tiene **estrictamente prohibido** realizar llamadas HTTP directas a APIs de proveedores de IA (OpenAI, Google Gemini, Anthropic u otros). **TODA** comunicación externa con esos proveedores **DEBE** enrutarse obligatoriamente a través del `external-bridge-engine` (p. ej. `BridgeProxy` y superficies documentadas del bridge), utilizando credenciales seguras del entorno y alineado con **§12**, **§14** y la soberanía de secretos de **§0** (sin exponer llaves en cliente ni en UI de producto).
+
+### 25.2.1 Transparencia de Capacidad (MOCK vs LIVE)
+
+25.2.1 — Transparencia de Capacidad (MOCK vs LIVE): El ai-orchestrator-engine DEBE informar explícitamente a los agentes de IA (ChatGPT/Gemini) si una integración de external-bridge-engine está operando en modo MOCK (sin llaves reales). En caso de estar en MOCK, la lógica del orquestador debe instruir a la IA para que genere "blueprints" y "prompts activadores" basados en mejores prácticas estándar y estructuras genéricas simuladas, añadiendo siempre una advertencia visible en el output para el usuario de que el código generado no utilizó datos de API en vivo.
+
+### 25.2.2 Auto-Descubrimiento de Credenciales (War Room)
+
+25.2.2 — Auto-Descubrimiento de Credenciales (War Room): Todo motor, servicio o integración externa (incluyendo aquellos que operen temporalmente en modo MOCK) DEBE declarar explícitamente sus variables de entorno requeridas en el archivo `.env` (aunque su valor esté vacío o sea un placeholder) y estar registradas en el contrato del `external-bridge-engine`. Está estrictamente prohibido ocultar requerimientos de llaves (API Keys, Tokens) dentro de la lógica del código. Esto garantiza que la "Sala de Guerra" (App Desarrollador) detecte automáticamente la dependencia y renderice la interfaz (inputs) para que el administrador pueda ingresar la llave y transicionar el servicio de MOCK a LIVE.
+
+### 25.3 Integración BFF y registro
+
+El motor `ai-orchestrator-engine` **DEBE** estar registrado en el `EngineRegistry` e implementar obligatoriamente el **contrato de salud** expuesto mediante `getHealthStatus()`, en coherencia con **§5** (observabilidad de motores) y **§6.4** (Health Status en Master Apps / Sala de Guerra).
+
+### 25.4 Estado y persistencia (esquema AODS)
+
+El estado de las iteraciones y del ciclo de trabajo de la IA **no** debe confinarse a memoria volátil del proceso. **DEBE** persistirse en base de datos (**PostgreSQL** vía **Prisma**) según el **esquema AODS**: entidades `AODS_Session`, `AODS_State`, `AODS_Document` (definición y espejo técnico en `prisma/schema.prisma` y `_xray_DATABASE.md` del motor, **§8**).
+
+### 25.5 Aislamiento frontend (ruta y Box únicos)
+
+La interfaz visual del AODS **DEBE** operar **exclusivamente** bajo la ruta canónica `src/app/[locale]/(dashboard)/ia-orchestrator/page.tsx` y **DEBE** utilizar el Box `ai-orchestrator-box` renderizado de forma dinámica (import/resolución acorde al patrón de Boxes del ecosistema), sin duplicar orquestación en la página y manteniendo **§18** (listados y telemetría data-driven, sin inventarios estáticos).
+
+## 26. PROTOCOLO MAESTRO DE LIMPIEZA — ZERO TECHNICAL DEBT (GLOBAL)
+
+**Zero Technical Debt:** cualquier actualización, refactorización o creación de código **impulsada por Cursor** —en particular al integrar el **AODS** (**§25**) con sistemas antiguos o paralelos— **DEBE** incluir de forma **proactiva** la identificación y la **eliminación** de: código muerto, importaciones huérfanas, variables sin uso, rutas o módulos redundantes y sistemas duplicados cuando el alcance del cambio los haga obsoletos. El resultado de cada iteración **DEBE** dejar el árbol afectado **limpio** y alineado con el ADN vigente. Este protocolo **complementa** y **no sustituye** **§23** (depuración estricta y código muerto) ni la Ley de Evolución Global (**§11.1**): amplía el mandato a todo trabajo asistido por agente donde el riesgo de deuda técnica sea alto.
