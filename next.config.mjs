@@ -2,12 +2,19 @@ import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
+function normalizeFiferApiBase(raw) {
+  let t = (raw ?? '').trim().replace(/\/+$/, '');
+  t = t.replace(/\/api\/v1\/core$/i, '').replace(/\/+$/, '');
+  return t;
+}
+
 /**
- * Base del core FastAPI en Cloud Run (sin barra final).
- * Ej.: https://core-service-xxxxx-uc.a.run.app/api/v1/core
- * Las peticiones del browser a /api/python/* se proxifican desde Next (mismo origen → sin CORS).
+ * Origen del core FastAPI en Cloud Run (NEXT_PUBLIC_* para build y runtime del front).
+ * Rutas del servicio: /api/v1/core/* (ver saas-fifer/ecosystem/core-service).
+ * /api/python/* → mismo destino (útil si prefieres mismo origen y evitas CORS en el navegador).
  */
-const pythonApiBase = process.env.FIFER_PYTHON_API_BASE?.replace(/\/$/, '') ?? '';
+const pythonApiBase = normalizeFiferApiBase(process.env.NEXT_PUBLIC_FIFER_API_BASE ?? '');
+const pythonCorePrefix = '/api/v1/core';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -33,7 +40,7 @@ const nextConfig = {
   },
 
   /**
-   * Proxy servidor: /api/python/health → ${FIFER_PYTHON_API_BASE}/health
+   * Proxy: /api/python/<ruta> → ${NEXT_PUBLIC_FIFER_API_BASE}/api/v1/core/<ruta>
    * Sin variable, no se registra rewrite (desarrollo local sin backend).
    */
   async rewrites() {
@@ -43,7 +50,7 @@ const nextConfig = {
     return [
       {
         source: '/api/python/:path*',
-        destination: `${pythonApiBase}/:path*`,
+        destination: `${pythonApiBase}${pythonCorePrefix}/:path*`,
       },
     ];
   },

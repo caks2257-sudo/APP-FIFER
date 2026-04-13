@@ -1,4 +1,4 @@
-<!-- Espejo vivo — generado automáticamente (2026-04-13T03:14:06.129Z) — fuente: .cursorrules — no editar a mano -->
+<!-- Espejo vivo — generado automáticamente (2026-04-13T02:47:58.623Z) — fuente: .cursorrules — no editar a mano -->
 
 # 🏗️ FIFER ECOSYSTEM - MASTER SYSTEM INSTRUCTOR (v6.5 — Starter Kit obligatorio + Depuración estricta + Auto-Healing visual + AODS + Zero Technical Debt)
 

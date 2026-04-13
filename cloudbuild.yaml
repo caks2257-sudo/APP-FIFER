@@ -74,8 +74,8 @@ steps:
         docker push ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/fifer-core-service:latest
 
   # ---------------------------------------------------------------------------
-  # 3) Cloud Run — tráfico sin autenticación IAM (Next.js llama vía URL pública
-  #    o vía rewrite /api/python). Secretos montados como variables de entorno.
+  # 3) Cloud Run — tráfico sin autenticación IAM (Next con NEXT_PUBLIC_FIFER_API_BASE
+  #    o proxy /api/python → …/api/v1/core). CORS: FIFER_CORS_ORIGINS en consola o --set-env-vars.
   # ---------------------------------------------------------------------------
   - id: deploy-cloud-run
     name: gcr.io/google.com/cloudsdktool/cloud-sdk
