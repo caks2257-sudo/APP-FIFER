@@ -11,7 +11,7 @@ import { handleLanggraphCallback } from '@/lib/integrations/langgraph';
 export const dynamic = 'force-dynamic';
 
 const PROVIDERS = ['tasklet', 'fintoc', 'make', 'langgraph'] as const;
-export type IntegrationCallbackProvider = (typeof PROVIDERS)[number];
+type IntegrationCallbackProvider = (typeof PROVIDERS)[number];
 
 const MAX_BODY_BYTES = 512 * 1024;
 const MAX_BODY_TEXT_STORE = 65_000;
@@ -36,7 +36,7 @@ function isProvider(value: string | undefined): value is IntegrationCallbackProv
 /**
  * Resolución del origen: prioridad explícita (query / cabecera FIFER) y heurísticas por proveedor.
  */
-export function resolveIntegrationProvider(request: NextRequest): IntegrationCallbackProvider | null {
+function resolveIntegrationProvider(request: NextRequest): IntegrationCallbackProvider | null {
   const url = request.nextUrl;
   const q = url.searchParams.get('provider')?.trim().toLowerCase();
   if (isProvider(q)) return q;
