@@ -1,4 +1,4 @@
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { Link } from '@/i18n/navigation';
 
@@ -11,7 +11,12 @@ import Hero from '@/components/Hero';
 import Stats from '@/components/Stats';
 import Testimonials from '@/components/Testimonials';
 
-export default async function LandingPage() {
+type LandingProps = {
+  params: { locale: string };
+};
+
+export default async function LandingPage({ params }: LandingProps) {
+  setRequestLocale(params.locale);
   const t = await getTranslations('landing');
 
   return (
