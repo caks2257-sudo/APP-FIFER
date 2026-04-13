@@ -1,9 +1,13 @@
-import { defineRouting } from 'next-intl/routing';
-
+import {defineRouting} from 'next-intl/routing';
+import {createNavigation} from 'next-intl/navigation';
+ 
 export const routing = defineRouting({
-  locales: ['es-CL', 'en-US'],
-  defaultLocale: 'es-CL',
-  localePrefix: 'as-needed',
+  // Lista de idiomas soportados
+  locales: ['en-US', 'es-CL'],
+ 
+  // El idioma por defecto si el usuario entra a la raíz "/"
+  defaultLocale: 'es-CL'
 });
-
-export type AppLocale = (typeof routing.locales)[number];
+ 
+export const {Link, redirect, usePathname, useRouter} =
+  createNavigation(routing);
