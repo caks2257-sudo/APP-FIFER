@@ -1,11 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Check, Loader2, RefreshCw, Send } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Check, Loader2, RefreshCw } from 'lucide-react';
 
 import BoxErrorBoundary from '@/components/core/BoxErrorBoundary';
 import type { V0BoxProps } from '@/components/v0-ingestion/box-types';
 import type { HealthEndpointSnapshot } from '@/types/system-health-ui';
+import { useOrchestratorIdeationStore } from '@/store/useOrchestratorIdeationStore';
 import { boxCircuitBreaker } from '@/utils/box-circuit-breaker';
 
 import { AodsTelemetryLog, type AodsLogEvent } from './AodsTelemetryLog';
@@ -15,11 +16,13 @@ import { ManualHandoffModal, type ManualHandoffKind } from './ManualHandoffModal
 const BOX_CIRCUIT_ID = 'fifer-aods-orchestrator' as const;
 
 const INIT_PATH = '/api/v1/ai-orchestrator/init';
-const IDEATE_PATH = '/api/v1/ai-orchestrator/ideate';
 const ANALYZE_PATH = '/api/v1/ai-orchestrator/analyze';
 const ACTIVATE_PATH = '/api/v1/ai-orchestrator/activate';
 const UPDATE_PATH = '/api/v1/ai-orchestrator/update';
 const DEPLOY_PATH = '/api/v1/ai-orchestrator/deploy';
+
+const handoffUrl = (sessionId: string) =>
+  `/api/v1/ai-orchestrator/session/${sessionId}/handoff`;
 
 const HEALTH_EXTERNAL_URL = '/api/v1/system-health?scope=external';
 const HEALTH_ENGINES_URL = '/api/v1/system-health?scope=engines';
@@ -94,11 +97,61 @@ function nowTime(): string {
   });
 }
 
+function resolveCursorMotorFallback(telemetry: AodsApiTelemetry | null): string {
+  if (!telemetry) return 'resolviendo motor…';
+  if (telemetry.openai.tier === 'LIVE') {
+    return 'OpenAI (prioridad · telemetría War Room)';
+  }
+  if (telemetry.anthropic.tier === 'LIVE') {
+    return 'Anthropic (fallback · telemetría War Room)';
+  }
+  return 'MOCK / sin clave LIVE';
+}
+
 function buildConsolidatedPlanMaestro(history: IdeationChatMessage[]): string {
   const parts = history.map(
     (m) => `[${m.role.toUpperCase()}]: ${m.content.trim()}`,
   );
   return `Plan Maestro consolidado (ideación Fase -1 → protocolo Fase 0):\n\n${parts.join('\n\n')}`;
+}
+
+type ActivePipelineKind =
+  | 'idle'
+  | 'ideate'
+  | 'init'
+  | 'analyze'
+  | 'activate'
+  | 'update';
+
+type ActiveAgentVariant = 'processing' | 'user' | 'manual' | 'deploy';
+
+function ActiveAgentBadge({
+  label,
+  variant,
+}: {
+  label: string;
+  variant: ActiveAgentVariant;
+}) {
+  const base =
+    'inline-flex max-w-full items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-semibold leading-snug tracking-wide transition';
+  const styles: Record<ActiveAgentVariant, string> = {
+    processing:
+      'border-amber-400/45 bg-amber-500/[0.12] text-amber-100 shadow-[0_0_14px_rgba(251,191,36,0.12)] animate-pulse',
+    user: 'border-sky-500/35 bg-sky-950/45 text-sky-100/95',
+    manual:
+      'border-[#EAB308]/50 bg-[#EAB308]/[0.14] text-[#fde68a] shadow-[0_0_0_1px_rgba(234,179,8,0.12)]',
+    deploy:
+      'border-emerald-400/40 bg-emerald-950/40 text-emerald-100 shadow-[0_0_14px_rgba(52,211,153,0.12)] animate-pulse',
+  };
+  return (
+    <div
+      className={`${base} ${styles[variant]}`}
+      role="status"
+      aria-live="polite"
+    >
+      <span className="break-words">{label}</span>
+    </div>
+  );
 }
 
 function StatusBadge({ tier }: { tier: 'LIVE' | 'MOCK' | 'NEEDS_KEY' }) {
@@ -239,7 +292,7 @@ function ApiStatusGrid({
 
   return (
     <section
-      className="w-full rounded-lg border border-white/[0.06] bg-[#070b14]/80 p-4 ring-1 ring-slate-800/30"
+      className="w-full rounded-lg border border-white/[0.06] bg-[#070b14]/55 p-4 ring-1 ring-slate-800/30"
       aria-label="Telemetría de APIs AODS"
     >
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -400,9 +453,11 @@ function AiOrchestratorBoxInner() {
 
   const [sessionId, setSessionId] = useState<string | null>(null);
 
-  const [chatHistory, setChatHistory] = useState<IdeationChatMessage[]>([]);
-  const [ideationInput, setIdeationInput] = useState('');
+  const chatHistory = useOrchestratorIdeationStore((s) => s.messages);
+  const copilotIdeating = useOrchestratorIdeationStore((s) => s.copilotLoading);
+  const clearIdeation = useOrchestratorIdeationStore((s) => s.clearIdeation);
   const ideationChatEndRef = useRef<HTMLDivElement>(null);
+  const prevIdeationLenRef = useRef(0);
 
   const [planMaestro, setPlanMaestro] = useState('');
   const [notebookContext, setNotebookContext] = useState('');
@@ -414,6 +469,8 @@ function AiOrchestratorBoxInner() {
   const [deploySuccess, setDeploySuccess] = useState<string | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
+  /** Desambigua ideación vs init (ambos usan `isLoading`). */
+  const [activePipeline, setActivePipeline] = useState<ActivePipelineKind>('idle');
   const [error, setError] = useState<string | null>(null);
 
   const [telemetry, setTelemetry] = useState<AodsApiTelemetry | null>(null);
@@ -434,11 +491,129 @@ function AiOrchestratorBoxInner() {
   const [manualModalOpen, setManualModalOpen] = useState(false);
   const [manualKind, setManualKind] = useState<ManualHandoffKind>('notebook');
 
+  const [handoffMeta, setHandoffMeta] = useState<{
+    phase1MotorLabel: string;
+    phase7MergeMotorLabel: string;
+  } | null>(null);
+  const [notebookPromptForModal, setNotebookPromptForModal] = useState<string | null>(null);
+  const [notebookPromptUnavailable, setNotebookPromptUnavailable] = useState(false);
+  const notebookPromptLoggedRef = useRef(false);
+
+  const fetchHandoff = useCallback(async (sid: string) => {
+    try {
+      const res = await fetch(handoffUrl(sid), {
+        credentials: 'same-origin',
+        cache: 'no-store',
+      });
+      if (!res.ok) return null;
+      return (await res.json()) as {
+        notebookPrompt: string | null;
+        phase1MotorLabel: string;
+        phase7MergeMotorLabel: string;
+      };
+    } catch {
+      return null;
+    }
+  }, []);
+
+  useEffect(() => {
+    setHandoffMeta(null);
+    setNotebookPromptForModal(null);
+    setNotebookPromptUnavailable(false);
+    notebookPromptLoggedRef.current = false;
+  }, [sessionId]);
+
+  useEffect(() => {
+    if (sessionId === null) setActivePipeline('idle');
+  }, [sessionId]);
+
+  useEffect(() => {
+    if (phase !== 'PHASE_1_WAITING_NOTEBOOK' || !sessionId) return;
+
+    let cancelled = false;
+    let attempts = 0;
+    const maxAttempts = 45;
+    let intervalId: ReturnType<typeof setInterval> | undefined;
+
+    const run = async () => {
+      if (cancelled) return;
+      const data = await fetchHandoff(sessionId);
+      if (cancelled || !data) return;
+      setHandoffMeta({
+        phase1MotorLabel: data.phase1MotorLabel,
+        phase7MergeMotorLabel: data.phase7MergeMotorLabel,
+      });
+      if (data.notebookPrompt) {
+        setNotebookPromptForModal(data.notebookPrompt);
+        if (intervalId) clearInterval(intervalId);
+        return;
+      }
+      attempts += 1;
+      if (attempts >= maxAttempts) {
+        setNotebookPromptUnavailable(true);
+        if (intervalId) clearInterval(intervalId);
+      }
+    };
+
+    void run();
+    intervalId = setInterval(() => void run(), 1800);
+    return () => {
+      cancelled = true;
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [phase, sessionId, fetchHandoff]);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    if (phase !== 'PHASE_4_LOOP_READY' && phase !== 'PHASE_9_READY_TO_DEPLOY') return;
+    let cancelled = false;
+    void fetchHandoff(sessionId).then((data) => {
+      if (cancelled || !data) return;
+      setHandoffMeta({
+        phase1MotorLabel: data.phase1MotorLabel,
+        phase7MergeMotorLabel: data.phase7MergeMotorLabel,
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [phase, sessionId, fetchHandoff]);
+
+  useEffect(() => {
+    if (
+      !notebookPromptForModal ||
+      phase !== 'PHASE_1_WAITING_NOTEBOOK' ||
+      notebookPromptLoggedRef.current
+    ) {
+      return;
+    }
+    notebookPromptLoggedRef.current = true;
+    appendLog(
+      '[OpenAI] Prompt maestro Fase 1 listo en el puente NotebookLM (bloque superior · copiar).',
+    );
+  }, [notebookPromptForModal, phase, appendLog]);
+
   useEffect(() => {
     appendLog(
-      'Fase -1 · Ideación: conversa con el arquitecto; al aprobar, se activa el protocolo (Fase 0).',
+      '[AODS] Fase -1 · Ideación: usa el copiloto global (barra superior); al aprobar, se activa el protocolo (Fase 0).',
     );
   }, [appendLog]);
+
+  useEffect(() => {
+    if (phase !== 'PHASE_MINUS_1_IDEATION') {
+      prevIdeationLenRef.current = 0;
+      return;
+    }
+    const n = chatHistory.length;
+    if (n < 2 || n <= prevIdeationLenRef.current) {
+      prevIdeationLenRef.current = n;
+      return;
+    }
+    if (n % 2 === 0) {
+      appendLog(`[Ideación] hilo ${n} mensajes (copiloto global).`);
+    }
+    prevIdeationLenRef.current = n;
+  }, [chatHistory.length, phase, appendLog]);
 
   useEffect(() => {
     ideationChatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -452,14 +627,16 @@ function AiOrchestratorBoxInner() {
     if (phase === 'PHASE_1_WAITING_NOTEBOOK') {
       setManualKind('notebook');
       setManualModalOpen(true);
-      appendLog('Fase 1: se abre puente manual NotebookLM — pega el análisis y confirma «Entregado».');
+      appendLog(
+        '[BFF] Fase 1: puente NotebookLM — usa el prompt maestro arriba; pega la respuesta y confirma «Entregado».',
+      );
     } else if (phase === 'PHASE_4_LOOP_READY' || phase === 'PHASE_9_READY_TO_DEPLOY') {
       setManualKind('cursor');
       setManualModalOpen(true);
       appendLog(
         phase === 'PHASE_9_READY_TO_DEPLOY'
-          ? 'Fase 7/9: puente Cursor — pega el informe de progreso y confirma «Entregado».'
-          : 'Fase 4: puente Cursor — copia el activador, trabaja en el IDE y entrega el informe.',
+          ? '[BFF] Fase 7/9: puente Cursor — pega el informe de progreso y confirma «Entregado».'
+          : '[BFF] Fase 4: puente Cursor — copia el activador, trabaja en el IDE y entrega el informe.',
       );
     }
   }, [phase, appendLog]);
@@ -487,46 +664,6 @@ function AiOrchestratorBoxInner() {
     void loadTelemetry(false);
   }, [loadTelemetry]);
 
-  const handleSendIdeation = useCallback(async () => {
-    const text = ideationInput.trim();
-    if (!text || phase !== 'PHASE_MINUS_1_IDEATION') return;
-
-    setIsLoading(true);
-    setError(null);
-    const userMsg: IdeationChatMessage = { role: 'user', content: text };
-    const messagesForApi = [...chatHistory, userMsg];
-
-    try {
-      const res = await fetch(IDEATE_PATH, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: messagesForApi.map((m) => ({ role: m.role, content: m.content })),
-        }),
-        credentials: 'same-origin',
-      });
-
-      if (!res.ok) {
-        boxCircuitBreaker.recordFailure(BOX_CIRCUIT_ID);
-        throw new Error(await readApiError(res));
-      }
-      boxCircuitBreaker.reset(BOX_CIRCUIT_ID);
-
-      const data = (await res.json()) as { reply?: string; mock?: boolean };
-      const reply = data.reply?.trim() ?? '';
-      setChatHistory((prev) => [...prev, userMsg, { role: 'assistant', content: reply }]);
-      setIdeationInput('');
-      appendLog(
-        `[Ideación] ${data.mock ? 'MOCK' : 'LIVE'} · hilo ${messagesForApi.length + 1} mensajes.`,
-      );
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error en ideación';
-      setError(msg);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [ideationInput, chatHistory, phase, appendLog]);
-
   const handleApproveIdeaAndInit = useCallback(async () => {
     if (chatHistory.length < 2) return;
 
@@ -537,6 +674,7 @@ function AiOrchestratorBoxInner() {
     }
 
     setPlanMaestro(consolidated);
+    setActivePipeline('init');
     setIsLoading(true);
     setError(null);
     appendLog('[AODS] «Aprobar Idea y Activar Protocolo» — POST /init (Fase 0 estricta).');
@@ -564,15 +702,17 @@ function AiOrchestratorBoxInner() {
       }
       setSessionId(data.sessionId);
       setPhase('PHASE_1_WAITING_NOTEBOOK');
+      clearIdeation();
       appendLog(`[Fase 0] Sesión ${data.sessionId.slice(0, 8)}… persistida · motor en Fase 1 (NotebookLM).`);
-      appendLog('[Protocolo] Plan Maestro consolidado inmutable en columna izquierda; telemetría War Room activa.');
+      appendLog('[Protocolo] Plan Maestro consolidado en franja superior; telemetría War Room activa.');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al inicializar la sesión';
       setError(msg);
     } finally {
       setIsLoading(false);
+      setActivePipeline('idle');
     }
-  }, [chatHistory, appendLog]);
+  }, [chatHistory, appendLog, clearIdeation]);
 
   const handleAnalyzeNotebook = useCallback(async () => {
     if (!sessionId) {
@@ -584,6 +724,7 @@ function AiOrchestratorBoxInner() {
       return;
     }
 
+    setActivePipeline('analyze');
     setIsLoading(true);
     setError(null);
     try {
@@ -612,6 +753,7 @@ function AiOrchestratorBoxInner() {
       setError(msg);
     } finally {
       setIsLoading(false);
+      setActivePipeline('idle');
     }
   }, [sessionId, notebookContext, appendLog]);
 
@@ -621,6 +763,7 @@ function AiOrchestratorBoxInner() {
       return;
     }
 
+    setActivePipeline('activate');
     setIsLoading(true);
     setError(null);
     try {
@@ -653,6 +796,7 @@ function AiOrchestratorBoxInner() {
       setError(msg);
     } finally {
       setIsLoading(false);
+      setActivePipeline('idle');
     }
   }, [sessionId, appendLog]);
 
@@ -666,6 +810,7 @@ function AiOrchestratorBoxInner() {
       return;
     }
 
+    setActivePipeline('update');
     setIsLoading(true);
     setError(null);
     setUpdateSuccess(null);
@@ -702,6 +847,7 @@ function AiOrchestratorBoxInner() {
       setError(msg);
     } finally {
       setIsLoading(false);
+      setActivePipeline('idle');
     }
   }, [sessionId, progressReport, appendLog]);
 
@@ -756,15 +902,88 @@ function AiOrchestratorBoxInner() {
     phase === 'PHASE_4_LOOP_READY' ||
     phase === 'PHASE_9_READY_TO_DEPLOY';
 
+  const activeAgent = useMemo(() => {
+    if (deployLoading) {
+      return {
+        label: '⚙️ Motor Activo: Vercel (despliegue)',
+        variant: 'deploy' as const,
+      };
+    }
+    if (copilotIdeating && phase === 'PHASE_MINUS_1_IDEATION') {
+      return {
+        label: '🤖 Motor Activo: ChatGPT (Ideación · copiloto)',
+        variant: 'processing' as const,
+      };
+    }
+    if (activePipeline === 'init') {
+      return {
+        label: '⚙️ Motor Activo: Orquestador Core (BFF)',
+        variant: 'processing' as const,
+      };
+    }
+    if (activePipeline === 'analyze') {
+      return {
+        label: '🧠 Motor Activo: ChatGPT (analizando contexto NotebookLM)',
+        variant: 'processing' as const,
+      };
+    }
+    if (activePipeline === 'activate') {
+      return {
+        label: '💎 Motor Activo: Gemini (activador Cursor)',
+        variant: 'processing' as const,
+      };
+    }
+    if (activePipeline === 'update') {
+      const sub = handoffMeta?.phase7MergeMotorLabel ?? 'motor blueprint';
+      return {
+        label: `🧩 Motor Activo: ${sub} (merge GEMINI_DOC)`,
+        variant: 'processing' as const,
+      };
+    }
+    if (phase === 'PHASE_MINUS_1_IDEATION' && !copilotIdeating) {
+      return { label: '👤 Turno del Usuario · escribe en el copiloto superior', variant: 'user' as const };
+    }
+    if (phase === 'PHASE_1_WAITING_NOTEBOOK') {
+      return {
+        label: '🛑 Esperando Acción Humana (NotebookLM)',
+        variant: 'manual' as const,
+      };
+    }
+    if (phase === 'PHASE_3_READY_FOR_ACTIVATOR') {
+      return {
+        label: '👤 Turno del Usuario · genera activador Cursor',
+        variant: 'user' as const,
+      };
+    }
+    if (phase === 'PHASE_4_LOOP_READY' || phase === 'PHASE_9_READY_TO_DEPLOY') {
+      return {
+        label: '🛑 Esperando Acción Humana (Cursor · informe)',
+        variant: 'manual' as const,
+      };
+    }
+    return { label: '—', variant: 'user' as const };
+  }, [deployLoading, activePipeline, phase, handoffMeta, copilotIdeating]);
+
   return (
-    <div className="flex w-full max-w-6xl flex-col gap-4 rounded-[0.75rem] border border-[#EAB308]/25 bg-[#0A0F1E] p-5 shadow-lg shadow-black/20 lg:p-6">
+    <div className="flex w-full max-w-6xl flex-col gap-5 rounded-[0.75rem] border border-[#EAB308]/20 bg-[#0A0F1E]/50 p-5 shadow-lg shadow-black/20 backdrop-blur-sm lg:gap-6 lg:p-6">
       <header className="w-full border-b border-[#EAB308]/20 pb-3">
-        <h2 className="font-title text-lg font-bold tracking-tight text-[#EAB308]">
-          AODS · Orquestador de desarrollo
-        </h2>
-        <p className="mt-1 text-xs text-slate-400">
-          Fase -1 (ideación) → Fase 0 (protocolo) → NotebookLM → Cursor. Puentes manuales en el modal.
-        </p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+          <div className="min-w-0 flex-1">
+            <h2 className="font-title text-lg font-bold tracking-tight text-[#EAB308]">
+              AODS · Orquestador de desarrollo
+            </h2>
+            <p className="mt-1 text-xs text-slate-400">
+              Fase -1 (ideación) → Fase 0 (protocolo) → NotebookLM → Cursor. Puentes manuales en el
+              modal.
+            </p>
+          </div>
+          <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:max-w-[min(100%,26rem)] sm:items-end">
+            <p className="font-mono text-[10px] uppercase tracking-wide text-slate-500 sm:text-right">
+              {phase.replace(/_/g, ' ')}
+            </p>
+            <ActiveAgentBadge label={activeAgent.label} variant={activeAgent.variant} />
+          </div>
+        </div>
       </header>
 
       {error && !manualModalOpen ? (
@@ -776,27 +995,26 @@ function AiOrchestratorBoxInner() {
         </div>
       ) : null}
 
-      <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-3 lg:gap-6">
-        <div className="flex min-w-0 flex-col gap-4 lg:col-span-2">
-          {phase === 'PHASE_MINUS_1_IDEATION' ? (
+      <div className="flex min-h-0 flex-col gap-5 lg:gap-6">
+        {phase === 'PHASE_MINUS_1_IDEATION' ? (
             <section
-              className="flex flex-col gap-3 rounded-lg border border-[#EAB308]/20 bg-[#070b14]/60 p-4 ring-1 ring-slate-800/25"
-              aria-label="Chat de ideación Fase -1"
+              className="flex w-full flex-col gap-4 rounded-lg border border-[#EAB308]/20 bg-[#070b14]/45 p-4 ring-1 ring-slate-800/25"
+              aria-label="Visor de propuesta viva Fase -1"
             >
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-[#EAB308]/90">
-                  Fase -1 · Ideación
+                  Fase -1 · Visor de Propuesta Viva
                 </p>
                 <p className="mt-1 text-[11px] text-slate-500">
-                  Refina la idea con el arquitecto; al aprobar, el chat se cierra y el Plan Maestro queda
-                  fijado como consola inmutable.
+                  La ideación ocurre en el copiloto global (barra superior). Este panel refleja el hilo en
+                  tiempo real; al aprobar, el Plan Maestro pasa a la franja compacta.
                 </p>
               </div>
 
-              <div className="max-h-[min(360px,50vh)] min-h-[200px] overflow-y-auto rounded-md border border-white/[0.06] bg-[#050810] p-3">
+              <div className="min-h-[min(280px,45vh)] max-h-[min(520px,60vh)] overflow-y-auto rounded-md border border-white/[0.06] bg-[#050810]/60 p-3">
                 {chatHistory.length === 0 ? (
                   <p className="text-center text-[12px] text-slate-600">
-                    Escribe el primer mensaje para comenzar…
+                    Aún no hay mensajes. Abre el copiloto superior y envía el primer turno.
                   </p>
                 ) : (
                   <ul className="flex flex-col gap-3">
@@ -805,8 +1023,8 @@ function AiOrchestratorBoxInner() {
                         key={`${i}-${m.role}-${m.content.slice(0, 24)}`}
                         className={`rounded-md px-3 py-2 text-sm leading-relaxed ${
                           m.role === 'user'
-                            ? 'ml-4 border border-[#EAB308]/20 bg-[#0A0F1E]/90 text-slate-100'
-                            : 'mr-4 border border-slate-700/40 bg-slate-900/50 text-slate-300'
+                            ? 'ml-4 border border-[#EAB308]/20 bg-[#0A0F1E]/80 text-slate-100'
+                            : 'mr-4 border border-slate-700/40 bg-slate-900/45 text-slate-300'
                         }`}
                       >
                         <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">
@@ -820,76 +1038,38 @@ function AiOrchestratorBoxInner() {
                 <div ref={ideationChatEndRef} aria-hidden />
               </div>
 
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-                <textarea
-                  className="min-h-[80px] flex-1 resize-y rounded-md border border-[#EAB308]/20 bg-[#050810] px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600 focus:border-[#EAB308]/50 focus:outline-none focus:ring-1 focus:ring-[#EAB308]/30"
-                  placeholder="Describe tu módulo, restricciones y dudas…"
-                  value={ideationInput}
-                  onChange={(e) => setIdeationInput(e.target.value)}
-                  disabled={isLoading}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      void handleSendIdeation();
-                    }
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => void handleSendIdeation()}
-                  disabled={isLoading || !ideationInput.trim()}
-                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-md border border-[#EAB308]/35 bg-[#0A0F1E] px-4 py-2.5 text-sm font-semibold text-[#EAB308] transition hover:bg-[#EAB308]/10 disabled:opacity-50"
-                >
-                  {isLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                  ) : (
-                    <Send className="h-4 w-4" aria-hidden />
-                  )}
-                  Enviar
-                </button>
-              </div>
-
               {chatHistory.length >= 2 ? (
                 <button
                   type="button"
                   onClick={() => void handleApproveIdeaAndInit()}
-                  disabled={isLoading}
+                  disabled={isLoading || copilotIdeating}
                   className="w-full rounded-lg bg-[#EAB308] py-3 text-sm font-bold tracking-wide text-[#0A0F1E] shadow-md shadow-black/30 transition hover:bg-[#f5d04a] disabled:opacity-50"
                 >
                   Aprobar Idea y Activar Protocolo
                 </button>
               ) : (
                 <p className="text-center text-[11px] text-slate-600">
-                  Necesitas al menos 2 mensajes en el hilo para aprobar e iniciar el protocolo.
+                  Necesitas al menos 2 mensajes en el hilo (copiloto superior) para aprobar e iniciar el
+                  protocolo.
                 </p>
               )}
             </section>
-          ) : (
-            <section className="flex flex-col gap-3 rounded-lg border border-white/[0.06] bg-[#050810]/90 p-4 ring-1 ring-slate-800/30">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                Plan Maestro Consolidado
+        ) : (
+          <>
+            <section className="flex flex-col gap-2 rounded-lg border border-white/[0.06] bg-[#050810]/55 px-3 py-2 ring-1 ring-slate-800/30">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                  Plan Maestro Consolidado
+                </p>
+                <span className="font-mono text-[9px] text-[#EAB308]">{phase.replace(/_/g, ' ')}</span>
+              </div>
+              <p className="text-[10px] text-slate-600">
+                Solo lectura · Fase -1 persistida en Fase 0.
               </p>
-              <p className="text-[11px] text-slate-600">
-                Solo lectura · definido en Fase -1 y persistido al activar el protocolo (Fase 0).
-              </p>
-              <div className="max-h-[min(280px,40vh)] overflow-y-auto rounded-md border border-white/[0.05] bg-[#070b14] px-3 py-3 font-mono text-[12px] leading-relaxed text-slate-300">
+              <div className="max-h-28 overflow-y-auto rounded-md border border-white/[0.05] bg-[#070b14]/70 px-2 py-1.5 font-mono text-[11px] leading-snug text-slate-300">
                 <pre className="whitespace-pre-wrap break-words">{planMaestro}</pre>
               </div>
-              <p className="text-[11px] text-slate-500">
-                Fase actual: <span className="font-mono text-[#EAB308]">{phase}</span>
-              </p>
             </section>
-          )}
-
-          {phase !== 'PHASE_MINUS_1_IDEATION' ? (
-            <ApiStatusGrid
-              telemetry={telemetry}
-              loading={telemetryLoading}
-              error={telemetryError}
-              refreshing={telemetryRefreshing}
-              onRefresh={() => void loadTelemetry(true)}
-            />
-          ) : null}
 
           {phase === 'PHASE_3_READY_FOR_ACTIVATOR' ? (
             <div className="flex flex-col items-center gap-3 rounded-lg border border-emerald-500/25 bg-emerald-950/15 px-4 py-6">
@@ -980,10 +1160,13 @@ function AiOrchestratorBoxInner() {
               </div>
             </div>
           ) : null}
-        </div>
+          </>
+        )}
 
-        <div className="min-h-0 lg:col-span-1">
-          <AodsTelemetryLog events={logEvents} />
+        <div className="flex min-h-0 flex-col gap-3 sm:gap-4">
+          <div className="min-h-0 w-full">
+            <AodsTelemetryLog events={logEvents} />
+          </div>
           {needsManualPanel && !manualModalOpen ? (
             <button
               type="button"
@@ -991,10 +1174,19 @@ function AiOrchestratorBoxInner() {
                 setManualKind(phase === 'PHASE_1_WAITING_NOTEBOOK' ? 'notebook' : 'cursor');
                 setManualModalOpen(true);
               }}
-              className="mt-3 w-full rounded-md border border-[#EAB308]/35 bg-[#EAB308]/10 py-2 text-xs font-semibold text-[#EAB308] transition hover:bg-[#EAB308]/20"
+              className="w-full rounded-md border border-[#EAB308]/35 bg-[#EAB308]/10 py-2 text-xs font-semibold text-[#EAB308] transition hover:bg-[#EAB308]/20"
             >
               Abrir puente manual
             </button>
+          ) : null}
+          {phase !== 'PHASE_MINUS_1_IDEATION' ? (
+            <ApiStatusGrid
+              telemetry={telemetry}
+              loading={telemetryLoading}
+              error={telemetryError}
+              refreshing={telemetryRefreshing}
+              onRefresh={() => void loadTelemetry(true)}
+            />
           ) : null}
         </div>
       </div>
@@ -1010,6 +1202,20 @@ function AiOrchestratorBoxInner() {
           setNotebookContext(v);
           setError(null);
         }}
+        notebookPromptToCopy={notebookPromptForModal ?? ''}
+        notebookPromptLoading={
+          phase === 'PHASE_1_WAITING_NOTEBOOK' &&
+          !notebookPromptForModal &&
+          !notebookPromptUnavailable
+        }
+        notebookPromptUnavailable={notebookPromptUnavailable}
+        motorSubtitle={
+          manualKind === 'notebook'
+            ? `Prompt generado por: ${handoffMeta?.phase1MotorLabel ?? 'resolviendo…'}`
+            : `Blueprint gestionado por: ${
+                handoffMeta?.phase7MergeMotorLabel ?? resolveCursorMotorFallback(telemetry)
+              }`
+        }
         copyPrompt={activatorPrompt}
         progressDraft={progressReport}
         onProgressDraftChange={(v) => {

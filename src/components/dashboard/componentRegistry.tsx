@@ -2,17 +2,6 @@ import type { DashboardWidget } from './mockDashboardConfig';
 import BoxLoader from '@/components/core/BoxLoader';
 import { renderBoxById } from '@/components/v0-ingestion/registry';
 
-export function getWidgetColSpanClass(colSpan: DashboardWidget['colSpan']) {
-  const colSpanMap: Record<DashboardWidget['colSpan'], string> = {
-    4: 'col-span-12 xl:col-span-4',
-    6: 'col-span-12 xl:col-span-6',
-    8: 'col-span-12 xl:col-span-8',
-    12: 'col-span-12 xl:col-span-12',
-  };
-
-  return colSpanMap[colSpan];
-}
-
 export function renderDashboardWidget(
   widget: DashboardWidget,
   isRefining = false,

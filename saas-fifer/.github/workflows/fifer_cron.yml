@@ -15,8 +15,6 @@ jobs:
       - run: npm install
       - name: Ejecutar Generador
         env:
-          # Aquí debes mapear tus variables del .env
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: node scripts/fiferGenerador.js

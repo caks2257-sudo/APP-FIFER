@@ -14,7 +14,7 @@ type AodsTelemetryLogProps = {
 };
 
 /**
- * Feed tipo consola — columna derecha AODS (Nevado Técnico).
+ * Feed tipo consola — stack vertical integrado AODS (Nevado Técnico).
  */
 export function AodsTelemetryLog({
   events,
@@ -28,7 +28,7 @@ export function AodsTelemetryLog({
 
   return (
     <aside
-      className="flex h-full min-h-[280px] flex-col rounded-lg border border-white/[0.06] bg-[#04060d] ring-1 ring-slate-800/40"
+      className="flex w-full min-h-[280px] flex-col rounded-lg border border-white/[0.06] bg-[#04060d]/85 ring-1 ring-slate-800/40"
       aria-label={title}
     >
       <div className="shrink-0 border-b border-white/[0.06] px-3 py-2">
@@ -37,7 +37,7 @@ export function AodsTelemetryLog({
         </h3>
         <p className="text-[10px] text-slate-600">Eventos de sesión (consola)</p>
       </div>
-      <div className="max-h-[min(520px,calc(100vh-220px))] min-h-[200px] flex-1 overflow-y-auto overflow-x-hidden px-2 py-2 font-mono text-[11px] leading-relaxed">
+      <div className="max-h-[min(440px,55vh)] min-h-[200px] flex-1 overflow-y-auto overflow-x-hidden px-2 py-2 font-mono text-[11px] leading-relaxed">
         {events.length === 0 ? (
           <p className="px-1 text-slate-600">Esperando eventos…</p>
         ) : (

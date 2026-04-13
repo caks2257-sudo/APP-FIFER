@@ -36,11 +36,11 @@ export default function DashboardLayout({
       <Sidebar />
       <main className="ml-64 min-h-screen bg-[#0A0F1E]">
         <Topbar />
-        <section className="px-8 pb-8 pt-28">
+        <section className="pb-8 pt-28">
           {children != null ? (
             <div className="flex min-h-[calc(100dvh-7rem)] flex-col">{children}</div>
           ) : (
-            <>
+            <div className="px-8">
               <header className="mb-8">
                 <h1 className="text-3xl font-semibold tracking-tight text-[#F9FAFB]">Dashboard</h1>
                 <p className="mt-2 text-sm text-[#9CA3AF]">
@@ -54,7 +54,7 @@ export default function DashboardLayout({
                 isLoading={isLoading}
                 hasError={hasError}
               />
-            </>
+            </div>
           )}
         </section>
       </main>

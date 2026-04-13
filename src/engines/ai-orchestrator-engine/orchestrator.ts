@@ -5,12 +5,11 @@ import {
   Prisma,
 } from '@prisma/client';
 
-import type { ExternalBridgeEngineApi } from '@/engines/external-bridge-engine';
 import { loadDecryptedVault } from '@/lib/bridge-vault';
 import { prisma } from '@/lib/prisma';
-import { EngineRegistry } from '@/registry/engine-registry';
 
 import { getAiOrchestratorHealth } from './health';
+import { completeLlmWithFallback } from './llm/gateway';
 import { loadMasterProtocolText } from './master-protocol';
 import {
   AI_ORCHESTRATOR_ENGINE_ID,
@@ -26,12 +25,9 @@ import {
   type UpdateGeminiDocResult,
 } from './types';
 
-const OPENAI_CHAT_URL = 'https://api.openai.com/v1/chat/completions';
-const ANTHROPIC_MESSAGES_URL = 'https://api.anthropic.com/v1/messages';
-
 /** §25.2.1 — advertencia obligatoria en MOCK (fase NotebookLM prompt). */
 const MOCK_NOTEBOOK_PROMPT_NOTICE =
-  '⚠️ [MODO SIMULADO]: API de OpenAI no conectada. Prompt generado mediante heurística local.';
+  '⚠️ [MODO SIMULADO]: ningún proveedor LLM disponible (Vertex / OpenAI / Anthropic). Prompt generado mediante heurística local.';
 
 /** §25.2.1 — advertencia visible cuando GEMINI_DOC no usa API en vivo. */
 const MOCK_GEMINI_DOC_NOTICE =
@@ -52,26 +48,12 @@ Fusiona el blueprint con el progreso: marca o reordena execution_steps si el inf
 Responde ÚNICAMENTE con un objeto JSON válido (sin markdown). Incluye siempre la clave opcional "aods_update_summary" (string breve, una frase) describiendo el cambio para el usuario.
 Preserva el resto de claves útiles del blueprint anterior y añade "source_phase": "phase_7_update".`;
 
-function resolveOpenAiChatModel(): string {
-  return (
-    process.env.FIFER_OPENAI_MODEL?.trim() ||
-    process.env.FIFER_AODS_OPENAI_MODEL?.trim() ||
-    'gpt-4o-mini'
-  );
-}
-
-function resolveAnthropicModel(): string {
-  return (
-    process.env.FIFER_ANTHROPIC_MODEL?.trim() || 'claude-3-5-haiku-20241022'
-  );
-}
-
 function buildNotebookInstructionsDraft(planMaestro: string): string {
   return `Analiza este Plan Maestro para FIFER y genera un resumen técnico estructurado para NotebookLM, enfocándote en dependencias de motores y esquema de base de datos:\n\n${planMaestro}`;
 }
 
-function buildPhase1SystemPrompt(): string {
-  const master = loadMasterProtocolText().trim();
+async function buildPhase1SystemPrompt(): Promise<string> {
+  const master = (await loadMasterProtocolText()).trim();
   if (!master) return NOTEBOOK_PHASE_1_SYSTEM_LIVE;
   return `${master}\n\n---\n\n${NOTEBOOK_PHASE_1_SYSTEM_LIVE}`;
 }
@@ -198,21 +180,8 @@ export class AiOrchestratorEngine {
     return getAiOrchestratorHealth();
   }
 
-  private getBridge(): ExternalBridgeEngineApi {
-    return EngineRegistry.use<ExternalBridgeEngineApi>('external-bridge-engine');
-  }
-
   /**
-   * Claves vía BridgeProxy + vault (§12 / §25.2). Sin exponer secretos.
-   */
-  private async buildBridgeProxy() {
-    const vault = await loadDecryptedVault();
-    return this.getBridge().buildProxy(vault);
-  }
-
-  /**
-   * Fase 1: OpenAI (clave vía bridge). LIVE vs MOCK según resolveKey.
-   * Inyecta documento maestro + ideación opcional en el system/user.
+   * Fase 1: cadena Vertex → OpenAI → Anthropic (`loadDecryptedVault` única fuente de credenciales LLM).
    */
   private async generateNotebookPromptViaBridge(
     planMaestro: string,
@@ -221,161 +190,53 @@ export class AiOrchestratorEngine {
     text: string;
     mock: boolean;
   }> {
-    const proxy = await this.buildBridgeProxy();
-    const resolved = proxy.resolveKey('OPENAI_API_KEY');
+    const vault = await loadDecryptedVault();
     const userMessage = buildPhase1UserContent(planMaestro, ideationBlock ?? '');
-    const systemContent = buildPhase1SystemPrompt();
+    const systemContent = await buildPhase1SystemPrompt();
 
-    if (resolved.mode === 'MOCK' || !resolved.secret) {
+    const result = await completeLlmWithFallback(
+      {
+        systemInstruction: systemContent,
+        turns: [{ role: 'user', content: userMessage }],
+        temperature: 0.35,
+      },
+      vault,
+    );
+
+    if (!result) {
       const heuristic = `${userMessage}\n\n${MOCK_NOTEBOOK_PROMPT_NOTICE}`;
       return { text: heuristic, mock: true };
     }
 
-    const model = resolveOpenAiChatModel();
-    const res = await fetch(OPENAI_CHAT_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${resolved.secret}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: 'system', content: systemContent },
-          { role: 'user', content: userMessage },
-        ],
-        temperature: 0.35,
-      }),
-    });
-
-    if (!res.ok) {
-      const raw = await res.text().catch(() => '');
-      throw new Error(
-        `OpenAI chat falló (${res.status}): ${raw.slice(0, 500)}`,
-      );
-    }
-
-    const data = (await res.json()) as {
-      choices?: Array<{ message?: { content?: string | null } }>;
-    };
-    const text = data.choices?.[0]?.message?.content?.trim();
-    if (!text) {
-      throw new Error('Respuesta vacía del modelo OpenAI.');
-    }
-    return { text, mock: false };
-  }
-
-  private async callOpenAiGeminiDocJson(
-    notebookContext: string,
-    apiKey: string,
-  ): Promise<string> {
-    const model = resolveOpenAiChatModel();
-    const res = await fetch(OPENAI_CHAT_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: 'system', content: PHASE_3_GEMINI_DOC_SYSTEM },
-          { role: 'user', content: notebookContext },
-        ],
-        temperature: 0.25,
-        response_format: { type: 'json_object' },
-      }),
-    });
-
-    if (!res.ok) {
-      const raw = await res.text().catch(() => '');
-      throw new Error(
-        `OpenAI GEMINI_DOC falló (${res.status}): ${raw.slice(0, 500)}`,
-      );
-    }
-
-    const data = (await res.json()) as {
-      choices?: Array<{ message?: { content?: string | null } }>;
-    };
-    const text = data.choices?.[0]?.message?.content?.trim();
-    if (!text) {
-      throw new Error('Respuesta vacía del modelo OpenAI (GEMINI_DOC).');
-    }
-    return text;
-  }
-
-  private async callAnthropicGeminiDocJson(
-    notebookContext: string,
-    apiKey: string,
-  ): Promise<string> {
-    const model = resolveAnthropicModel();
-    const res = await fetch(ANTHROPIC_MESSAGES_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model,
-        max_tokens: 4096,
-        system: PHASE_3_GEMINI_DOC_SYSTEM,
-        messages: [{ role: 'user', content: notebookContext }],
-      }),
-    });
-
-    if (!res.ok) {
-      const raw = await res.text().catch(() => '');
-      throw new Error(
-        `Anthropic GEMINI_DOC falló (${res.status}): ${raw.slice(0, 500)}`,
-      );
-    }
-
-    const data = (await res.json()) as {
-      content?: Array<{ type?: string; text?: string }>;
-    };
-    const text =
-      data.content?.map((b) => (b.type === 'text' ? b.text : '')).join('') ??
-      '';
-    const trimmed = text.trim();
-    if (!trimmed) {
-      throw new Error('Respuesta vacía del modelo Anthropic (GEMINI_DOC).');
-    }
-    return trimmed;
+    return { text: result.text, mock: false };
   }
 
   /**
-   * Fase 3: estructura volcado NotebookLM → JSON GEMINI_DOC (OpenAI preferido, Anthropic si OpenAI en MOCK).
+   * Fase 3: volcado NotebookLM → JSON GEMINI_DOC (Vertex → OpenAI → Anthropic).
    */
   private async structurizeNotebookToGeminiDoc(
     notebookContext: string,
   ): Promise<{ blueprint: Record<string, unknown>; mock: boolean }> {
-    const proxy = await this.buildBridgeProxy();
-    const openai = proxy.resolveKey('OPENAI_API_KEY');
-    const anthropic = proxy.resolveKey('ANTHROPIC_API_KEY');
+    const vault = await loadDecryptedVault();
+    const result = await completeLlmWithFallback(
+      {
+        systemInstruction: PHASE_3_GEMINI_DOC_SYSTEM,
+        turns: [{ role: 'user', content: notebookContext }],
+        temperature: 0.25,
+        jsonMode: true,
+      },
+      vault,
+    );
 
-    if (openai.mode === 'PROD' && openai.secret) {
-      const raw = await this.callOpenAiGeminiDocJson(
-        notebookContext,
-        openai.secret,
-      );
-      const blueprint = parseJsonObjectFromAiText(raw);
-      return { blueprint, mock: false };
+    if (!result) {
+      return {
+        blueprint: buildMockGeminiDocBlueprint(notebookContext),
+        mock: true,
+      };
     }
 
-    if (anthropic.mode === 'PROD' && anthropic.secret) {
-      const raw = await this.callAnthropicGeminiDocJson(
-        notebookContext,
-        anthropic.secret,
-      );
-      const blueprint = parseJsonObjectFromAiText(raw);
-      return { blueprint, mock: false };
-    }
-
-    return {
-      blueprint: buildMockGeminiDocBlueprint(notebookContext),
-      mock: true,
-    };
+    const blueprint = parseJsonObjectFromAiText(result.text);
+    return { blueprint, mock: false };
   }
 
   private mergeBlueprintMockLocal(
@@ -396,93 +257,10 @@ export class AiOrchestratorEngine {
     };
   }
 
-  private async callOpenAiPhase7Json(
-    userContent: string,
-    apiKey: string,
-  ): Promise<string> {
-    const model = resolveOpenAiChatModel();
-    const res = await fetch(OPENAI_CHAT_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: 'system', content: PHASE_7_UPDATE_BLUEPRINT_SYSTEM },
-          { role: 'user', content: userContent },
-        ],
-        temperature: 0.2,
-        response_format: { type: 'json_object' },
-      }),
-    });
-
-    if (!res.ok) {
-      const raw = await res.text().catch(() => '');
-      throw new Error(
-        `OpenAI actualización blueprint falló (${res.status}): ${raw.slice(0, 500)}`,
-      );
-    }
-
-    const data = (await res.json()) as {
-      choices?: Array<{ message?: { content?: string | null } }>;
-    };
-    const text = data.choices?.[0]?.message?.content?.trim();
-    if (!text) {
-      throw new Error('Respuesta vacía del modelo OpenAI (fase 7).');
-    }
-    return text;
-  }
-
-  private async callAnthropicPhase7Json(
-    userContent: string,
-    apiKey: string,
-  ): Promise<string> {
-    const model = resolveAnthropicModel();
-    const res = await fetch(ANTHROPIC_MESSAGES_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model,
-        max_tokens: 4096,
-        system: PHASE_7_UPDATE_BLUEPRINT_SYSTEM,
-        messages: [{ role: 'user', content: userContent }],
-      }),
-    });
-
-    if (!res.ok) {
-      const raw = await res.text().catch(() => '');
-      throw new Error(
-        `Anthropic actualización blueprint falló (${res.status}): ${raw.slice(0, 500)}`,
-      );
-    }
-
-    const data = (await res.json()) as {
-      content?: Array<{ type?: string; text?: string }>;
-    };
-    const text =
-      data.content?.map((b) => (b.type === 'text' ? b.text : '')).join('') ??
-      '';
-    const trimmed = text.trim();
-    if (!trimmed) {
-      throw new Error('Respuesta vacía del modelo Anthropic (fase 7).');
-    }
-    return trimmed;
-  }
-
   private async mergeBlueprintWithProgressReport(
     previous: Record<string, unknown>,
     progressReport: string,
   ): Promise<{ merged: Record<string, unknown>; mock: boolean }> {
-    const proxy = await this.buildBridgeProxy();
-    const openai = proxy.resolveKey('OPENAI_API_KEY');
-    const anthropic = proxy.resolveKey('ANTHROPIC_API_KEY');
-
     const userContent = [
       '## Blueprint JSON actual',
       JSON.stringify(previous, null, 2),
@@ -491,46 +269,48 @@ export class AiOrchestratorEngine {
       progressReport,
     ].join('\n');
 
-    if (openai.mode === 'PROD' && openai.secret) {
-      const raw = await this.callOpenAiPhase7Json(userContent, openai.secret);
-      const merged = parseJsonObjectFromAiText(raw);
-      return { merged, mock: false };
+    const vault = await loadDecryptedVault();
+    const result = await completeLlmWithFallback(
+      {
+        systemInstruction: PHASE_7_UPDATE_BLUEPRINT_SYSTEM,
+        turns: [{ role: 'user', content: userContent }],
+        temperature: 0.2,
+        jsonMode: true,
+      },
+      vault,
+    );
+
+    if (!result) {
+      return {
+        merged: this.mergeBlueprintMockLocal(previous, progressReport),
+        mock: true,
+      };
     }
 
-    if (anthropic.mode === 'PROD' && anthropic.secret) {
-      const raw = await this.callAnthropicPhase7Json(
-        userContent,
-        anthropic.secret,
-      );
-      const merged = parseJsonObjectFromAiText(raw);
-      return { merged, mock: false };
-    }
-
-    return {
-      merged: this.mergeBlueprintMockLocal(previous, progressReport),
-      mock: true,
-    };
+    const merged = parseJsonObjectFromAiText(result.text);
+    return { merged, mock: false };
   }
 
   /**
-   * Fase -1: chat libre vía Bridge (OpenAI preferido, Anthropic fallback). Sin Prisma.
+   * Fase -1: chat libre (Vertex → OpenAI → Anthropic vía `loadDecryptedVault`). Sin Prisma.
    */
   async ideate(messages: AodsIdeationMessage[]): Promise<IdeateResult> {
     if (!messages.length) {
       throw new Error('Se requiere al menos un mensaje.');
     }
     const normalized = normalizeIdeationForOpenAi(messages);
-    const proxy = await this.buildBridgeProxy();
-    const openai = proxy.resolveKey('OPENAI_API_KEY');
-    const anthropic = proxy.resolveKey('ANTHROPIC_API_KEY');
+    const vault = await loadDecryptedVault();
+    const result = await completeLlmWithFallback(
+      {
+        systemInstruction: IDEATION_SYSTEM_PROMPT,
+        turns: normalized,
+        temperature: 0.55,
+      },
+      vault,
+    );
 
-    if (openai.mode === 'PROD' && openai.secret) {
-      const reply = await this.callOpenAiIdeation(normalized, openai.secret);
-      return { success: true, reply, mock: false };
-    }
-    if (anthropic.mode === 'PROD' && anthropic.secret) {
-      const reply = await this.callAnthropicIdeation(normalized, anthropic.secret);
-      return { success: true, reply, mock: false };
+    if (result) {
+      return { success: true, reply: result.text, mock: false };
     }
 
     const last = messages[messages.length - 1]?.content?.slice(0, 200) ?? '';
@@ -539,82 +319,6 @@ export class AiOrchestratorEngine {
       mock: true,
       reply: `⚠️ [MODO SIMULADO]: sin API de IA en vivo. Refina tu idea: ${last}\n\n¿Qué motores FIFER (engines) y tablas Prisma necesitas?`,
     };
-  }
-
-  private async callOpenAiIdeation(
-    messages: Array<{ role: 'user' | 'assistant'; content: string }>,
-    apiKey: string,
-  ): Promise<string> {
-    const model = resolveOpenAiChatModel();
-    const res = await fetch(OPENAI_CHAT_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: 'system', content: IDEATION_SYSTEM_PROMPT },
-          ...messages,
-        ],
-        temperature: 0.55,
-      }),
-    });
-
-    if (!res.ok) {
-      const raw = await res.text().catch(() => '');
-      throw new Error(`OpenAI ideación falló (${res.status}): ${raw.slice(0, 500)}`);
-    }
-
-    const data = (await res.json()) as {
-      choices?: Array<{ message?: { content?: string | null } }>;
-    };
-    const text = data.choices?.[0]?.message?.content?.trim();
-    if (!text) {
-      throw new Error('Respuesta vacía del modelo OpenAI (ideación).');
-    }
-    return text;
-  }
-
-  private async callAnthropicIdeation(
-    messages: Array<{ role: 'user' | 'assistant'; content: string }>,
-    apiKey: string,
-  ): Promise<string> {
-    const model = resolveAnthropicModel();
-    const res = await fetch(ANTHROPIC_MESSAGES_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model,
-        max_tokens: 4096,
-        system: IDEATION_SYSTEM_PROMPT,
-        messages,
-      }),
-    });
-
-    if (!res.ok) {
-      const raw = await res.text().catch(() => '');
-      throw new Error(
-        `Anthropic ideación falló (${res.status}): ${raw.slice(0, 500)}`,
-      );
-    }
-
-    const data = (await res.json()) as {
-      content?: Array<{ type?: string; text?: string }>;
-    };
-    const text =
-      data.content?.map((b) => (b.type === 'text' ? b.text : '')).join('') ??
-      '';
-    const trimmed = text.trim();
-    if (!trimmed) {
-      throw new Error('Respuesta vacía del modelo Anthropic (ideación).');
-    }
-    return trimmed;
   }
 
   /**
@@ -1058,19 +762,9 @@ Ejecuta.
       throw new Error('Estado AODS no encontrado para la sesión.');
     }
 
-    const proxy = await this.buildBridgeProxy();
-    const resolved = proxy.resolveKey('VERCEL_DEPLOY_HOOK');
-    const hookFromBridge =
-      resolved.mode === 'PROD' && resolved.secret?.trim()
-        ? resolved.secret.trim()
-        : '';
-    const hookFromEnv = process.env.VERCEL_DEPLOY_HOOK?.trim() ?? '';
-    const hookUrl =
-      hookFromBridge && hookFromBridge.startsWith('http')
-        ? hookFromBridge
-        : hookFromEnv.startsWith('http')
-          ? hookFromEnv
-          : '';
+    const vault = await loadDecryptedVault();
+    const rawHook = vault.VERCEL_DEPLOY_HOOK?.trim() ?? '';
+    const hookUrl = rawHook.startsWith('http') ? rawHook : '';
 
     let deployHookAttempted = false;
     let deployHookSucceeded = false;

@@ -34,6 +34,8 @@ model User {
   name      String
   role      String   @default("user")
   tier      String   @default("free")
+  /// Layout del dashboard (grilla): celdas por widgetId { x, y, w, h }, slotOrder y widgets líquidos opcionales.
+  dashboardLayout Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -130,18 +132,6 @@ model AodsState {
   updatedAt        DateTime @updatedAt
 
   session AodsSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-}
-
-/// Credenciales de integraciones externas (Bridge) — valores cifrados en reposo; clave maestra vía `FIFER_BRIDGE_MASTER_KEY`.
-model ExternalBridgeCredential {
-  id            String   @id @default(cuid())
-  /// Nombre de variable de entorno lógica (ej. FLOW_API_KEY)
-  envKey        String   @unique
-  ciphertextB64 String
-  ivB64         String
-  authTagB64    String
-  updatedAt     DateTime @updatedAt
-  updatedBy     String?
 }
 
 /// Borradores de expediente DOM (formularios municipales generados vía `dom-engine:form-generator`).

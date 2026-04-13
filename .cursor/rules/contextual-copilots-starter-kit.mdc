@@ -1,0 +1,15 @@
+---
+description: Enforce the inclusion of MinimalistContextChat in all new FIFER modules
+alwaysApply: true
+---
+### §27 Contextual Copilots / Starter Kit Protocol
+* **Mandatory AI Chat:** Every new App, Sub-App, or dashboard view created within the `src/app/[locale]/(dashboard)/` directory MUST include the Global Contextual Copilot by default.
+* **Component Usage:** You must import and mount `<MinimalistContextChat appContext="nombre-del-modulo" />` at the root layout or main page of the new module.
+* **Path:** Import it from `@/components/core/MinimalistContextChat`.
+* **Zero Persistence:** Do not attempt to wire this specific component to `prisma` or `DomExpediente`. It relies strictly on the ephemeral `/api/v1/shared-chat` BFF endpoint.
+* **Trigger Action:** If the user asks to "Create a new app for X" or "Scaffold a new module", automatically append the `<MinimalistContextChat>` to the output code and explain that it was included per the §27 rule.
+
+### §27.2 Liquid Workspace Protocol
+* **Fluid grid:** New dashboard boxes must participate in the liquid 12-column workspace (`PageOrchestrator` + `useLayoutStore`). Do not rely on fixed pixel widths or Tailwind fixed widths such as `w-96` for box shells; layout spans come from manifest `defaultDimensions` and store overrides.
+* **Container queries:** Each new Box component must use CSS `@container` (e.g. `@container` on the box root and `@[breakpoint]:` variants for internals) so content adapts to the grid cell, not to a hard-coded width.
+* **Manifest:** Register `defaultDimensions` (`w`, `h`), `isResizable`, and `isDraggable` in `FIFER_BOX_CATALOG` / `BoxManifestSchema` when adding a box to the genome.

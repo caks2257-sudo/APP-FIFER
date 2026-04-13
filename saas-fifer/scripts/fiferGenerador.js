@@ -1,8 +1,16 @@
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 puppeteer.use(StealthPlugin());
-const { preguntarAFifer } = require('../services/aiService');
 const supabase = require('../services/dbService');
+
+/**
+ * Copy de ventas sin llamada directa a Gemini (pipeline centralizado FIFER).
+ * Sustituir por HTTP al orquestador cuando el job SaaS tenga endpoint estable.
+ */
+async function generarCopyVentasHeuristico(prod) {
+  const base = (prod.description || '').replace(/\s+/g, ' ').trim().slice(0, 140);
+  return `${prod.title}: ${base || 'Solución enfocada en resultados medibles.'} Oferta con respaldo en el nicho.`;
+}
 
 const esperar = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -84,28 +92,17 @@ async function solucionDefinitiva() {
 
             console.log(`🧠 FIFER IA trabajando en: ${prod.title}...`);
             
-            // PROMPT ACTUALIZADO: ENFOQUE EN MECANISMO ÚNICO
-            const prompt = `
-            Eres un copywriter A-List experto en marketing de respuesta directa. 
-            Producto: ${prod.title}.
-            Descripción base: ${prod.description}.
-            
-            Escribe un copy de ventas de 3 líneas en español. 
-            REGLA DE ORO: Vende el "Mecanismo Único" (el proceso científico o lógico que hace que funcione). 
-            No uses saludos, ve directo al grano. Solo entrega el texto.
-            `;
-
             let copyIA;
             try {
-                copyIA = await preguntarAFifer(prompt);
-                await esperar(5500); // Evitamos el error 429 de cuota excedida
+                copyIA = await generarCopyVentasHeuristico(prod);
+                await esperar(800);
             } catch (e) {
-                console.log("⏳ Límite de IA alcanzado. Esperando pausa de seguridad...");
-                await esperar(15000);
+                console.log("⏳ Error generando copy. Reintentando siguiente producto...");
+                await esperar(2000);
                 continue;
             }
 
-            if (!copyIA || copyIA.includes("RECHAZADO")) continue;
+            if (!copyIA) continue;
 
             const { error } = await supabase.from('productos_fifer').insert([{
                 nombre: prod.title,

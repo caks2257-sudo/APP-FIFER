@@ -1,3 +1,4 @@
+import DashboardCopilot from '@/components/core/DashboardCopilot';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 
 /**
@@ -10,7 +11,10 @@ export default function DashboardGroupLayout({
 }) {
   return (
     <DashboardLayout>
-      <div className="mx-auto w-full max-w-7xl">{children}</div>
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-8">
+        <DashboardCopilot />
+        <div className="min-w-0 flex-1">{children}</div>
+      </div>
     </DashboardLayout>
   );
 }

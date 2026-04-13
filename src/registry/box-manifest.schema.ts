@@ -25,7 +25,13 @@ export const BoxManifestSchema = z.object({
     'liquidity-forecast-box',
     'ai-orchestrator-box',
   ]),
+  /** Dimensiones por defecto en la grilla 12×N (columnas × filas lógicas). */
+  defaultDimensions: z.object({
+    w: z.number().int().min(1).max(12),
+    h: z.number().int().min(1).max(24),
+  }),
   isResizable: z.boolean().optional().default(true),
+  isDraggable: z.boolean().optional().default(true),
 });
 
 export type BoxManifest = z.infer<typeof BoxManifestSchema>;

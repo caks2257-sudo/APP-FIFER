@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
+
+import { prisma } from '@/lib/prisma';
+import { createServerSupabaseClient } from '@/lib/supabase-ssr/server';
 import type { RawDashboardPayload } from '@/utils/adapters/dashboardAdapter';
 import { STRESS_CONTRATOS_API_SABOTAGE } from '@/utils/fifer-box-data-bridge';
+
+export const dynamic = 'force-dynamic';
 
 const XRAY_SOURCES = ['FIFER_CORE/xray_engines/xray_admitad.js', 'FIFER_CORE/xray_engines/xray_products.js'] as const;
 
@@ -75,7 +80,21 @@ async function buildDashboardPayload(): Promise<RawDashboardPayload> {
 export async function GET() {
   try {
     const payload = await buildDashboardPayload();
-    return NextResponse.json(payload, { status: 200 });
+
+    const supabase = createServerSupabaseClient();
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
+
+    let dashboardLayout: unknown = null;
+    if (authUser?.email) {
+      const rows = await prisma.$queryRaw<Array<{ dashboardLayout: unknown | null }>>`
+        SELECT "dashboardLayout" FROM "User" WHERE "email" = ${authUser.email} LIMIT 1
+      `;
+      dashboardLayout = rows[0]?.dashboardLayout ?? null;
+    }
+
+    return NextResponse.json({ ...payload, dashboardLayout }, { status: 200 });
   } catch (error) {
     return NextResponse.json(
       {

@@ -32,10 +32,8 @@ const supabaseStorage = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 // --- SISTEMA DE RESPALDO DE MODELOS IA ---
 const MODELOS_RESPALDO = [
-    "gemini-2.5-flash",
     "gemini-2.0-flash",
     "gemini-2.0-flash-lite-001",
-    "gemini-2.5-flash-lite"
 ];
 
 async function generarContenidoConRespaldo(promptTexto, genAILocal) {

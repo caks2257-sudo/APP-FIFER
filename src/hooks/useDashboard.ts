@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { toFiferBoxData, type RawDashboardPayload } from '@/utils/adapters/dashboardAdapter';
-import type { FiferDashboardState } from '@/utils/adapters/dashboardAdapter';
 import { DASHBOARD_REFERENCE_WIDGETS } from '@/config/dashboardReferenceWidgets';
 import { useLayoutStore } from '@/store/useLayoutStore';
+import { dashboardLayoutPersistedSchema } from '@/types/dashboard-layout-persisted';
+import { toFiferBoxData, type RawDashboardPayload } from '@/utils/adapters/dashboardAdapter';
+import type { FiferDashboardState } from '@/utils/adapters/dashboardAdapter';
 
 const baseWidgets = DASHBOARD_REFERENCE_WIDGETS;
 
@@ -22,6 +23,7 @@ export function useDashboard() {
   const lockedByBoxId = useLayoutStore((state) => state.lockedByBoxId);
   const heroByBoxId = useLayoutStore((state) => state.heroByBoxId);
   const isRefineAllActive = useLayoutStore((state) => state.isRefineAllActive);
+  const liquidAddonWidgets = useLayoutStore((state) => state.liquidAddonWidgets);
 
   const [dashboardState, setDashboardState] = useState<FiferDashboardState>(emptyState);
   const [isLoading, setIsLoading] = useState(true);
@@ -39,12 +41,31 @@ export function useDashboard() {
           const errorPayload = (await response.json().catch(() => null)) as { error?: string } | null;
           throw new Error(errorPayload?.error ?? `Dashboard API failed (${response.status})`);
         }
-        const rawPayload = (await response.json()) as RawDashboardPayload;
+        const rawPayload = (await response.json()) as RawDashboardPayload & {
+          dashboardLayout?: unknown;
+        };
         if (!isMounted) return;
-        setDashboardState(toFiferBoxData(rawPayload));
+
+        const { dashboardLayout, ...rest } = rawPayload;
+        const merged = toFiferBoxData(rest as RawDashboardPayload);
+        const apiIds = merged.config.widgets.map((w) => w.id);
+
+        if (dashboardLayout !== undefined && dashboardLayout !== null) {
+          const parsedLayout = dashboardLayoutPersistedSchema.safeParse(dashboardLayout);
+          if (parsedLayout.success) {
+            useLayoutStore.getState().hydrateDashboardLayoutFromServer(parsedLayout.data, apiIds);
+          } else {
+            useLayoutStore.getState().markLayoutHydrated();
+          }
+        } else {
+          useLayoutStore.getState().markLayoutHydrated();
+        }
+
+        setDashboardState(merged);
       } catch (err) {
         if (!isMounted) return;
         setError(err instanceof Error ? err : new Error('Dashboard fetch failed'));
+        useLayoutStore.getState().markLayoutHydrated();
       } finally {
         if (isMounted) setIsLoading(false);
       }
@@ -57,7 +78,11 @@ export function useDashboard() {
   }, []);
 
   return useMemo(() => {
-    const widgetsWithTransportState = dashboardState.config.widgets.map((widget) => ({
+    const base = dashboardState.config.widgets;
+    const liquid = liquidAddonWidgets.filter((w) => !base.some((b) => b.id === w.id));
+    const merged = [...base, ...liquid];
+
+    const widgetsWithTransportState = merged.map((widget) => ({
       ...widget,
       colSpan:
         widget.boxId === 'content-ingestion-form' && heroByBoxId['content-ingestion-form']
@@ -78,5 +103,13 @@ export function useDashboard() {
       isLoading,
       error,
     };
-  }, [dashboardState, isLoading, error, lockedByBoxId, heroByBoxId, isRefineAllActive]);
+  }, [
+    dashboardState,
+    isLoading,
+    error,
+    lockedByBoxId,
+    heroByBoxId,
+    isRefineAllActive,
+    liquidAddonWidgets,
+  ]);
 }

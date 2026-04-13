@@ -1,6 +1,7 @@
 'use client';
 
 import PageOrchestrator from '@/components/core/PageOrchestrator';
+import DashboardLayoutSync from '@/components/dashboard/DashboardLayoutSync';
 import { useApplyCommanderLayoutSanity } from '@/hooks/useApplyCommanderLayoutSanity';
 import { useDashboard } from '@/hooks/useDashboard';
 
@@ -13,6 +14,7 @@ export default function DashboardPage() {
 
   return (
     <>
+      <DashboardLayoutSync />
       {/* Const. v6.0 — inmunidad: el circuito registra fallos con boxCircuitBreaker.recordFailure (p. ej. useBoxData / shells de box). */}
       <header className="mb-8">
         <h1 className="text-3xl font-semibold tracking-tight text-[#F9FAFB]">Dashboard</h1>

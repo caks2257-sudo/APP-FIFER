@@ -1,0 +1,93 @@
+# =============================================================================
+# Google Cloud Build — despliegue de fifer-core-service (FastAPI) a Cloud Run
+# =============================================================================
+#
+# Disparo sugerido: conexión a GitHub/GitLab en Cloud Build Triggers, para que
+# exista la sustitución $COMMIT_SHA. En ejecución manual:
+#   gcloud builds submit --config=cloudbuild.yaml --substitutions=COMMIT_SHA=manual .
+#
+# Prerrequisitos en GCP:
+#   - Repositorio Docker en Artifact Registry: ${_REGION} / ${_AR_REPO}
+#   - Secretos en Secret Manager (IDs alineados con _RUN_SET_SECRETS)
+#   - APIs: Cloud Build, Artifact Registry, Cloud Run, Secret Manager
+#
+# Ejemplo crear repo AR:
+#   gcloud artifacts repositories create ${_AR_REPO} \
+#     --repository-format=docker --location=${_REGION} --description="FIFER"
+#
+# -----------------------------------------------------------------------------
+# IAM — cuenta de servicio de Cloud Build
+#     (por defecto: PROJECT_NUMBER@cloudbuild.gserviceaccount.com)
+# -----------------------------------------------------------------------------
+#   roles/artifactregistry.writer     → subir imágenes
+#   roles/run.admin                   → desplegar Cloud Run
+#   roles/iam.serviceAccountUser      → usar la SA de ejecución de Cloud Run
+#
+# La cuenta con la que **ejecuta** el contenedor en Cloud Run (p. ej.
+# PROJECT_NUMBER-compute@developer.gserviceaccount.com) necesita:
+#
+#   roles/secretmanager.secretAccessor
+#     → sobre cada secreto referenciado en --set-secrets
+#
+# =============================================================================
+
+substitutions:
+  _REGION: us-central1
+  _AR_REPO: fifer-containers
+  # gcloud --set-secrets: ENV=secret_id:version separados por coma (sin espacios).
+  # Crea en Secret Manager los secretos fifer-* o cambia los nombres aquí.
+  _RUN_SET_SECRETS: 'FIFER_AODS_OPENAI_MODEL=fifer-aods-openai-model:latest,DATABASE_URL=fifer-core-database-url:latest,SUPABASE_URL=fifer-core-supabase-url:latest,SUPABASE_SERVICE_ROLE_KEY=fifer-core-supabase-service-role:latest,SUPABASE_JWT_SECRET=fifer-core-supabase-jwt-secret:latest,REDIS_URL=fifer-core-redis-url:latest,ELEVENLABS_API_KEY=fifer-core-elevenlabs-key:latest'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+timeout: 1200s
+
+steps:
+  # ---------------------------------------------------------------------------
+  # 1) Construir imagen (contexto = raíz del repo; incluye shared-libs/)
+  # ---------------------------------------------------------------------------
+  - id: docker-build
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -f
+      - saas-fifer/ecosystem/core-service/Dockerfile
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/fifer-core-service:$COMMIT_SHA
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/fifer-core-service:latest
+      - .
+
+  # ---------------------------------------------------------------------------
+  # 2) Push a Artifact Registry (antes de deploy: la clave `images:` empuja al
+  #    final del build y dejaría el deploy sin imagen en el registro)
+  # ---------------------------------------------------------------------------
+  - id: docker-push
+    name: gcr.io/cloud-builders/docker
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -euo pipefail
+        docker push ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/fifer-core-service:$COMMIT_SHA
+        docker push ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/fifer-core-service:latest
+
+  # ---------------------------------------------------------------------------
+  # 3) Cloud Run — tráfico sin autenticación IAM (Next.js llama vía URL pública
+  #    o vía rewrite /api/python). Secretos montados como variables de entorno.
+  # ---------------------------------------------------------------------------
+  - id: deploy-cloud-run
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - fifer-core-service
+      - --project=$PROJECT_ID
+      - --region=${_REGION}
+      - --platform=managed
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/fifer-core-service:$COMMIT_SHA
+      - --allow-unauthenticated
+      - --port=8080
+      - --set-secrets=${_RUN_SET_SECRETS}
