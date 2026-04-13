@@ -5,7 +5,10 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { routing } from '@/i18n/routing';
 import type { Database } from '@/types/supabase-database';
 
-const intlMiddleware = createIntlMiddleware(routing);
+const intlMiddleware = createIntlMiddleware({
+  ...routing,
+  localeDetection: true,
+});
 
 /**
  * Rutas del hub de trabajo (prefijos). Un path coincide si es exactamente el prefijo
@@ -22,11 +25,13 @@ const HUB_PRIVATE_PREFIXES = [
 ] as const;
 
 function stripLocalePrefix(pathname: string): string {
-  if (pathname.startsWith('/en-US/')) {
-    return pathname.slice('/en-US'.length);
-  }
-  if (pathname === '/en-US') {
-    return '/';
+  for (const locale of routing.locales) {
+    if (pathname.startsWith(`/${locale}/`)) {
+      return pathname.slice(`/${locale}`.length);
+    }
+    if (pathname === `/${locale}`) {
+      return '/';
+    }
   }
   return pathname;
 }
@@ -39,7 +44,12 @@ function isHubPrivateRoute(pathname: string): boolean {
 }
 
 function loginPathForRequest(pathname: string): string {
-  return pathname.startsWith('/en-US') ? '/en-US/login' : '/login';
+  for (const locale of routing.locales) {
+    if (pathname.startsWith(`/${locale}`)) {
+      return `/${locale}/login`;
+    }
+  }
+  return '/login';
 }
 
 function isBareLoginPath(pathname: string): boolean {
