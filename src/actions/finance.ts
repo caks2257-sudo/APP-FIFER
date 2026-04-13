@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
+import { triggerFinanceAudit } from '@/lib/integrations/tasklet';
 import { prisma } from '@/lib/prisma';
 import { createServerSupabaseClient } from '@/lib/supabase-ssr/server';
 
@@ -154,4 +155,52 @@ export async function initializeFinancialModule(
 
   revalidatePath(`/${locale}/finanzas`);
   return { ok: true };
+}
+
+export type SyncFinancialDataResult =
+  | { ok: true; mode: 'mock' | 'live' }
+  | {
+      ok: false;
+      error: 'unauthenticated' | 'no_prisma_user' | 'no_account' | 'tasklet';
+      detail?: string;
+    };
+
+export async function syncFinancialData(): Promise<SyncFinancialDataResult> {
+  try {
+    const supabase = createServerSupabaseClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user?.email) {
+      return { ok: false, error: 'unauthenticated' };
+    }
+
+    const dbUser = await prisma.user.findUnique({
+      where: { email: user.email },
+    });
+
+    if (!dbUser) {
+      return { ok: false, error: 'no_prisma_user' };
+    }
+
+    const account = await prisma.financialAccount.findUnique({
+      where: { userId: dbUser.id },
+    });
+
+    if (!account) {
+      return { ok: false, error: 'no_account' };
+    }
+
+    const result = await triggerFinanceAudit(account.id);
+
+    if (!result.ok) {
+      return { ok: false, error: 'tasklet', detail: result.error };
+    }
+
+    return { ok: true, mode: result.mode };
+  } catch (e) {
+    const detail = e instanceof Error ? e.message : 'syncFinancialData failed';
+    return { ok: false, error: 'tasklet', detail };
+  }
 }

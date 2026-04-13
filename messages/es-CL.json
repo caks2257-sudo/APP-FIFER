@@ -3,6 +3,20 @@
     "dash": "—",
     "openArrow": "Abrir →"
   },
+  "WarRoom": {
+    "title": "Sala de Guerra",
+    "subtitle": "Monitoreo centralizado de integraciones y estado operativo del ecosistema.",
+    "telemetryHeader": "Telemetry Header Box",
+    "telemetrySummary": "{live} LIVE · {mock} MOCK · {total} servicios base",
+    "liveCountBadge": "LIVE: {count}",
+    "mockCountBadge": "MOCK: {count}",
+    "badgeLive": "LIVE",
+    "badgeMock": "MOCK",
+    "configureLocalKey": "Configurar Llave Local",
+    "serviceOperational": "Servicio operativo en entorno activo",
+    "latencyMock": "MOCK · 0ms",
+    "latencyError": "Error de latencia"
+  },
   "Finance": {
     "dashboardTitle": "Finanzas",
     "dashboardSubtitle": "Resumen operativo: saldo, flujo del mes y últimos movimientos.",
@@ -22,6 +36,11 @@
     "statusCompletado": "Completado",
     "statusFallido": "Fallido",
     "syncBanksSii": "Sincronizar Bancos/SII",
+    "syncInProgress": "Sincronizando…",
+    "syncSuccessMock": "Auditoría encolada (modo simulación, sin API key de Tasklet).",
+    "syncSuccessLive": "Solicitud enviada a Tasklet correctamente.",
+    "syncErrorGeneric": "No se pudo completar la sincronización.",
+    "syncErrorNoAccount": "No hay cuenta financiera para sincronizar.",
     "syncToastMessage": "Sincronización simulada (MVP).",
     "emptyBadge": "Módulo financiero",
     "emptyTitle": "Aún no tienes cuenta financiera en FIFER",
