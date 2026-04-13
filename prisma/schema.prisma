@@ -29,15 +29,15 @@ enum TransactionStatus {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String
-  role      String   @default("user")
-  tier      String   @default("free")
+  id              String   @id @default(cuid())
+  email           String   @unique
+  name            String
+  role            String   @default("user")
+  tier            String   @default("free")
   /// Layout del dashboard (grilla): celdas por widgetId { x, y, w, h }, slotOrder y widgets líquidos opcionales.
   dashboardLayout Json?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   expediente       Expediente?
   domExpedientes   DomExpediente[]
@@ -120,16 +120,16 @@ model AodsMessage {
 }
 
 model AodsState {
-  id               String   @id @default(uuid())
-  sessionId        String   @unique
-  currentStep      String?
-  lastPrompt       String?  @db.Text
-  lastResponse     String?  @db.Text
+  id              String   @id @default(uuid())
+  sessionId       String   @unique
+  currentStep     String?
+  lastPrompt      String?  @db.Text
+  lastResponse    String?  @db.Text
   /// Fase -1: historial { role, content }[] persistido al init (opcional).
-  ideationHistory  Json?
-  needsNotebook    Boolean  @default(false)
-  needsUserAction  Boolean  @default(false)
-  updatedAt        DateTime @updatedAt
+  ideationHistory Json?
+  needsNotebook   Boolean  @default(false)
+  needsUserAction Boolean  @default(false)
+  updatedAt       DateTime @updatedAt
 
   session AodsSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 }
@@ -284,4 +284,26 @@ model Document {
 
   @@index([ownerId])
   @@index([mainApp])
+}
+
+/// Webhooks / callbacks unificados (Tasklet, Fintoc, Make, LangGraph, etc.) — auditoría antes de lógica de negocio.
+model IntegrationCallbackEvent {
+  id          String   @id @default(cuid())
+  provider    String
+  method      String
+  requestPath String   @map("request_path")
+  queryJson   Json?    @map("query_json")
+  headersJson Json     @map("headers_json")
+  bodyJson    Json?    @map("body_json")
+  bodyText    String?  @map("body_text") @db.Text
+  clientIp    String?  @map("client_ip")
+  
+  /// Indica si la sub-app correspondiente (Finanzas, DOM, etc.) ya procesó este evento.
+  processed   Boolean  @default(false)
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([provider, createdAt])
+  @@index([processed])
+  @@map("integration_callback_events")
 }
