@@ -58,6 +58,10 @@ const nextConfig = {
         os: false,
       };
     }
+    // Suppress webpack cache serialization warnings for large strings (i18n files)
+    config.infrastructureLogging = {
+      level: 'error',
+    };
     return config;
   },
 };

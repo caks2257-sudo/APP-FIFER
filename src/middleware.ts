@@ -5,6 +5,6 @@ export default createMiddleware(routing);
 
 export const config = {
   // Coincide con la raíz (/) y todas las rutas bajo /[locale]
-  // Ignora las rutas de API, _next (archivos estáticos), e imágenes
+  // Ignora las rutas de API, _next, y archivos estáticos
   matcher: ['/', '/(es-CL|en-US)/:path*', '/((?!api|_next|_vercel|.*\\..*).*)']
 };
