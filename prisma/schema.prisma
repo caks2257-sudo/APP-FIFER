@@ -29,15 +29,16 @@ enum TransactionStatus {
 }
 
 model User {
-  id              String   @id @default(cuid())
-  email           String   @unique
-  name            String
-  role            String   @default("user")
-  tier            String   @default("free")
+  /// Debe coincidir con auth.users.id (UUID). La app asigna `id` en upsert; no usar cuid (RLS Supabase).
+  id               String   @id
+  email            String   @unique
+  name             String
+  role             String   @default("user")
+  tier             String   @default("free")
   /// Layout del dashboard (grilla): celdas por widgetId { x, y, w, h }, slotOrder y widgets líquidos opcionales.
-  dashboardLayout Json?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  dashboardLayout  Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   expediente       Expediente?
   domExpedientes   DomExpediente[]
@@ -197,12 +198,16 @@ model Transaction {
   bankExternalId String?
   /// Fecha contable reportada por el banco (puede diferir de createdAt).
   bankPostedAt   DateTime?
+  /// Identificador de la pasarela de pago (ej. Fintoc checkoutId) para cruzar pagos generados
+  checkoutId     String?
   /// Facturación electrónica (SII / Bridge billing): folio DTE.
   dteFolio       String?
   /// URL del PDF (mock o proveedor).
   dtePdfUrl      String?
   /// pendiente | emitido | error
   dteStatus      String?
+  /// Razón o motivo si el DTE falla o se omite
+  dteReason      String?
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
 
@@ -210,15 +215,16 @@ model Transaction {
 
   @@index([accountId])
   @@index([accountId, bankExternalId])
+  @@index([checkoutId])
 }
 
 // Llaves internas: qué App puede invocar qué Engine (Control de Flujo — .cursorrules §5).
 model InternalApiKey {
   id                String              @id @default(cuid())
-  name              String // ej. "Engine de Imágenes"
+  name              String              // ej. "Engine de Imágenes"
   apiKey            String              @unique // secreto o hash almacenado; nunca reutilizar en texto plano en logs
   scope             InternalApiKeyScope @default(READ_ONLY)
-  targetAppOrEngine String // slug del Engine o App autorizado como destinatario de esta llave
+  targetAppOrEngine String              // slug del Engine o App autorizado como destinatario de esta llave
   ownerId           String
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
@@ -292,6 +298,8 @@ model IntegrationCallbackEvent {
   provider    String
   method      String
   requestPath String   @map("request_path")
+  /// ID de la entidad afectada (transactionId, userId) extraída para evitar parseos Json costosos en búsquedas
+  entityId    String?  @map("entity_id") 
   queryJson   Json?    @map("query_json")
   headersJson Json     @map("headers_json")
   bodyJson    Json?    @map("body_json")
@@ -304,6 +312,7 @@ model IntegrationCallbackEvent {
   createdAt   DateTime @default(now()) @map("created_at")
 
   @@index([provider, createdAt])
+  @@index([entityId])
   @@index([processed])
   @@map("integration_callback_events")
 }

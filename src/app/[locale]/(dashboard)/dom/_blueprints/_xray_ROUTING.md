@@ -1,23 +1,28 @@
-# Plano ROUTING — DOM (Hub)
+# X-Ray ROUTING — app:dom
 
 ## UBICACIÓN LÓGICA
 
 `FIFER://APP/DOM`
 
-## Ruta pública
+## RUTEO DEL MÓDULO
 
-- **Path Hub:** `/dom`
-- **Implementación:** `src/app/(dashboard)/dom/page.tsx`
+- Tipo de módulo: `app`
+- Ruta física: `dom`
+- Documentar rutas y navegación reales.
 
-## Spokes (sub-rutas)
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
 
-| Ruta | Rol |
-|------|-----|
-| `/dom/recepcion` | Recepción Municipal |
-| `/dom/permisos` | Permisos de Edificación |
-| `/dom/regularizaciones` | Regularizaciones |
-| `/dom/normativa` | Normativa OGUC/LGUC |
-
-## Sidebar
-
-- Grupo **Trámites DOM** en `src/registry/app-registry.ts`: `href: '/dom'`, hijos con rutas bajo `/dom/...`.
+- `normativa`
+- `error`
+- `errors`
+- `result`
+- `e293b`
+- `eab308`
+- `a3b8`
+- `f9fafb`
+- `font-semibold`
+- `usetranslations`
+- `label`
+- `factible`
+- `next-intl`
+- `perfiljson`

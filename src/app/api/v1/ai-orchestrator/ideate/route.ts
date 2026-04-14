@@ -41,7 +41,11 @@ export async function POST(request: NextRequest) {
 
   try {
     const engine = EngineRegistry.use<AiOrchestratorEngine>('ai-orchestrator-engine');
-    const result = await engine.ideate(parsed.data.messages);
+    const result = await engine.ideate(
+      parsed.data.messages,
+      auth.dbUser.role,
+      auth.dbUser.tier,
+    );
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     console.error('[API] /v1/ai-orchestrator/ideate', error);

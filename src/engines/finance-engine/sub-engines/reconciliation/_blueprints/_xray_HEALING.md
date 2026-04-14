@@ -1,10 +1,28 @@
-# Healing — finance-engine:reconciliation
+# X-Ray HEALING — engine:finance-engine-sub-engines-reconciliation
 
 ## UBICACIÓN LÓGICA
 
 `FIFER://engines/finance-engine/reconciliation`
 
-**targetAppOrEngine:** `finance-engine:reconciliation`
+## RESILIENCIA
 
-- Registro en `try/catch` con log.
-- Errores de API propagados a rutas Next con HTTP 500 y mensaje controlado.
+- Tipo de módulo: `engine`
+- Ruta física: `finance-engine/sub-engines/reconciliation`
+- Documentar boundaries, retries, circuit-breakers y degradación.
+
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
+
+- `balance`
+- `concept`
+- `accountid`
+- `currency`
+- `prisma`
+- `amountclp`
+- `externalid`
+- `postedat`
+- `savedids`
+- `bridgemode`
+- `newmovements`
+- `vault`
+- `bank`
+- `externalbridgeengineapi`

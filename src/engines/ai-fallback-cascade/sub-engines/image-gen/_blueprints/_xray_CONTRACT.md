@@ -1,5 +1,10 @@
 # Contrato X-Ray — Sub-Engine `image-gen` (`ai-fallback:image-gen`)
 
+## UBICACIÓN LÓGICA
+
+FIFER://engines/ai-fallback-cascade/sub-engines/image-gen
+
+
 Micro-Core hijo del motor `ai-fallback-cascade`. No altera el contrato de insights de texto (`processInsight`).
 
 ## Entrada — `generate(params, core)`

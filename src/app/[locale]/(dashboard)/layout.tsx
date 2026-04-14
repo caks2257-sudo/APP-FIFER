@@ -1,4 +1,5 @@
 import DashboardCopilot from '@/components/core/DashboardCopilot';
+import DynamicWidgetOverlay from '@/components/core/DynamicWidgetOverlay';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 
 /**
@@ -15,6 +16,7 @@ export default function DashboardGroupLayout({
         <DashboardCopilot />
         <div className="min-w-0 flex-1">{children}</div>
       </div>
+      <DynamicWidgetOverlay />
     </DashboardLayout>
   );
 }

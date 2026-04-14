@@ -2,14 +2,23 @@
 
 import { MessageSquare, Send, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 
+import type {
+  CashFlowReport,
+  FintocAccount,
+} from '@/components/dashboard/widgets/contracts';
 import { useOrchestratorIdeationStore } from '@/store/useOrchestratorIdeationStore';
 import { useLayoutStore } from '@/store/useLayoutStore';
+import { useUIStore } from '@/store/ui-store';
 import { boxCircuitBreaker } from '@/utils/box-circuit-breaker';
 import type { LayoutCommand } from '@/types/layout-command';
+import { warRoomConfigSchema, type WarRoomConfig } from '@/types/war-room';
 
 const IDEATE_PATH = '/api/v1/ai-orchestrator/ideate';
 const ORCHESTRATOR_BOX_CIRCUIT = 'fifer-aods-orchestrator' as const;
+
+type SharedChatMessage = { role: 'user' | 'assistant'; content: string };
 
 export type MinimalistContextChatProps = {
   appContext: string;
@@ -19,8 +28,18 @@ function isOrchestratorContext(appContext: string): boolean {
   return appContext.trim().toLowerCase() === 'orquestador';
 }
 
+function parsePathContext(pathname: string): { locale: string; currentContext: string } {
+  const segments = pathname.split('/').filter(Boolean);
+  const locale = segments[0] ?? 'es-CL';
+  const currentContext = segments[1] ?? 'dashboard';
+  return { locale, currentContext };
+}
+
 export default function MinimalistContextChat({ appContext }: MinimalistContextChatProps) {
   const orchestratorMode = isOrchestratorContext(appContext);
+  const pathname = usePathname();
+  const router = useRouter();
+  const { locale, currentContext } = parsePathContext(pathname);
 
   const messages = useOrchestratorIdeationStore((s) => s.messages);
   const copilotLoading = useOrchestratorIdeationStore((s) => s.copilotLoading);
@@ -30,6 +49,8 @@ export default function MinimalistContextChat({ appContext }: MinimalistContextC
   const [isExpanded, setIsExpanded] = useState(false);
   const [input, setInput] = useState('');
   const [response, setResponse] = useState('');
+  /** Diálogo textual del copiloto (dashboard); los widgets van al overlay global. */
+  const [chatThread, setChatThread] = useState<SharedChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const sendingRef = useRef(false);
   const responseEndRef = useRef<HTMLDivElement>(null);
@@ -37,7 +58,7 @@ export default function MinimalistContextChat({ appContext }: MinimalistContextC
 
   useEffect(() => {
     responseEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [response, loading]);
+  }, [chatThread.length, loading, response]);
 
   useEffect(() => {
     threadEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -86,40 +107,185 @@ export default function MinimalistContextChat({ appContext }: MinimalistContextC
     }
 
     setLoading(true);
+    const classifierMessages = [
+      ...chatThread.map((m) => ({ role: m.role, content: m.content })),
+      { role: 'user' as const, content: trimmed },
+    ];
+    setChatThread((prev) => [...prev, { role: 'user', content: trimmed }]);
     try {
-      const res = await fetch('/api/v1/shared-chat', {
+      const res = await fetch('/api/v1/ai-orchestrator/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: trimmed, appContext }),
+        body: JSON.stringify({
+          messages: classifierMessages,
+          currentContext,
+          locale,
+          appContext,
+        }),
       });
-      const data = (await res.json()) as {
-        reply?: string;
-        layoutCommand?: LayoutCommand;
-        error?: unknown;
-      };
+      const raw: unknown = await res.json();
+      const data = raw as Record<string, unknown>;
       if (!res.ok) {
         const err = data.error;
-        setResponse(
-          typeof err === 'string'
-            ? err
-            : err !== undefined
-              ? JSON.stringify(err)
-              : 'No se pudo obtener respuesta.',
-        );
+        useUIStore.getState().setOverlayWidgets(null);
+        setChatThread((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content:
+              typeof err === 'string'
+                ? err
+                : err !== undefined
+                  ? JSON.stringify(err)
+                  : 'No se pudo obtener respuesta.',
+          },
+        ]);
         return;
       }
-      if (data.layoutCommand) {
-        useLayoutStore.getState().applyLayoutCommand(data.layoutCommand);
+
+      const action = typeof data.action === 'string' ? data.action : '';
+
+      // Solo NAVIGATE cambia la ruta; STREAM_UI / overlay nunca deben usar router.push.
+      if (action === 'NAVIGATE' && typeof data.targetUrl === 'string') {
+        useUIStore.getState().setOverlayWidgets(null);
+        router.push(data.targetUrl);
+        setChatThread((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: `Redirigiendo a ${data.targetUrl}…`,
+          },
+        ]);
+        setInput('');
+        return;
       }
-      setResponse(data.reply ?? '');
+
+      if (action === 'TEXT_ONLY') {
+        useUIStore.getState().setOverlayWidgets(null);
+        const reply =
+          typeof data.reply === 'string' && data.reply.trim() !== ''
+            ? data.reply
+            : typeof data.reasoning === 'string' && data.reasoning.trim() !== ''
+              ? data.reasoning
+              : 'No pude generar una respuesta en este momento.';
+        setChatThread((prev) => [...prev, { role: 'assistant', content: reply }]);
+        setInput('');
+        return;
+      }
+
+      if (action === 'STREAM_UI' || action === 'GUIDED_OVERLAY') {
+        const widgetsRaw = data.visualWidgets;
+        let widgets = Array.isArray(widgetsRaw)
+          ? widgetsRaw.filter((w): w is string => typeof w === 'string')
+          : [];
+        const financeRaw = data.finance;
+        const finance =
+          financeRaw != null && typeof financeRaw === 'object'
+            ? (financeRaw as {
+                fintocAccount?: FintocAccount;
+                cashFlowReport?: CashFlowReport;
+              })
+            : undefined;
+        const warRoomWidgetIds = new Set(['constructorWarRoom', 'appBlueprintWarRoom']);
+        const overlayContext =
+          typeof data.visualWidgetContext === 'string' && data.visualWidgetContext.trim() !== ''
+            ? data.visualWidgetContext.trim()
+            : null;
+        let warRoomConfig: WarRoomConfig | null = null;
+        if (widgets.some((w) => warRoomWidgetIds.has(w))) {
+          const parsed = warRoomConfigSchema.safeParse(data.warRoomConfig);
+          if (parsed.success) {
+            warRoomConfig = parsed.data;
+          } else {
+            widgets = widgets.filter((w) => !warRoomWidgetIds.has(w));
+          }
+        }
+        const hasWarRoomWidget = widgets.some((w) => warRoomWidgetIds.has(w));
+        const replyText =
+          typeof data.reply === 'string' && data.reply.trim() !== ''
+            ? data.reply
+            : typeof data.reasoning === 'string'
+              ? data.reasoning
+              : '';
+        setChatThread((prev) => [...prev, { role: 'assistant', content: replyText }]);
+        if (widgets.length > 0) {
+          useUIStore.getState().setOverlayWidgets(
+            widgets,
+            finance,
+            hasWarRoomWidget ? warRoomConfig : null,
+            overlayContext,
+          );
+        } else {
+          useUIStore.getState().setOverlayWidgets(null);
+        }
+        setInput('');
+        return;
+      }
+
+      if (data.layoutCommand && typeof data.layoutCommand === 'object') {
+        const cmd = data.layoutCommand as LayoutCommand;
+        useLayoutStore.getState().applyLayoutCommand(cmd);
+      }
+
+      const replyText =
+        typeof data.reply === 'string' && data.reply.trim() !== ''
+          ? data.reply
+          : typeof data.reasoning === 'string'
+            ? data.reasoning
+            : '';
+      const vw = data.visualWidget;
+      if (
+        vw != null &&
+        typeof vw === 'object' &&
+        'kind' in vw &&
+        (vw as { kind?: string }).kind === 'bank' &&
+        'account' in vw &&
+        (vw as { account?: FintocAccount }).account
+      ) {
+        useUIStore.getState().setOverlayWidgets(
+          ['BankConnectionWidget'],
+          { fintocAccount: (vw as { account: FintocAccount }).account },
+        );
+      } else if (
+        vw != null &&
+        typeof vw === 'object' &&
+        'kind' in vw &&
+        (vw as { kind?: string }).kind === 'cashflow' &&
+        'report' in vw &&
+        (vw as { report?: CashFlowReport }).report
+      ) {
+        useUIStore.getState().setOverlayWidgets(
+          ['CashFlowWidget'],
+          { cashFlowReport: (vw as { report: CashFlowReport }).report },
+        );
+      } else {
+        useUIStore.getState().setOverlayWidgets(null);
+      }
+
+      setChatThread((prev) => [...prev, { role: 'assistant', content: replyText }]);
       setInput('');
     } catch {
-      setResponse('Error de red. Intenta de nuevo.');
+      useUIStore.getState().setOverlayWidgets(null);
+      setChatThread((prev) => [
+        ...prev,
+        { role: 'assistant', content: 'Error de red. Intenta de nuevo.' },
+      ]);
     } finally {
       setLoading(false);
       sendingRef.current = false;
     }
-  }, [appContext, input, orchestratorMode, messages, applyIdeationExchange, setCopilotLoading]);
+  }, [
+    appContext,
+    input,
+    orchestratorMode,
+    messages,
+    chatThread,
+    applyIdeationExchange,
+    setCopilotLoading,
+    currentContext,
+    locale,
+    router,
+  ]);
 
   const inputDisabled = orchestratorMode ? copilotLoading : loading;
 
@@ -196,8 +362,24 @@ export default function MinimalistContextChat({ appContext }: MinimalistContextC
               </>
             ) : loading ? (
               <span className="text-white/50">Pensando…</span>
-            ) : response ? (
-              response
+            ) : chatThread.length > 0 ? (
+              <ul className="flex flex-col gap-2">
+                {chatThread.map((m, i) => (
+                  <li
+                    key={`${i}-${m.role}-${m.content.slice(0, 24)}`}
+                    className={`rounded-md px-2 py-1.5 text-[13px] ${
+                      m.role === 'user'
+                        ? 'border border-[#EAB308]/15 bg-black/20 text-slate-100'
+                        : 'border border-white/5 bg-white/[0.04] text-slate-300'
+                    }`}
+                  >
+                    <span className="mb-0.5 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                      {m.role === 'user' ? 'Tú' : 'Copiloto'}
+                    </span>
+                    <span className="whitespace-pre-wrap break-words">{m.content}</span>
+                  </li>
+                ))}
+              </ul>
             ) : (
               <span className="text-white/45">Escribe un mensaje para el copiloto.</span>
             )}

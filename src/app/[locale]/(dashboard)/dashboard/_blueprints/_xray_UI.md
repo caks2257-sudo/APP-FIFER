@@ -1,11 +1,32 @@
-# Plano Visual - dashboard
+# X-Ray UI — app:dashboard
 
-## Shell
+## UBICACIÓN LÓGICA
 
-- Layout de grupo: `src/app/(dashboard)/layout.tsx` — `DashboardLayout` + contenedor `max-w-7xl`.
-- Segmento: `layout.tsx` en esta carpeta importa `globals-dashboard.css` y metadata de la vista dashboard.
+`FIFER://APP/DASHBOARD`
 
-## Contenido principal
+## RESUMEN DE SUPERFICIE
 
-- **Header:** título «Dashboard» y subtítulo analítico (misma copia que el modo sin `children` de `DashboardLayout`).
-- **`PageOrchestrator`:** grid DnD de widgets desde `useDashboard` / `DASHBOARD_REFERENCE_WIDGETS`; render vía `componentRegistry`.
+- Tipo de módulo: `app`
+- Ruta física: `dashboard`
+- Este documento es un artefacto compilado desde `v0_pack/starter-kit/_blueprints/`.
+
+## COMPONENTES VISIBLES
+
+- Completar desde código real del módulo.
+
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
+
+- `apps`
+- `bots`
+- `f9fafb`
+- `flex-col`
+- `a3b8`
+- `contratos`
+- `items-center`
+- `construcci`
+- `contenido`
+- `font-bold`
+- `gesti`
+- `h-full`
+- `justify-center`
+- `perfil`

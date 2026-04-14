@@ -16,25 +16,32 @@ import {
   Landmark,
   LayoutGrid,
   LineChart,
+  Loader2,
   MessageSquare,
   ShieldCheck,
   Sparkles,
   Terminal,
+  Trash2,
   User,
   Users,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
-import { Link, usePathname } from '@/i18n/navigation';
+import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { useLayoutEffect, useMemo, useState } from 'react';
 import FiferIsotypeMark from '@/components/branding/FiferIsotypeMark';
 import {
+  buildSidebarNavigationForContext,
   filterSidebarNavigation,
   type SidebarNavGroup,
   type SidebarNavLeaf,
   type SidebarNavNode,
-  sidebarNavigation,
 } from '@/registry/app-registry';
+import {
+  isSidebarLeafProvisioning,
+  misAppSlugFromHref,
+  useUIStore,
+} from '@/store/ui-store';
 import { useUserDnaStore } from '@/store/useUserDnaStore';
 
 const iconMap: Record<string, LucideIcon> = {
@@ -86,20 +93,104 @@ const rowActive = 'border-[#EAB308] bg-[#1E293B] text-[#EAB308]';
 function NavLinkRow({
   leaf,
   pathname,
+  showProvisioningSpinner,
 }: {
   leaf: SidebarNavLeaf;
   pathname: string;
+  showProvisioningSpinner?: boolean;
 }) {
   const Icon = iconMap[leaf.iconKey] ?? LayoutGrid;
   const active = isActiveHref(pathname, leaf.href);
   return (
     <Link
       href={leaf.href}
-      className={`${rowBase} ${active ? rowActive : `${rowInactive} ${rowHover}`}`}
+      className={`${rowBase} w-full ${active ? rowActive : `${rowInactive} ${rowHover}`}`}
     >
       <Icon className="h-5 w-5 flex-shrink-0" />
-      <span>{leaf.label}</span>
+      <span className="min-w-0 flex-1 text-left">{leaf.label}</span>
+      {showProvisioningSpinner ? (
+        <Loader2
+          className="ml-auto h-4 w-4 shrink-0 animate-spin text-[#EAB308]"
+          aria-label="Provisionando app"
+        />
+      ) : null}
     </Link>
+  );
+}
+
+function MisAppsSubAppRow({
+  child,
+  pathname,
+  appSlug,
+}: {
+  child: SidebarNavLeaf;
+  pathname: string;
+  appSlug: string;
+}) {
+  const router = useRouter();
+  const deletingApps = useUIStore((s) => s.deletingApps);
+  const setDeletingApp = useUIStore((s) => s.setDeletingApp);
+  const setMisAppHidden = useUIStore((s) => s.setMisAppHidden);
+  const provisioningApps = useUIStore((s) => s.provisioningApps);
+  const abkupferProvisioning = useUIStore((s) => s.provisioningApps['Abkupfer'] === true);
+  const deleting = deletingApps[appSlug] === true;
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!window.confirm('¿Eliminar esta sub-app del entorno de pruebas?')) return;
+    setDeletingApp(appSlug, true);
+    try {
+      const res = await fetch('/api/v1/factory/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ appId: appSlug }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        window.alert(
+          typeof data.error === 'string' ? data.error : `Error al eliminar (${res.status})`,
+        );
+        return;
+      }
+      setMisAppHidden(appSlug, true);
+      router.refresh();
+    } catch {
+      window.alert('Error de red al eliminar la sub-app.');
+    } finally {
+      setDeletingApp(appSlug, false);
+    }
+  };
+
+  return (
+    <li className={`group/row ${deleting ? 'opacity-50' : ''}`}>
+      <div className="flex items-stretch gap-0.5 pr-0.5">
+        <div className="min-w-0 flex-1">
+          <NavLinkRow
+            leaf={child}
+            pathname={pathname}
+            showProvisioningSpinner={
+              (appSlug === 'ab-kupfer' && abkupferProvisioning) ||
+              isSidebarLeafProvisioning(provisioningApps, child.label)
+            }
+          />
+        </div>
+        <button
+          type="button"
+          aria-label={`Eliminar ${child.label}`}
+          disabled={deleting}
+          onClick={(e) => void handleDelete(e)}
+          className="mt-0.5 flex h-9 w-8 shrink-0 items-center justify-center self-start rounded-md text-red-500/50 opacity-0 transition hover:bg-red-500/10 hover:text-red-500 group-hover/row:opacity-100 focus:opacity-100 focus:outline-none focus:ring-1 focus:ring-red-500/40 disabled:pointer-events-none disabled:opacity-30"
+        >
+          {deleting ? (
+            <Loader2 className="h-4 w-4 animate-spin text-[#EAB308]" aria-hidden />
+          ) : (
+            <Trash2 className="h-4 w-4" aria-hidden />
+          )}
+        </button>
+      </div>
+    </li>
   );
 }
 
@@ -108,15 +199,27 @@ function NavGroupRow({
   pathname,
   expanded,
   onToggle,
+  provisioningApps,
+  hiddenMisAppSlugs,
 }: {
   group: SidebarNavGroup;
   pathname: string;
   expanded: boolean;
   onToggle: () => void;
+  provisioningApps: Record<string, boolean>;
+  hiddenMisAppSlugs: Record<string, boolean>;
 }) {
   const tSidebar = useTranslations('sidebar');
   const Icon = iconMap[group.iconKey] ?? LayoutGrid;
-  const subtreeActive = group.children.some((c) => isActiveHref(pathname, c.href));
+  const visibleChildren =
+    group.label === 'Mis Apps'
+      ? group.children.filter((c) => {
+          const slug = misAppSlugFromHref(c.href);
+          if (!slug) return true;
+          return hiddenMisAppSlugs[slug] !== true;
+        })
+      : group.children;
+  const subtreeActive = visibleChildren.some((c) => isActiveHref(pathname, c.href));
   const hubActive = isActiveHref(pathname, group.href) || subtreeActive;
 
   return (
@@ -158,11 +261,32 @@ function NavGroupRow({
       >
         <div className="min-h-0 overflow-hidden">
           <ul className="space-y-1 pl-10 pt-1">
-            {group.children.map((child) => (
-              <li key={`${group.label}-${child.label}`}>
-                <NavLinkRow leaf={child} pathname={pathname} />
-              </li>
-            ))}
+            {visibleChildren.map((child) => {
+              const misSlug =
+                group.label === 'Mis Apps' ? misAppSlugFromHref(child.href) : null;
+              if (misSlug) {
+                return (
+                  <MisAppsSubAppRow
+                    key={`${group.label}-${child.label}`}
+                    child={child}
+                    pathname={pathname}
+                    appSlug={misSlug}
+                  />
+                );
+              }
+              return (
+                <li key={`${group.label}-${child.label}`}>
+                  <NavLinkRow
+                    leaf={child}
+                    pathname={pathname}
+                    showProvisioningSpinner={isSidebarLeafProvisioning(
+                      provisioningApps,
+                      child.label,
+                    )}
+                  />
+                </li>
+              );
+            })}
           </ul>
         </div>
       </div>
@@ -183,15 +307,28 @@ export default function Sidebar() {
   const tSidebar = useTranslations('sidebar');
   const pathname = usePathname();
   const coreProfile = useUserDnaStore((s) => s.coreProfile);
+  const provisioningApps = useUIStore((s) => s.provisioningApps);
+  const hiddenMisAppSlugs = useUIStore((s) => s.hiddenMisAppSlugs);
+  const misAppModules = useUIStore((s) => s.misAppModules);
   const [expandedLabel, setExpandedLabel] = useState<string | null>(null);
 
   const displayName =
     coreProfile.name?.trim() ||
     `${coreProfile.nombres} ${coreProfile.apellidoPaterno}`.trim();
 
+  const currentMisAppSlug = useMemo(() => misAppSlugFromHref(pathname), [pathname]);
+
+  const navBlueprint = useMemo(
+    () =>
+      buildSidebarNavigationForContext({
+        misAppModuleIds: currentMisAppSlug ? misAppModules[currentMisAppSlug] : undefined,
+      }),
+    [currentMisAppSlug, misAppModules],
+  );
+
   const navItems = useMemo(
-    () => filterSidebarNavigation(sidebarNavigation, coreProfile),
-    [coreProfile],
+    () => filterSidebarNavigation(navBlueprint, coreProfile),
+    [coreProfile, navBlueprint],
   );
 
   useLayoutEffect(() => {
@@ -216,7 +353,14 @@ export default function Sidebar() {
             if (item.type === 'link') {
               return (
                 <li key={item.label}>
-                  <NavLinkRow leaf={item} pathname={pathname} />
+                  <NavLinkRow
+                    leaf={item}
+                    pathname={pathname}
+                    showProvisioningSpinner={isSidebarLeafProvisioning(
+                      provisioningApps,
+                      item.label,
+                    )}
+                  />
                 </li>
               );
             }
@@ -228,6 +372,8 @@ export default function Sidebar() {
                 group={item}
                 pathname={pathname}
                 expanded={expanded}
+                provisioningApps={provisioningApps}
+                hiddenMisAppSlugs={hiddenMisAppSlugs}
                 onToggle={() =>
                   setExpandedLabel((prev) => (prev === item.label ? null : item.label))
                 }

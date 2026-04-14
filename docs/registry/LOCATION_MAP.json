@@ -7,7 +7,35 @@
     "path": "src/app/[locale]/(dashboard)/dashboard",
     "type": "APP"
   },
-  "FIFER://APP/DASHBOARD_INMOBILIARIO": {
+  "FIFER://APP/DASHBOARD/CONTENIDO_AI": {
+    "path": "src/app/[locale]/(dashboard)/dashboard/contenido-ai",
+    "type": "SUB_APP"
+  },
+  "FIFER://APP/DASHBOARD/CONTRATOS": {
+    "path": "src/app/[locale]/(dashboard)/dashboard/contratos",
+    "type": "SUB_APP"
+  },
+  "FIFER://APP/DASHBOARD/MIS_APPS": {
+    "path": "src/app/[locale]/(dashboard)/dashboard/mis-apps",
+    "type": "SUB_APP"
+  },
+  "FIFER://APP/DASHBOARD/MIS_APPS/AB_KUPFER": {
+    "path": "src/app/[locale]/(dashboard)/dashboard/mis-apps/ab-kupfer",
+    "type": "SUB_APP"
+  },
+  "FIFER://APP/DASHBOARD/MIS_BOTS": {
+    "path": "src/app/[locale]/(dashboard)/dashboard/mis-bots",
+    "type": "SUB_APP"
+  },
+  "FIFER://APP/DASHBOARD/MIS_BOTS/ASISTENTE_DOM": {
+    "path": "src/app/[locale]/(dashboard)/dashboard/mis-bots/asistente-dom",
+    "type": "SUB_APP"
+  },
+  "FIFER://APP/DASHBOARD/PERFIL": {
+    "path": "src/app/[locale]/(dashboard)/dashboard/perfil",
+    "type": "SUB_APP"
+  },
+  "FIFER://APP/DASHBOARDINMOBILIARIO": {
     "path": "src/app/[locale]/(dashboard)/dashboardinmobiliario",
     "type": "APP"
   },
@@ -19,50 +47,53 @@
     "path": "src/app/[locale]/(dashboard)/dom",
     "type": "APP"
   },
+  "FIFER://APP/DOM/NORMATIVA": {
+    "path": "src/app/[locale]/(dashboard)/dom/normativa",
+    "type": "SUB_APP"
+  },
+  "FIFER://APP/DOM/PERMISOS": {
+    "path": "src/app/[locale]/(dashboard)/dom/permisos",
+    "type": "SUB_APP"
+  },
+  "FIFER://APP/DOM/RECEPCION": {
+    "path": "src/app/[locale]/(dashboard)/dom/recepcion",
+    "type": "SUB_APP"
+  },
+  "FIFER://APP/DOM/REGULARIZACIONES": {
+    "path": "src/app/[locale]/(dashboard)/dom/regularizaciones",
+    "type": "SUB_APP"
+  },
   "FIFER://APP/FINANZAS": {
     "path": "src/app/[locale]/(dashboard)/finanzas",
+    "type": "APP"
+  },
+  "FIFER://APP/IA_ORCHESTRATOR": {
+    "path": "src/app/[locale]/(dashboard)/ia-orchestrator",
     "type": "APP"
   },
   "FIFER://APP/MISBOTS": {
     "path": "src/app/[locale]/(dashboard)/misbots",
     "type": "APP"
   },
-  "FIFER://APP/PERFIL": {
-    "path": "src/app/[locale]/(dashboard)/dashboard/perfil",
+  "FIFER://APP/MISBOTS/": {
+    "path": "src/app/[locale]/(dashboard)/misbots/[id]/config",
     "type": "SUB_APP"
   },
-  "FIFER://ENGINE/AI_FALLBACK_CASCADE": {
-    "path": "src/engines/ai-fallback-cascade",
-    "type": "ENGINE"
+  "FIFER://APP/MISBOTS/CONFIG": {
+    "path": "src/app/[locale]/(dashboard)/misbots/config",
+    "type": "SUB_APP"
   },
-  "FIFER://ENGINE/AI_ORCHESTRATOR": {
-    "path": "src/engines/ai-orchestrator-engine",
-    "type": "ENGINE"
+  "FIFER://APP/WAR_ROOM": {
+    "path": "src/app/[locale]/(dashboard)/war-room",
+    "type": "APP"
   },
   "FIFER://ENGINE/API_MANAGER": {
     "path": "src/lib",
     "type": "ENGINE"
   },
-  "FIFER://ENGINE/NORMATIVA": {
-    "path": "src/app/[locale]/(dashboard)/dom/normativa",
-    "type": "SUB_APP",
-    "targetAppOrEngine": "normativa"
-  },
-  "FIFER://ENGINE/SYSTEM_HEALTH": {
-    "path": "src/engines/system-health",
-    "type": "ENGINE"
-  },
   "FIFER://ENGINE/forecast-core": {
     "path": "src/engines/forecast-core",
     "type": "ENGINE"
-  },
-  "FIFER://SUB_ENGINE/AI_FALLBACK_CASCADE/COMMS": {
-    "path": "src/engines/ai-fallback-cascade/sub-engines/comms",
-    "type": "SUB_ENGINE"
-  },
-  "FIFER://SUB_ENGINE/AI_FALLBACK_CASCADE/IMAGE_GEN": {
-    "path": "src/engines/ai-fallback-cascade/sub-engines/image-gen",
-    "type": "SUB_ENGINE"
   },
   "FIFER://SUB_ENGINE/dom-engine/form-generator": {
     "path": "src/engines/dom-engine/sub-engines/form-generator",
@@ -79,6 +110,22 @@
   "FIFER://app/desarrollador/conexiones-externas": {
     "path": "src/app/[locale]/(dashboard)/desarrollador/conexiones-externas",
     "type": "SUB_APP"
+  },
+  "FIFER://engines/ai-fallback-cascade": {
+    "path": "src/engines/ai-fallback-cascade",
+    "type": "ENGINE"
+  },
+  "FIFER://engines/ai-fallback-cascade/sub-engines/comms": {
+    "path": "src/engines/ai-fallback-cascade/sub-engines/comms",
+    "type": "SUB_ENGINE"
+  },
+  "FIFER://engines/ai-fallback-cascade/sub-engines/image-gen": {
+    "path": "src/engines/ai-fallback-cascade/sub-engines/image-gen",
+    "type": "SUB_ENGINE"
+  },
+  "FIFER://engines/ai-orchestrator-engine": {
+    "path": "src/engines/ai-orchestrator-engine",
+    "type": "ENGINE"
   },
   "FIFER://engines/bot-engine": {
     "path": "src/engines/bot-engine",
@@ -108,6 +155,10 @@
     "path": "src/engines/finance-engine/sub-engines/reconciliation",
     "type": "SUB_ENGINE"
   },
+  "FIFER://engines/master-app-factory": {
+    "path": "src/engines/master-app-factory",
+    "type": "ENGINE"
+  },
   "FIFER://engines/system-engine": {
     "path": "src/engines/system-engine",
     "type": "ENGINE"
@@ -115,5 +166,9 @@
   "FIFER://engines/system-engine/sub-engines/env-manager": {
     "path": "src/engines/system-engine/sub-engines/env-manager",
     "type": "SUB_ENGINE"
+  },
+  "FIFER://engines/system-health": {
+    "path": "src/engines/system-health",
+    "type": "ENGINE"
   }
 }

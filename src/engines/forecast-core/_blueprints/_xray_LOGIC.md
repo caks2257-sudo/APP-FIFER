@@ -13,3 +13,20 @@
 | Cold start | Mínimo **3** transacciones `COMPLETADO` **o** dispersión **≥ 14** días (diferencia de día civil UTC entre primera y última); si no, `status: insufficient_data` |
 | Proyección | `meanDailyNet = totalSignedNet / max(1, gapDays+1)`; `projectedNet30 = meanDailyNet * 30`; `projectedEndBalance = balance + projectedNet30` |
 | Riesgos reportados | `negativeProjectedNetFlow`, `projectedEndBalanceBelowZero` |
+
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
+
+- error
+- date
+- log_prefix
+- status
+- sub_engine_id
+- cashflow-liquidity
+- engine_id
+- cashflow
+- engines
+- forecast-core
+- liquidity
+- literal
+- balance
+- cashflowliquidityinput

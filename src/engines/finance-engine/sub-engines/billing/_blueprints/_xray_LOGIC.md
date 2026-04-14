@@ -14,3 +14,20 @@
 ## Trigger automático
 
 - `POST /api/v1/webhooks/payments/*` tras `COMPLETADO` en `payment_checkout` → `queueMicrotask` → `triggerAutoInvoiceAfterPaymentCheckout(transactionId, publicOrigin)`.
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
+
+- transactionid
+- prisma
+- expediente
+- publicorigin
+- customer
+- result
+- reason
+- folio
+- total
+- email
+- emitinvoicefortransaction
+- fifer
+- transaction
+- account
+

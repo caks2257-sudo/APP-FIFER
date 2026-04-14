@@ -1,15 +1,18 @@
-# Plano ROUTING — Control de Contratos
+# X-Ray ROUTING — app:contratos
 
-## Ruta pública
+## UBICACIÓN LÓGICA
 
-- **Path:** `/contratos`
-- **Implementación App Router:** `src/app/(dashboard)/contratos/page.tsx` (el route group `(dashboard)` no aparece en la URL).
+`FIFER://APP/CONTRATOS`
 
-## Compatibilidad histórica
+## RUTEO DEL MÓDULO
 
-- **`/dashboard/contratos`:** `src/app/dashboard/contratos/page.tsx` redirige con `redirect('/contratos')` hacia la ruta canónica del grupo `(dashboard)`.
+- Tipo de módulo: `app`
+- Ruta física: `contratos`
+- Documentar rutas y navegación reales.
 
-## Navegación lateral
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
 
-- En `src/components/dashboard/Sidebar.tsx`, ítem **«Control de Contratos»** con `href: '/contratos'`.
-- Anidado bajo el padre **«Finanzas»** (`label: 'Finanzas'`, `href: '/finanzas'`), junto con la app **«Finanzas»** (`/finanzas`).
+- `contratospageshell`
+- `components`
+- `contratos`
+- `contratospage`

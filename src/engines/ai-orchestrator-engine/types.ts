@@ -1,3 +1,5 @@
+import type { WarRoomConfig } from '@/types/war-room';
+
 export const AI_ORCHESTRATOR_ENGINE_ID = 'ai-orchestrator-engine' as const;
 
 export interface OrchestratorConfig {
@@ -24,6 +26,39 @@ export type IdeateResult = {
   mock: boolean;
 };
 
+export type AiOrchestratorSharedChatResult =
+  | {
+      action: 'NAVIGATE';
+      targetUrl: string;
+      reasoning: string;
+    }
+  | {
+      action: 'STREAM_UI';
+      reasoning: string;
+      visualWidgets: string[];
+      reply: string;
+      /** Si `visualWidgets` incluye `constructorWarRoom`, el cliente debe pintar SmartWarRoom. */
+      warRoomConfig?: WarRoomConfig;
+    }
+  | {
+      action: 'GUIDED_OVERLAY';
+      reasoning: string;
+      visualWidgets: string[];
+      reply: string;
+      mock: boolean;
+      warRoomConfig?: WarRoomConfig;
+    }
+  | {
+      action: 'TEXT_ONLY';
+      reply: string;
+    }
+  | {
+      action: 'EXECUTE';
+      reasoning: string;
+      reply: string;
+      mock: boolean;
+    };
+
 /** Resultado de `initSession` (Fase 0). */
 export type InitSessionResult = {
   success: true;
@@ -48,6 +83,18 @@ export type UpdateGeminiDocResult = {
   success: true;
   version: number;
   message: string;
+};
+
+/** Herramienta de soberanía de layout §28.4. */
+export type RearrangeDashboardLayoutResult = {
+  success: true;
+  message: string;
+  layout: {
+    cells: Record<string, { x: number; y: number; w: number; h: number }>;
+    slotOrder?: string[];
+    liquidAddonWidgets?: unknown[];
+  };
+  mock: boolean;
 };
 
 /** Fase 9 — disparo de despliegue Vercel (hook opcional). */

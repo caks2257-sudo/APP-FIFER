@@ -1,14 +1,32 @@
-# Plano de Datos — Normativa DOM
+# X-Ray DATA — app:dom-normativa
 
-## Esquemas Zod (`src/types/schemas.ts`)
+## UBICACIÓN LÓGICA
 
-- **`domAnalisisRequestSchema`:** `superficieTerreno` (número positivo), `coeficienteConstructibilidad` (positivo), `ocupacionSuelo` (0–100), `destino` (string 1–120 caracteres).
-- **`domAnalisisResponseSchema`:** `factible` (boolean), `superficieMaximaEdificable` (number), `observaciones` (string o array de strings).
+`FIFER://APP/DOM/NORMATIVA`
 
-## API
+## RESUMEN DE DATOS
 
-- **`POST /api/v1/dom/analisis`** (`src/app/api/v1/dom/analisis/route.ts`): valida el cuerpo con `domAnalisisRequestSchema`; exige sesión Supabase y fila `User` en Prisma; construye un `CoreProfile` desde el usuario; invoca **`EngineRegistry.use('ai-fallback')`** (`AiFallbackCascadeEngine.processInsight`) con prompt de sistema de auditor OGUC/LGUC y meta `moduleId: dom-normativa`, `boxId: analisis-parametrico`; la salida textual del modelo se parsea a JSON y se valida con `domAnalisisResponseSchema`. Errores de cascada: `503` con `AiCascadeExhaustedError`; fallo de parseo o esquema: `502`.
+- Tipo de módulo: `app`
+- Ruta física: `dom/normativa`
+- Mapear entradas, salidas y contratos reales.
 
-## Cliente
+## FUENTES Y FLUJOS
 
-- **`page.tsx`** envía el payload JSON desde **`AnalisisTerrenoForm.tsx`** (React Hook Form + `zodResolver(domAnalisisRequestSchema)`); **`ReporteFactibilidad.tsx`** muestra la respuesta tipada o mensajes de error.
+- Completar desde código real del módulo.
+
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
+
+- `error`
+- `errors`
+- `result`
+- `normativa`
+- `eab308`
+- `factible`
+- `font-semibold`
+- `label`
+- `perfiljson`
+- `role`
+- `analisisterrenoform`
+- `loading`
+- `reportefactibilidad`
+- `seterror`

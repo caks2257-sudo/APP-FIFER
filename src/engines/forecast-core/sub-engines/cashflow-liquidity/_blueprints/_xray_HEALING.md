@@ -1,14 +1,28 @@
-# Plano HEALING — `forecast-core:cashflow-liquidity`
+# X-Ray HEALING — engine:forecast-core-sub-engines-cashflow-liquidity
 
 ## UBICACIÓN LÓGICA
 
 `FIFER://SUB_ENGINE/forecast-core/cashflow-liquidity`
 
-## Reflejo de código
+## RESILIENCIA
 
-| Pieza | Archivo |
-|-------|---------|
-| try/catch en método público | `src/engines/forecast-core/sub-engines/cashflow-liquidity/index.ts` — `runLiquidityForecast` |
-| Entrada inválida (Zod) | `computeLiquidityForecast` lanza si `safeParse` falla (uso interno tras validación en API) |
+- Tipo de módulo: `engine`
+- Ruta física: `forecast-core/sub-engines/cashflow-liquidity`
+- Documentar boundaries, retries, circuit-breakers y degradación.
 
-Cold start insuficiente no lanza: devuelve `insufficient_data`.
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
+
+- `error`
+- `date`
+- `status`
+- `sub_engine_id`
+- `literal`
+- `balance`
+- `cashflowliquidityinput`
+- `cashflowliquidityoutput`
+- `log_prefix`
+- `math`
+- `meandailynet`
+- `tofixed`
+- `totalsigned`
+- `account`

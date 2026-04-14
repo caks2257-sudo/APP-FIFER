@@ -1,11 +1,28 @@
-# Plano ROUTING — Finanzas
+# X-Ray ROUTING — app:finanzas
 
-## Ruta pública
+## UBICACIÓN LÓGICA
 
-- **Path:** `/finanzas` (Hub Finanzas — visión general; sin redirect a otras rutas).
-- **Implementación App Router:** `src/app/(dashboard)/finanzas/page.tsx` (el route group `(dashboard)` no aparece en la URL).
-- **Título UI:** «Hub de Finanzas - Visión General».
+`FIFER://APP/FINANZAS`
 
-## Navegación lateral
+## RUTEO DEL MÓDULO
 
-- En `src/registry/app-registry.ts`, entrada `appRegistry` con `id: 'finanzas'`, `href: '/finanzas'`, resuelta en la Sidebar vía `sidebarNavigationSource` bajo el grupo **«Finanzas»** (`href: '/finanzas'`).
+- Tipo de módulo: `app`
+- Ruta física: `finanzas`
+- Documentar rutas y navegación reales.
+
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
+
+- `eab308`
+- `error`
+- `font-semibold`
+- `currency`
+- `f9fafb`
+- `font-medium`
+- `seterror`
+- `loading`
+- `e293b`
+- `rounded-lg`
+- `a0f1e`
+- `message`
+- `finanzas`
+- `labels`

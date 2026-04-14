@@ -1,10 +1,28 @@
-# Healing — system-engine:env-manager
+# X-Ray HEALING — engine:system-engine-sub-engines-env-manager
 
 ## UBICACIÓN LÓGICA
 
 `FIFER://engines/system-engine/sub-engines/env-manager`
 
-**targetAppOrEngine:** `system-engine:env-manager`
+## RESILIENCIA
 
-- Fallos de I/O en `readFile`/`writeFile` propagan al caller; no hay retry automático.
-- Fuera de desarrollo, error explícito antes de tocar disco (fail-closed).
+- Tipo de módulo: `engine`
+- Ruta física: `system-engine/sub-engines/env-manager`
+- Documentar boundaries, retries, circuit-breakers y degradación.
+
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
+
+- `error`
+- `sub_engine_id`
+- `development`
+- `eventring`
+- `info`
+- `env-manager`
+- `envmanagerevent`
+- `length`
+- `level`
+- `recordenvmanagerevent`
+- `assertenvfileaccessallowed`
+- `bloqueado`
+- `content`
+- `development-only`

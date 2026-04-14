@@ -18,3 +18,20 @@
 2. Adaptadores devuelven mocks coherentes si `mode === 'MOCK'`.
 3. APIs Next (`/api/v1/external-bridge/status`, `/api/v1/system/external-bridge/credentials`) son la única superficie HTTP documentada para estado y rotación.
 4. `pingAllActiveIntegrations()` (`packages/engines/external-bridge-engine/src/bridge-latency.ts` — `pingBridgeIntegrations`) ejecuta sondas ligeras de latencia hacia OpenAI (API o status público), Supabase `/auth/v1/health` y `flow.cl`; consumida por `GET /api/v1/war-room` (Sala de Guerra §16).
+
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
+
+- error
+- engine_id
+- fifer
+- case
+- external-bridge-engine
+- https
+- integrationid
+- catch
+- controller
+- externalbridgeengine
+- mock
+- performance
+- pinger
+- process

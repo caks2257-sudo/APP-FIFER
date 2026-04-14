@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { createServerSupabaseClient } from '@/lib/supabase-ssr/server';
+import {
+  PrismaAuthLegacyEmailConflictError,
+  syncThenFindUser,
+} from '@/lib/prisma-auth-sync';
 import { prisma } from '@/lib/prisma';
+import { createServerSupabaseClient } from '@/lib/supabase-ssr/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,7 +31,7 @@ export async function GET(request: NextRequest) {
     data: { user: authUser },
   } = await supabase.auth.getUser();
 
-  if (!authUser?.email) {
+  if (!authUser?.email || !authUser.id) {
     return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
   }
 
@@ -36,9 +40,19 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Falta tx' }, { status: 400 });
   }
 
-  const dbUser = await prisma.user.findUnique({
-    where: { email: authUser.email },
-  });
+  let dbUser;
+  try {
+    dbUser = await syncThenFindUser(authUser);
+  } catch (error) {
+    if (error instanceof PrismaAuthLegacyEmailConflictError) {
+      return NextResponse.json(
+        { error: 'Identidad desalineada con Supabase Auth.' },
+        { status: 409 },
+      );
+    }
+    throw error;
+  }
+
   if (!dbUser) {
     return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
   }

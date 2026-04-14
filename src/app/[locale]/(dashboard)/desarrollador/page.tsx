@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import BaseBoxTemplate from '@/components/v0-ingestion/templates/BaseBoxTemplate';
 import BoxErrorBoundary from '@/components/core/BoxErrorBoundary';
 import SmartInsightWidget from '@/components/core/SmartInsightWidget';
+import IngestControlWidget from '@/components/dashboard/widgets/IngestControlWidget';
 import ExternalConnectionsPanel from '@/components/system/ExternalConnectionsPanel';
 import TelemetryHeaderBox from '@/components/system/TelemetryHeaderBox';
 import WarRoomPanel from '@/components/system/WarRoomPanel';
@@ -564,19 +565,26 @@ export default function DesarrolladorPage() {
           ))}
         </div>
 
-        <BaseBoxTemplate
-          key={activeMeta.boxId}
-          config={{ title: '', boxId: activeMeta.boxId }}
-          data={
-            data ??
-            (activeTab !== 'external' && (isLoading || error)
-              ? { schemaVersion: '1.0-dev-pending', pending: true }
-              : undefined)
-          }
-          isLoading={activeTab === 'external' ? bridge.loading : isLoading}
-        >
-          {body}
-        </BaseBoxTemplate>
+        <section className="@container grid grid-cols-1 gap-4 xl:grid-cols-12">
+          <div className="xl:col-span-8">
+            <BaseBoxTemplate
+              key={activeMeta.boxId}
+              config={{ title: '', boxId: activeMeta.boxId }}
+              data={
+                data ??
+                (activeTab !== 'external' && (isLoading || error)
+                  ? { schemaVersion: '1.0-dev-pending', pending: true }
+                  : undefined)
+              }
+              isLoading={activeTab === 'external' ? bridge.loading : isLoading}
+            >
+              {body}
+            </BaseBoxTemplate>
+          </div>
+          <div className="xl:col-span-4">
+            <IngestControlWidget w={4} h={7} context="desarrollador" />
+          </div>
+        </section>
 
         <SmartInsightWidget
           moduleId="desarrollador"

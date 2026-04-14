@@ -1,6 +1,28 @@
-# Plano de Enrutamiento - misbots
+# X-Ray ROUTING — app:misbots
 
-## Rutas
+## UBICACIÓN LÓGICA
 
-- **Ruta pública Next.js:** `/misbots` — segmento de App bajo `src/app/(dashboard)/misbots/page.tsx` (grupo `(dashboard)` comparte layout del shell).
-- **Navegación:** enlace **Cockpit Mis Bots** → `/misbots` en la categoría **Mis Bots** de `src/components/dashboard/Sidebar.tsx` (junto al legado `/dashboard/mis-bots/*`).
+`FIFER://APP/MISBOTS`
+
+## RUTEO DEL MÓDULO
+
+- Tipo de módulo: `app`
+- Ruta física: `misbots`
+- Documentar rutas y navegación reales.
+
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
+
+- `font-semibold`
+- `bots`
+- `bot-engine`
+- `user`
+- `link`
+- `config`
+- `f9fafb`
+- `gettranslations`
+- `status`
+- `a3b8`
+- `engines`
+- `initialbots`
+- `tracking-wide`
+- `tstatus`

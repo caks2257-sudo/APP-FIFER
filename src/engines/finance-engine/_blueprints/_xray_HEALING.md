@@ -1,5 +1,28 @@
-# Healing — finance-engine (raíz)
+# X-Ray HEALING — engine:finance-engine
 
-- **Circuito:** los fallos de negocio se manejan en rutas API y en sub-motores (billing, payments, reconciliation) con `try/catch` y respuestas HTTP coherentes.
-- **Resiliencia:** reintentos y degradación dependen del sub-engine invocado (p. ej. Bridge MOCK/PROD en reconciliación y pagos).
-- **Sin rompecircuitos globales** a nivel del shell del motor raíz; documentar umbrales en el plano HEALING de cada sub-engine.
+## UBICACIÓN LÓGICA
+
+`FIFER://engines/finance-engine`
+
+## RESILIENCIA
+
+- Tipo de módulo: `engine`
+- Ruta física: `finance-engine`
+- Documentar boundaries, retries, circuit-breakers y degradación.
+
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
+
+- `prisma`
+- `engines`
+- `error`
+- `finance-engine`
+- `concept`
+- `transactionid`
+- `vault`
+- `accountid`
+- `balance`
+- `billing`
+- `result`
+- `amountclp`
+- `currency`
+- `publicorigin`

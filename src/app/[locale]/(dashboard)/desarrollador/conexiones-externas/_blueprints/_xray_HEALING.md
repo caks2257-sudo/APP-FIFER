@@ -1,10 +1,28 @@
-# Healing — Conexiones externas
+# X-Ray HEALING — app:desarrollador-conexiones-externas
 
 ## UBICACIÓN LÓGICA
 
 `FIFER://app/desarrollador/conexiones-externas`
 
-**targetAppOrEngine:** `desarrollador`
+## RESILIENCIA
 
-- Página envuelta en `BoxErrorBoundary`.
-- Errores de fetch en `useExternalBridge` se muestran como mensaje de texto sin tumbar el shell.
+- Tipo de módulo: `app`
+- Ruta física: `desarrollador/conexiones-externas`
+- Documentar boundaries, retries, circuit-breakers y degradación.
+
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
+
+- `boxerrorboundary`
+- `error`
+- `externalconnectionspanel`
+- `integrations`
+- `loading`
+- `useexternalbridge`
+- `useuserdnastore`
+- `a0f1e`
+- `components`
+- `profile`
+- `refresh`
+- `acceso`
+- `admin`
+- `conexionesexternaspage`

@@ -1,14 +1,28 @@
-# Plano DATABASE — `forecast-core`
+# X-Ray DATABASE — engine:forecast-core
 
 ## UBICACIÓN LÓGICA
 
 `FIFER://ENGINE/forecast-core`
 
-## Reflejo de código
+## SUPERFICIE DE DATOS
 
-| Persistencia | Estado |
-|--------------|--------|
-| Tablas propias del motor | **N/A** (v1 hot compute) |
-| Datos de lectura | Modelos existentes `FinancialAccount`, `Transaction` (`prisma/schema.prisma`) — solo lectura desde la ruta API; sin migraciones añadidas en v1 |
+- Tipo de módulo: `engine`
+- Ruta física: `forecast-core`
+- Registrar entidades, lecturas, escrituras y dependencias reales.
 
-**RLS / Prisma:** sin cambios de esquema en esta fase; el caller filtra por cuenta del usuario autenticado.
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
+
+- `error`
+- `date`
+- `log_prefix`
+- `status`
+- `sub_engine_id`
+- `cashflow-liquidity`
+- `engine_id`
+- `cashflow`
+- `engines`
+- `forecast-core`
+- `liquidity`
+- `literal`
+- `balance`
+- `cashflowliquidityinput`

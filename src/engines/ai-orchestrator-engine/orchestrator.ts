@@ -4,26 +4,47 @@ import {
   AodsSessionStatus,
   Prisma,
 } from '@prisma/client';
+import { generateText } from 'ai';
+import type { ModelMessage } from 'ai';
+import { z } from 'zod';
 
+import { updateDashboardLayout } from '@/actions/user-settings';
 import { loadDecryptedVault } from '@/lib/bridge-vault';
 import { prisma } from '@/lib/prisma';
+import {
+  MODULE_ID_TO_APP_PATH,
+  getVisualWidgetsForModule,
+} from '@/registry/discovery-registry';
+import { dashboardLayoutPersistedSchema } from '@/types/dashboard-layout-persisted';
 
+import {
+  buildWarRoomConfigFromBlueprintInput,
+  defaultBlueprintProposedModules,
+  normalizeClassifierBlueprintModules,
+  extractUrlFromUserText,
+  inferBusinessNameFromUrl,
+  normalizeUrlScanned,
+} from './app-blueprint-war-room-config';
 import { getAiOrchestratorHealth } from './health';
 import { completeLlmWithFallback } from './llm/gateway';
 import { loadMasterProtocolText } from './master-protocol';
 import {
   AI_ORCHESTRATOR_ENGINE_ID,
   type AiOrchestratorHealth,
+  type AiOrchestratorSharedChatResult,
   type AodsIdeationMessage,
   type AnalyzeNotebookResult,
   type GenerateGeminiActivatorResult,
   type IdeateResult,
   type InitSessionResult,
   type OrchestratorConfig,
+  type RearrangeDashboardLayoutResult,
   type SessionStartParams,
   type TriggerDeploymentResult,
   type UpdateGeminiDocResult,
 } from './types';
+import { runClassifierNode } from './graph/nodes/classifier';
+import { applyAiSdkEnvFromVault, getOptimalModel } from './model-selector';
 
 /** §25.2.1 — advertencia obligatoria en MOCK (fase NotebookLM prompt). */
 const MOCK_NOTEBOOK_PROMPT_NOTICE =
@@ -47,6 +68,28 @@ const PHASE_7_UPDATE_BLUEPRINT_SYSTEM = `Eres el Arquitecto Jefe de FIFER. Recib
 Fusiona el blueprint con el progreso: marca o reordena execution_steps si el informe indica trabajo completado; añade rutas de archivos creados o modificados en la clave "files_touched" (array de strings) cuando el informe las mencione; actualiza summary de forma breve si cambió el alcance.
 Responde ÚNICAMENTE con un objeto JSON válido (sin markdown). Incluye siempre la clave opcional "aods_update_summary" (string breve, una frase) describiendo el cambio para el usuario.
 Preserva el resto de claves útiles del blueprint anterior y añade "source_phase": "phase_7_update".`;
+
+const LAYOUT_CELL_SCHEMA = z.object({
+  x: z.number().int().min(0).max(100_000),
+  y: z.number().int().min(0).max(100_000),
+  w: z.number().int().min(1).max(12),
+  h: z.number().int().min(1).max(24),
+});
+
+const LAYOUT_CELLS_ONLY_SCHEMA = z.object({
+  cells: z.record(z.string(), LAYOUT_CELL_SCHEMA),
+});
+
+const REARRANGE_LAYOUT_SYSTEM_PROMPT = `Eres un sub-agente experto en grid layout 12 columnas.
+Tu tarea: reorganizar un dashboard según una instrucción del usuario.
+Responde SOLO JSON válido sin markdown ni texto adicional.
+Formato obligatorio:
+{"cells":{"<widgetId>":{"x":0,"y":0,"w":4,"h":3}}}
+Reglas:
+- Mantén todos los widgetId existentes (no agregues ni elimines).
+- x >= 0, y >= 0, w entre 1 y 12, h entre 1 y 24.
+- Evita solapes evidentes y respeta una grilla de 12 columnas.
+- Usa la instrucción del usuario como prioridad semántica (ej: "métricas arriba").`;
 
 function buildNotebookInstructionsDraft(planMaestro: string): string {
   return `Analiza este Plan Maestro para FIFER y genera un resumen técnico estructurado para NotebookLM, enfocándote en dependencias de motores y esquema de base de datos:\n\n${planMaestro}`;
@@ -99,6 +142,17 @@ function normalizeIdeationForOpenAi(
     out.unshift({ role: 'user', content: '[Inicio de conversación]' });
   }
   return out;
+}
+
+function isAdminRole(userRole: string): boolean {
+  const r = userRole.trim().toLowerCase();
+  return r === 'admin' || r === 'administrador';
+}
+
+function contextIncludesAppPath(currentContext: string, appPath: string): boolean {
+  const n = currentContext.toLowerCase();
+  const p = appPath.toLowerCase();
+  return n.includes(`/${p}`) || n.endsWith(p) || n.includes(`${p}/`);
 }
 
 /**
@@ -292,14 +346,41 @@ export class AiOrchestratorEngine {
   }
 
   /**
-   * Fase -1: chat libre (Vertex → OpenAI → Anthropic vía `loadDecryptedVault`). Sin Prisma.
+   * Fase -1: chat libre. Prioriza Gemini Flash (BASIC_CHAT) vía AI SDK; cadena legacy como respaldo.
    */
-  async ideate(messages: AodsIdeationMessage[]): Promise<IdeateResult> {
+  async ideate(
+    messages: AodsIdeationMessage[],
+    userRole = 'user',
+    userTier?: string,
+  ): Promise<IdeateResult> {
     if (!messages.length) {
       throw new Error('Se requiere al menos un mensaje.');
     }
     const normalized = normalizeIdeationForOpenAi(messages);
     const vault = await loadDecryptedVault();
+    applyAiSdkEnvFromVault(vault);
+
+    const hasGoogle = !!process.env.GOOGLE_GENERATIVE_AI_API_KEY?.trim();
+    const hasOpenAI = !!process.env.OPENAI_API_KEY?.trim();
+
+    if (hasGoogle || hasOpenAI) {
+      try {
+        const model = getOptimalModel('BASIC_CHAT', userRole, userTier);
+        const { text } = await generateText({
+          model,
+          system: IDEATION_SYSTEM_PROMPT,
+          messages: normalized,
+          temperature: 0.55,
+        });
+        const trimmed = text?.trim();
+        if (trimmed) {
+          return { success: true, reply: trimmed, mock: false };
+        }
+      } catch {
+        /* fallback a cadena legacy */
+      }
+    }
+
     const result = await completeLlmWithFallback(
       {
         systemInstruction: IDEATION_SYSTEM_PROMPT,
@@ -318,6 +399,251 @@ export class AiOrchestratorEngine {
       success: true,
       mock: true,
       reply: `⚠️ [MODO SIMULADO]: sin API de IA en vivo. Refina tu idea: ${last}\n\n¿Qué motores FIFER (engines) y tablas Prisma necesitas?`,
+    };
+  }
+
+  /**
+   * Chat AODS con bifurcación de intención:
+   * - NAVIGATE: única rama que retorna cambio de ruta (`targetUrl`).
+   * - STREAM_UI / GUIDED_OVERLAY: mismos payload (`visualWidgets` + `reply`); el cliente abre overlay sin `router.push`.
+   * - EXECUTE general: salida textual (`ideate`).
+   */
+  async processSharedChat(
+    messages: ModelMessage[],
+    currentContext: string,
+    locale = 'es-CL',
+    userRole = 'user',
+    userTier?: string,
+  ): Promise<AiOrchestratorSharedChatResult> {
+    const lastUserText = (() => {
+      for (let i = messages.length - 1; i >= 0; i--) {
+        const m = messages[i];
+        if (m?.role === 'user' && typeof m.content === 'string') {
+          return m.content.trim();
+        }
+      }
+      const last = messages[messages.length - 1];
+      return typeof last?.content === 'string' ? last.content.trim() : '';
+    })();
+
+    const decision = await runClassifierNode(messages, userRole);
+    console.log('[Agentic Router] Decisión estructurada:', decision);
+
+    if (decision.intent === 'ERROR') {
+      return {
+        action: 'TEXT_ONLY',
+        reply: `⚠️ Error interno de FIFER: No pude clasificar tu intención. Detalles: ${decision.reasoning}`,
+      };
+    }
+
+    if (decision.intent === 'DISAMBIGUATE') {
+      return {
+        action: 'TEXT_ONLY',
+        reply: decision.reasoning,
+      };
+    }
+
+    if (decision.intent === 'TEXT_ONLY') {
+      return {
+        action: 'TEXT_ONLY',
+        reply: decision.reasoning,
+      };
+    }
+
+    if (decision.intent === 'CREATE_APP_FROM_URL') {
+      const rawUrl =
+        (decision.sourceUrl?.trim() || extractUrlFromUserText(lastUserText)).trim();
+      const urlScanned = normalizeUrlScanned(rawUrl);
+      const effectiveUrl = urlScanned || 'https://';
+      const businessName =
+        decision.scaffoldBusinessName?.trim() ||
+        inferBusinessNameFromUrl(effectiveUrl);
+      const rawProposedModules =
+        decision.scaffoldProposedModules != null &&
+        decision.scaffoldProposedModules.length > 0
+          ? decision.scaffoldProposedModules
+          : defaultBlueprintProposedModules();
+      const proposedModules = normalizeClassifierBlueprintModules(rawProposedModules);
+      const warRoomConfig = buildWarRoomConfigFromBlueprintInput({
+        urlScanned: effectiveUrl,
+        businessName,
+        proposedModules,
+      });
+      return {
+        action: 'STREAM_UI',
+        visualWidgets: ['appBlueprintWarRoom'],
+        warRoomConfig,
+        reply:
+          decision.reasoning?.trim() ||
+          'Analizando la URL y preparando el blueprint de tu aplicación personalizada…',
+        reasoning: decision.reasoning,
+      };
+    }
+
+    const tryNavigateToModule = (
+      moduleId: string | null | undefined,
+      reasoning: string,
+    ): AiOrchestratorSharedChatResult | null => {
+      if (moduleId == null || moduleId === '') return null;
+      const appPath = MODULE_ID_TO_APP_PATH[moduleId];
+      if (!appPath) return null;
+      if (contextIncludesAppPath(currentContext, appPath)) {
+        return null;
+      }
+      return {
+        action: 'NAVIGATE',
+        targetUrl: `/${locale}/${appPath}`,
+        reasoning,
+      };
+    };
+
+    switch (decision.intent) {
+      case 'NAVIGATE': {
+        const nav = tryNavigateToModule(decision.targetModuleId, decision.reasoning);
+        if (nav) return nav;
+        break;
+      }
+      case 'SYSTEM_WAR_ROOM': {
+        if (!isAdminRole(userRole)) {
+          const ideation = await this.ideate(
+            [{ role: 'user', content: lastUserText }],
+            userRole,
+            userTier,
+          );
+          return {
+            action: 'EXECUTE',
+            reasoning: decision.reasoning,
+            reply:
+              ideation.reply +
+              '\n\n(El módulo de telemetría del sistema requiere rol administrador.)',
+            mock: ideation.mock,
+          };
+        }
+        const warPath = MODULE_ID_TO_APP_PATH['system-telemetry-war-room'];
+        const suggested = warPath ? `/${locale}/${warPath}` : '';
+        return {
+          action: 'TEXT_ONLY',
+          reply:
+            (decision.reasoning ?? '').trim() +
+            (suggested
+              ? `\n\nPuedes abrir Telemetría del sistema desde el menú o en: ${suggested}`
+              : ''),
+        };
+      }
+      case 'GUIDED_OVERLAY':
+      case 'STREAM_UI': {
+        let widgetsToRender =
+          decision.visualWidgets != null && decision.visualWidgets.length > 0
+            ? decision.visualWidgets.filter(
+                (w): w is string => typeof w === 'string' && w.trim().length > 0,
+              )
+            : [];
+
+        if (
+          decision.intent === 'GUIDED_OVERLAY' &&
+          decision.targetModuleId === 'affiliates-beauty'
+        ) {
+          widgetsToRender = ['configuradorCampana'];
+        }
+
+        if (widgetsToRender.length === 0) {
+          widgetsToRender = getVisualWidgetsForModule(decision.targetModuleId);
+        }
+
+        return {
+          action: 'STREAM_UI',
+          visualWidgets: widgetsToRender,
+          reply:
+            decision.reasoning?.trim() || 'Abriendo entorno de trabajo…',
+          reasoning: decision.reasoning,
+        };
+      }
+      default:
+        break;
+    }
+
+    const ideation = await this.ideate(
+      [{ role: 'user', content: lastUserText }],
+      userRole,
+      userTier,
+    );
+    return {
+      action: 'EXECUTE',
+      reasoning: decision.reasoning,
+      reply: ideation.reply,
+      mock: ideation.mock,
+    };
+  }
+
+  async rearrangeDashboardLayout(
+    ownerId: string,
+    userPrompt: string,
+    revalidateTarget?: string,
+  ): Promise<RearrangeDashboardLayoutResult> {
+    const prompt = userPrompt.trim();
+    if (!prompt) {
+      throw new Error('El prompt para reorganizar layout no puede estar vacío.');
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: ownerId },
+      select: { dashboardLayout: true },
+    });
+    if (!user) {
+      throw new Error('No se encontró el usuario para soberanía de layout.');
+    }
+
+    const currentParsed = dashboardLayoutPersistedSchema.safeParse(
+      user.dashboardLayout ?? { cells: {} },
+    );
+    const currentLayout = currentParsed.success
+      ? currentParsed.data
+      : { cells: {} as Record<string, { x: number; y: number; w: number; h: number }> };
+
+    const llmInput = [
+      '## Instrucción del usuario',
+      prompt,
+      '',
+      '## Layout actual',
+      JSON.stringify({ cells: currentLayout.cells }, null, 2),
+    ].join('\n');
+
+    const vault = await loadDecryptedVault();
+    const llmResult = await completeLlmWithFallback(
+      {
+        systemInstruction: REARRANGE_LAYOUT_SYSTEM_PROMPT,
+        turns: [{ role: 'user', content: llmInput }],
+        temperature: 0.15,
+        jsonMode: true,
+      },
+      vault,
+    );
+
+    const candidate = llmResult
+      ? parseJsonObjectFromAiText(llmResult.text)
+      : { cells: currentLayout.cells };
+    const cellsParsed = LAYOUT_CELLS_ONLY_SCHEMA.safeParse(candidate);
+    if (!cellsParsed.success) {
+      throw new Error('El sub-agente de layout devolvió un JSON inválido para la grilla.');
+    }
+
+    const nextLayout = {
+      cells: cellsParsed.data.cells,
+      slotOrder: currentLayout.slotOrder,
+      liquidAddonWidgets: currentLayout.liquidAddonWidgets,
+    };
+    const validatedNextLayout = dashboardLayoutPersistedSchema.parse(nextLayout);
+
+    const persist = await updateDashboardLayout(validatedNextLayout, revalidateTarget);
+    if (!persist.ok) {
+      throw new Error(`No se pudo persistir dashboardLayout (${persist.error}).`);
+    }
+
+    return {
+      success: true,
+      message: 'Layout reorganizado y persistido con éxito.',
+      layout: validatedNextLayout,
+      mock: llmResult == null,
     };
   }
 

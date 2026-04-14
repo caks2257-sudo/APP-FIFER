@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import MinimalistContextChat from '@/components/core/MinimalistContextChat';
 import { getIntegrationsStatus } from '@/engines/system-engine/env-manager';
 import { prisma } from '@/lib/prisma';
+import { upsertPrismaUserFromSupabaseAuth } from '@/lib/prisma-auth-sync';
 import { createServerSupabaseClient } from '@/lib/supabase-ssr/server';
 
 type WarRoomPageProps = {
@@ -50,11 +51,17 @@ export default async function WarRoomPage({ params }: WarRoomPageProps) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user?.email) {
+  if (!user?.email || !user.id) {
     redirect(`/${params.locale}/login`);
   }
 
-  const dbUser = await prisma.user.findUnique({ where: { email: user.email } });
+  try {
+    await upsertPrismaUserFromSupabaseAuth(user);
+  } catch {
+    redirect(`/${params.locale}/dashboard`);
+  }
+
+  const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
   if (!dbUser || dbUser.role?.toLowerCase() !== 'admin') {
     redirect(`/${params.locale}/dashboard`);
   }

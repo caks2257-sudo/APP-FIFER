@@ -3,8 +3,17 @@
 import { revalidatePath } from 'next/cache';
 
 import { triggerFinanceAudit } from '@/lib/integrations/tasklet';
+import {
+  PrismaAuthLegacyEmailConflictError,
+  syncThenFindUser,
+} from '@/lib/prisma-auth-sync';
 import { prisma } from '@/lib/prisma';
 import { createServerSupabaseClient } from '@/lib/supabase-ssr/server';
+import type {
+  CashFlowReport,
+  FintocAccount,
+} from '@/components/dashboard/widgets/contracts';
+import type { DashboardLayoutPersisted } from '@/types/dashboard-layout-persisted';
 
 export type FinanceTransactionRow = {
   id: string;
@@ -32,6 +41,9 @@ export type FinanceDashboardData =
       transactions: FinanceTransactionRow[];
       monthlyIncome: string;
       monthlyExpense: string;
+      fintocAccount: FintocAccount;
+      cashFlowReport: CashFlowReport;
+      dashboardLayout: DashboardLayoutPersisted | null;
     }
   | { ok: false; error: 'unauthenticated' | 'no_prisma_user' };
 
@@ -42,19 +54,94 @@ function monthBoundsUtcNow(): { start: Date; end: Date } {
   return { start, end };
 }
 
+function inferInstitutionIcon(name: string): string {
+  const trimmed = name.trim();
+  return trimmed ? trimmed.slice(0, 1).toUpperCase() : 'B';
+}
+
+function buildFintocAccountSimulation(args: {
+  accountId: string;
+  accountCurrency: string;
+  currentBalance: number;
+  availableBalance: number;
+  lastTransactionDate: Date | null;
+}): FintocAccount {
+  const {
+    accountId,
+    accountCurrency,
+    currentBalance,
+    availableBalance,
+    lastTransactionDate,
+  } = args;
+  const bankName = 'Banco Santander';
+  return {
+    id: `fintoc_${accountId}`,
+    name: 'Cuenta Corriente Empresa',
+    number: `0000${accountId.slice(-4)}`,
+    currency: (accountCurrency === 'USD' || accountCurrency === 'EUR'
+      ? accountCurrency
+      : 'CLP') as FintocAccount['currency'],
+    officialName: 'Santander Empresas',
+    institution: {
+      id: 'santander_cl',
+      name: bankName,
+      iconInitial: inferInstitutionIcon(bankName),
+    },
+    balance: {
+      current: Math.round(currentBalance),
+      available: Math.round(availableBalance),
+    },
+    lastSyncAt: lastTransactionDate ? `Actualizado ${lastTransactionDate.toLocaleDateString('es-CL')}` : 'Actualizado hoy',
+    syncStatus: 'SYNCED',
+  };
+}
+
+function buildCashFlowReportSimulation(args: {
+  currency: string;
+  monthlyIncome: number;
+  monthlyExpense: number;
+  transactionsCount: number;
+}): CashFlowReport {
+  const now = new Date();
+  const periodLabel = now.toLocaleDateString('es-CL', {
+    month: 'long',
+    year: 'numeric',
+  });
+  return {
+    periodLabel: `${periodLabel[0]?.toUpperCase() ?? ''}${periodLabel.slice(1)}`,
+    currency: (args.currency === 'USD' || args.currency === 'EUR'
+      ? args.currency
+      : 'CLP') as CashFlowReport['currency'],
+    ingresosDte: {
+      projectedAmount: Math.round(args.monthlyIncome),
+      documentCount: Math.max(1, Math.ceil(args.transactionsCount / 2)),
+    },
+    egresosFacturas: {
+      payableAmount: Math.round(args.monthlyExpense),
+      documentCount: Math.max(1, Math.floor(args.transactionsCount / 2)),
+    },
+  };
+}
+
 export async function getFinanceDashboardData(): Promise<FinanceDashboardData> {
   const supabase = createServerSupabaseClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user?.email) {
+  if (!user?.email || !user.id) {
     return { ok: false, error: 'unauthenticated' };
   }
 
-  const dbUser = await prisma.user.findUnique({
-    where: { email: user.email },
-  });
+  let dbUser;
+  try {
+    dbUser = await syncThenFindUser(user);
+  } catch (error) {
+    if (error instanceof PrismaAuthLegacyEmailConflictError) {
+      return { ok: false, error: 'no_prisma_user' };
+    }
+    throw error;
+  }
 
   if (!dbUser) {
     return { ok: false, error: 'no_prisma_user' };
@@ -96,6 +183,25 @@ export async function getFinanceDashboardData(): Promise<FinanceDashboardData> {
     }
   }
 
+  const monthlyIncomeNumber = Number(monthlyIncome);
+  const monthlyExpenseNumber = Number(monthlyExpense);
+  const currentBalance = Number(account.balance);
+  const availableBalance = Math.max(0, currentBalance - monthlyExpenseNumber * 0.08);
+  const lastTransactionDate = account.transactions[0]?.createdAt ?? null;
+  const fintocAccount = buildFintocAccountSimulation({
+    accountId: account.id,
+    accountCurrency: account.currency,
+    currentBalance,
+    availableBalance,
+    lastTransactionDate,
+  });
+  const cashFlowReport = buildCashFlowReportSimulation({
+    currency: account.currency,
+    monthlyIncome: monthlyIncomeNumber,
+    monthlyExpense: monthlyExpenseNumber,
+    transactionsCount: account.transactions.length,
+  });
+
   return {
     ok: true,
     hasAccount: true,
@@ -116,6 +222,9 @@ export async function getFinanceDashboardData(): Promise<FinanceDashboardData> {
     })),
     monthlyIncome,
     monthlyExpense,
+    fintocAccount,
+    cashFlowReport,
+    dashboardLayout: (dbUser.dashboardLayout as DashboardLayoutPersisted | null) ?? null,
   };
 }
 
@@ -131,13 +240,19 @@ export async function initializeFinancialModule(
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user?.email) {
+  if (!user?.email || !user.id) {
     return { ok: false, error: 'unauthenticated' };
   }
 
-  const dbUser = await prisma.user.findUnique({
-    where: { email: user.email },
-  });
+  let dbUser;
+  try {
+    dbUser = await syncThenFindUser(user);
+  } catch (error) {
+    if (error instanceof PrismaAuthLegacyEmailConflictError) {
+      return { ok: false, error: 'no_prisma_user' };
+    }
+    throw error;
+  }
 
   if (!dbUser) {
     return { ok: false, error: 'no_prisma_user' };
@@ -172,13 +287,19 @@ export async function syncFinancialData(): Promise<SyncFinancialDataResult> {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user?.email) {
+    if (!user?.email || !user.id) {
       return { ok: false, error: 'unauthenticated' };
     }
 
-    const dbUser = await prisma.user.findUnique({
-      where: { email: user.email },
-    });
+    let dbUser;
+    try {
+      dbUser = await syncThenFindUser(user);
+    } catch (error) {
+      if (error instanceof PrismaAuthLegacyEmailConflictError) {
+        return { ok: false, error: 'no_prisma_user' };
+      }
+      throw error;
+    }
 
     if (!dbUser) {
       return { ok: false, error: 'no_prisma_user' };

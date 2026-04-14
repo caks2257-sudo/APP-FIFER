@@ -1,4 +1,28 @@
-# Healing — system-engine (raíz)
+# X-Ray HEALING — engine:system-engine
 
-- El motor raíz no implementa cascadas propias; la resiliencia vive en sub-engines (p. ej. `system-engine:env-manager` — solo desarrollo, validación de entorno).
-- Errores de registro en carga: log en consola sin tumbar el proceso (ver `index.ts` del sub-engine).
+## UBICACIÓN LÓGICA
+
+`FIFER://engines/system-engine`
+
+## RESILIENCIA
+
+- Tipo de módulo: `engine`
+- Ruta física: `system-engine`
+- Documentar boundaries, retries, circuit-breakers y degradación.
+
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
+
+- `error`
+- `process`
+- `engine_id`
+- `env-manager`
+- `sub_engine_id`
+- `log_prefix`
+- `manager`
+- `status`
+- `system-engine`
+- `development`
+- `eventring`
+- `info`
+- `length`
+- `name`

@@ -1,7 +1,32 @@
-# Plano de Datos - desarrollador
+# X-Ray DATA — app:desarrollador
 
-## Esquemas Zod
-- (Listar schemas de entrada/salida y versionado.)
+## UBICACIÓN LÓGICA
 
-## Endpoints
-- (Rutas API, métodos, contratos y fuentes de verdad.)
+`FIFER://APP/DESARROLLADOR`
+
+## RESUMEN DE DATOS
+
+- Tipo de módulo: `app`
+- Ruta física: `desarrollador`
+- Mapear entradas, salidas y contratos reales.
+
+## FUENTES Y FLUJOS
+
+- Completar desde código real del módulo.
+
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
+
+- `activetab`
+- `bridge`
+- `external`
+- `title`
+- `bridgelatencies`
+- `degraded`
+- `boxid`
+- `engines`
+- `onrefresh`
+- `record`
+- `apis`
+- `error`
+- `internal`
+- `ontelemetryrefresh`

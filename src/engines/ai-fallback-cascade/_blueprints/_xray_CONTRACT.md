@@ -1,5 +1,10 @@
 # Contrato X-Ray — `ai-fallback-cascade`
 
+## UBICACIÓN LÓGICA
+
+FIFER://engines/ai-fallback-cascade
+
+
 ## Entrada
 
 | Campo | Tipo | Requerido | Descripción |

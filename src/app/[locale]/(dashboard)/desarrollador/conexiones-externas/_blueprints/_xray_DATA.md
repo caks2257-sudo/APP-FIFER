@@ -1,16 +1,32 @@
-# Datos — Conexiones externas
+# X-Ray DATA — app:desarrollador-conexiones-externas
 
 ## UBICACIÓN LÓGICA
 
 `FIFER://app/desarrollador/conexiones-externas`
 
-**targetAppOrEngine:** `desarrollador`
+## RESUMEN DE DATOS
 
-## APIs
+- Tipo de módulo: `app`
+- Ruta física: `desarrollador/conexiones-externas`
+- Mapear entradas, salidas y contratos reales.
 
-| Método | Ruta | Rol |
-|--------|------|-----|
-| GET | `/api/v1/external-bridge/status` | Sesión; `schemaVersion` 2.x unificado + auto-descubrimiento + `iconKey` |
-| POST | `/api/v1/system/external-bridge/credentials` | Admin + dev; `{ envKey, secret }` o `{ integrationId, secret }` (Bridge) |
+## FUENTES Y FLUJOS
 
-Motor: `EngineRegistry.use('external-bridge-engine')` + `loadDecryptedVault()`.
+- Completar desde código real del módulo.
+
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
+
+- `boxerrorboundary`
+- `error`
+- `externalconnectionspanel`
+- `integrations`
+- `loading`
+- `useexternalbridge`
+- `useuserdnastore`
+- `a0f1e`
+- `components`
+- `profile`
+- `refresh`
+- `acceso`
+- `admin`
+- `conexionesexternaspage`

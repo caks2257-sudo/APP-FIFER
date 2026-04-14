@@ -2,7 +2,7 @@
 
 ## UBICACIÓN LÓGICA
 
-`FIFER://ENGINE/AI_ORCHESTRATOR`
+FIFER://engines/ai-orchestrator-engine
 
 ## Flujo de estados (sesión)
 

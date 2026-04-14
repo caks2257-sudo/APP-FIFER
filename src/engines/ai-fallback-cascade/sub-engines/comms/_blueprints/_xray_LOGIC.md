@@ -1,5 +1,10 @@
 # Espejo X-Ray — lógica (`sub-engines/comms/index.ts`)
 
+## UBICACIÓN LÓGICA
+
+FIFER://engines/ai-fallback-cascade/sub-engines/comms
+
+
 **Archivo:** `index.ts`. `EngineRegistry.register("ai-fallback:comms", new CommsSubEngine())`.
 
 ---
@@ -50,3 +55,20 @@
 - `fetch`, `Buffer` (Twilio Basic auth)
 
 No hay persistencia ni cola; envíos síncronos en cadena según la tabla anterior.
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
+
+- reason
+- body
+- trim
+- dest
+- twilio
+- error
+- provider
+- whatsapp
+- mock
+- sendgrid
+- email
+- process
+- channel
+- mocksend
+

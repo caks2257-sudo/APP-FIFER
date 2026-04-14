@@ -1,5 +1,10 @@
 # Espejo X-Ray — contratos TypeScript (`system-health/index.ts`)
 
+## UBICACIÓN LÓGICA
+
+FIFER://engines/system-health
+
+
 **No hay esquemas Zod** en este motor; el contrato es solo TypeScript exportado.
 
 ---

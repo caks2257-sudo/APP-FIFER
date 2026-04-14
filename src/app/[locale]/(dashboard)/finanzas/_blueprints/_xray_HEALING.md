@@ -1,7 +1,28 @@
-# Plano de Resiliencia — Finanzas
+# X-Ray HEALING — app:finanzas
 
-## Circuit Breaker
+## UBICACIÓN LÓGICA
 
-- **Threshold:** 3 fallos consecutivos antes de abrir el circuito.
-- **Half-open:** reintento tras ventana de enfriamiento; la UI muestra estado degradado sin derrumbar el shell del dashboard.
-- **Registro:** fallos de box vía `boxCircuitBreaker.recordFailure` en rutas de datos de widgets.
+`FIFER://APP/FINANZAS`
+
+## RESILIENCIA
+
+- Tipo de módulo: `app`
+- Ruta física: `finanzas`
+- Documentar boundaries, retries, circuit-breakers y degradación.
+
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
+
+- `eab308`
+- `error`
+- `font-semibold`
+- `currency`
+- `f9fafb`
+- `font-medium`
+- `seterror`
+- `loading`
+- `e293b`
+- `rounded-lg`
+- `a0f1e`
+- `message`
+- `finanzas`
+- `labels`

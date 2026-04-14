@@ -1,8 +1,19 @@
-# Plano de Enrutamiento - DashboardInmobiliario
+# X-Ray ROUTING — app:dashboardinmobiliario
 
-## Rutas
-- (Rutas Next.js / segmentos / parámetros dinámicos y enlaces desde el shell del dashboard.)
+## UBICACIÓN LÓGICA
 
-## Registro global (Sidebar)
-- La ruta pública **`/dashboardinmobiliario`** está enlazada desde la **Sidebar principal** del dashboard (`src/components/dashboard/Sidebar.tsx`), bajo la categoría **Gestión Real Estate** → **Dashboard Inmobiliario**.
-- **Nivel de acceso:** estándar (mismo criterio que el resto de ítems del menú principal; sin flags especiales de permiso en navegación).
+`FIFER://APP/DASHBOARDINMOBILIARIO`
+
+## RUTEO DEL MÓDULO
+
+- Tipo de módulo: `app`
+- Ruta física: `dashboardinmobiliario`
+- Documentar rutas y navegación reales.
+
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
+
+- `fiferinmobiliariomain`
+- `boxes`
+- `components`
+- `dashboardinmobiliariopage`
+- `v0-ingestion`

@@ -4,6 +4,10 @@ import { z } from 'zod';
 import '@/engines/finance-engine';
 
 import { loadDecryptedVault } from '@/lib/bridge-vault';
+import {
+  PrismaAuthLegacyEmailConflictError,
+  syncThenFindUser,
+} from '@/lib/prisma-auth-sync';
 import { prisma } from '@/lib/prisma';
 import { createServerSupabaseClient } from '@/lib/supabase-ssr/server';
 import { EngineRegistry } from '@/registry/engine-registry';
@@ -24,7 +28,7 @@ export async function POST(request: NextRequest) {
     data: { user: authUser },
   } = await supabase.auth.getUser();
 
-  if (!authUser?.email) {
+  if (!authUser?.email || !authUser.id) {
     return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
   }
 
@@ -43,9 +47,19 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const dbUser = await prisma.user.findUnique({
-    where: { email: authUser.email },
-  });
+  let dbUser;
+  try {
+    dbUser = await syncThenFindUser(authUser);
+  } catch (error) {
+    if (error instanceof PrismaAuthLegacyEmailConflictError) {
+      return NextResponse.json(
+        { error: 'Identidad desalineada con Supabase Auth.' },
+        { status: 409 },
+      );
+    }
+    throw error;
+  }
+
   if (!dbUser) {
     return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
   }

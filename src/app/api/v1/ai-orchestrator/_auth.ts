@@ -1,12 +1,17 @@
 import { NextResponse } from 'next/server';
 
+import {
+  PrismaAuthLegacyEmailConflictError,
+  type PrismaUserRow,
+  upsertPrismaUserFromSupabaseAuth,
+} from '@/lib/prisma-auth-sync';
 import { prisma } from '@/lib/prisma';
 import { createServerSupabaseClient } from '@/lib/supabase-ssr/server';
 
-export type PrismaUserRow = { id: string; email: string };
+export type { PrismaUserRow };
 
 /**
- * Supabase session + fila `User` en Prisma. Mismos códigos que `init/route.ts`.
+ * Supabase session + fila `User` en Prisma con `id` = UUID de Auth (RLS).
  */
 export async function requirePrismaUser(): Promise<
   | { ok: true; dbUser: PrismaUserRow }
@@ -17,28 +22,38 @@ export async function requirePrismaUser(): Promise<
     data: { user: authUser },
   } = await supabase.auth.getUser();
 
-  if (!authUser?.email) {
+  if (!authUser?.email || !authUser.id) {
     return {
       ok: false,
       response: NextResponse.json({ error: 'No autenticado' }, { status: 401 }),
     };
   }
 
-  const dbUser = await prisma.user.findUnique({
-    where: { email: authUser.email },
-  });
-
-  if (!dbUser) {
+  try {
+    const dbUser = await upsertPrismaUserFromSupabaseAuth(authUser);
+    return { ok: true, dbUser };
+  } catch (error) {
+    if (error instanceof PrismaAuthLegacyEmailConflictError) {
+      return {
+        ok: false,
+        response: NextResponse.json(
+          {
+            error:
+              'Identidad desalineada: el email en la base no coincide con el UUID de Supabase Auth. Ejecute la migración de identidad (sync-uuid) o contacte a soporte.',
+          },
+          { status: 409 },
+        ),
+      };
+    }
+    console.error('[requirePrismaUser] Error al sincronizar usuario Prisma:', error);
     return {
       ok: false,
       response: NextResponse.json(
-        { error: 'Usuario sin fila en Prisma; sincronice la identidad.' },
-        { status: 404 },
+        { error: 'No se pudo sincronizar el usuario con la base de datos.' },
+        { status: 500 },
       ),
     };
   }
-
-  return { ok: true, dbUser };
 }
 
 /**

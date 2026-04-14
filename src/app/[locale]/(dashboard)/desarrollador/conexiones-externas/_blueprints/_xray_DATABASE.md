@@ -1,11 +1,28 @@
-# Persistencia — Conexiones externas
+# X-Ray DATABASE — app:desarrollador-conexiones-externas
 
 ## UBICACIÓN LÓGICA
 
 `FIFER://app/desarrollador/conexiones-externas`
 
-**targetAppOrEngine:** `desarrollador`
+## SUPERFICIE DE DATOS
 
-## Notas
+- Tipo de módulo: `app`
+- Ruta física: `desarrollador/conexiones-externas`
+- Registrar entidades, lecturas, escrituras y dependencias reales.
 
-La UI admin persiste secretos vía modelo `ExternalBridgeCredential` (véase motor `external-bridge-engine` y `prisma/schema.prisma`). Esta Sub-App no introduce tablas adicionales.
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
+
+- `boxerrorboundary`
+- `error`
+- `externalconnectionspanel`
+- `integrations`
+- `loading`
+- `useexternalbridge`
+- `useuserdnastore`
+- `a0f1e`
+- `components`
+- `profile`
+- `refresh`
+- `acceso`
+- `admin`
+- `conexionesexternaspage`

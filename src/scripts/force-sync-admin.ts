@@ -2,8 +2,7 @@
  * Emergencia: sincroniza el usuario de Supabase en Prisma y lo eleva a admin + tier pro.
  * Uso: npm run fifer:admin-setup
  *
- * Opcional: `FIFER_ADMIN_SUPABASE_USER_ID=<uuid>` — al crear un usuario nuevo, fuerza el `id`
- * al UUID de Supabase Auth (si no se define, Prisma usa `cuid()`).
+ * Obligatorio al crear usuario nuevo: `FIFER_ADMIN_SUPABASE_USER_ID=<uuid>` (debe coincidir con auth.users.id).
  */
 import 'dotenv/config';
 
@@ -25,9 +24,14 @@ async function main(): Promise<void> {
   const existing = await prisma.user.findUnique({ where: { email: EMAIL } });
 
   if (!existing) {
+    if (!explicitId) {
+      throw new Error(
+        '[fifer:admin-setup] Sin usuario previo: defina FIFER_ADMIN_SUPABASE_USER_ID con el UUID de Supabase Auth.',
+      );
+    }
     const created = await prisma.user.create({
       data: {
-        ...(explicitId ? { id: explicitId } : {}),
+        id: explicitId,
         email: EMAIL,
         name: NAME,
         role: ROLE,

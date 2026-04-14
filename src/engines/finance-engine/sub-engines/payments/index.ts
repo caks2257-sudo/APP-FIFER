@@ -4,7 +4,6 @@
 
 import '@/engines/external-bridge-engine';
 
-import { Decimal } from '@prisma/client/runtime/library';
 import type { PrismaClient } from '@prisma/client';
 
 import type {
@@ -12,9 +11,11 @@ import type {
   ExternalBridgeEngineApi,
 } from '@fifer/external-bridge-engine';
 
+import { CreatePaymentCheckoutInputSchema, CreatePaymentCheckoutOutputSchema } from '@/engines/finance-engine/schemas';
 import { EngineRegistry } from '@/registry/engine-registry';
 
 const SUB_ENGINE_ID = 'finance-engine:payments' as const;
+const PAYMENTS_AGENT_ID = 'tasklet' as const;
 
 export type CreatePaymentCheckoutParams = {
   prisma: PrismaClient;
@@ -30,56 +31,37 @@ export type CreatePaymentCheckoutResult = CreateCheckoutLinkResult & {
 };
 
 /**
- * Crea `Transaction` PENDIENTE (INGRESO) y genera link de pago vía Bridge.
+ * Adaptador liviano: valida payload y delega checkout al External Bridge.
  */
 export async function createPaymentCheckout(
   params: CreatePaymentCheckoutParams,
 ): Promise<CreatePaymentCheckoutResult> {
-  const {
-    prisma,
-    accountId,
-    amountClp,
-    description,
-    publicOrigin,
-    vault,
-  } = params;
-
-  const account = await prisma.financialAccount.findUnique({
-    where: { id: accountId },
-  });
-  if (!account) {
-    throw new Error('ACCOUNT_NOT_FOUND');
-  }
-
-  const tx = await prisma.transaction.create({
-    data: {
-      accountId,
-      amount: new Decimal(amountClp),
-      currency: account.currency,
-      type: 'INGRESO',
-      concept: description.slice(0, 500),
-      status: 'PENDIENTE',
-      source: 'payment_checkout',
-    },
-  });
+  const validated = CreatePaymentCheckoutInputSchema.parse(params);
 
   const bridge = EngineRegistry.use<ExternalBridgeEngineApi>(
     'external-bridge-engine',
   );
+  const envelope = {
+    agentId: PAYMENTS_AGENT_ID,
+    payload: {
+      amountClp: validated.amountClp,
+      description: validated.description,
+      transactionId: validated.accountId,
+      publicOrigin: validated.publicOrigin,
+    },
+  };
   const link = await bridge.createCheckoutLink(
     {
-      amountClp,
-      description,
-      transactionId: tx.id,
-      publicOrigin,
+      ...envelope.payload,
     },
-    vault,
+    validated.vault,
   );
 
-  return {
-    transactionId: tx.id,
+  const output = {
+    transactionId: envelope.payload.transactionId,
     ...link,
   };
+  return CreatePaymentCheckoutOutputSchema.parse(output);
 }
 
 export type PaymentsSubEngineApi = {

@@ -1,5 +1,10 @@
 # Contrato X-Ray — Sub-Engine `comms` (`ai-fallback:comms`)
 
+## UBICACIÓN LÓGICA
+
+FIFER://engines/ai-fallback-cascade/sub-engines/comms
+
+
 Micro-Core hijo del motor `ai-fallback-cascade`. Notificaciones salientes (WhatsApp / correo) con gobernanza FinOps por `CoreProfile.tier`.
 
 ## API pública — `send(to, body, provider, core?)`

@@ -1,26 +1,18 @@
-# Plano HEALING — Inmunidad y circuit breaker (`fifer-contratos-main`)
+# X-Ray HEALING — app:contratos
 
-## Dónde vive la lógica
+## UBICACIÓN LÓGICA
 
-- La página `page.tsx` solo compone layout + shell; la **inmunidad** y el manejo de errores de red están en **`ContratosPageShell`** (import directo desde la página, dentro del alcance que audita el inspector de obra).
+`FIFER://APP/CONTRATOS`
 
-## Circuit breaker de caja (`box-circuit-breaker`)
+## RESILIENCIA
 
-- Suscripción con `useSyncExternalStore` + `subscribeBoxCircuitSnapshots` para reflejar `boxCircuitBreaker.isCircuitOpen('fifer-contratos-main')`.
-- Antes del fetch, si el circuito está abierto para **`fifer-contratos-main`**, el shell corta el flujo (error UI, sin datos).
+- Tipo de módulo: `app`
+- Ruta física: `contratos`
+- Documentar boundaries, retries, circuit-breakers y degradación.
 
-## Registro de fallo (auditoría Constitución v6.0)
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
 
-- En el bloque **`catch`** del `try` que envuelve el `fetch` de contratos, se invoca explícitamente:
-
-  `boxCircuitBreaker.recordFailure('fifer-contratos-main')`
-
-- En ese mismo `catch` también se llama `recordFailure()` del circuito Chicureo y se limpian filas / flags de degradado.
-
-## Éxito y degradado controlado
-
-- Respuestas degradadas pero parseables incrementan fallos vía `recordFailure()` cuando `payload.degraded` es verdadero; flujos exitosos llaman `recordSuccess()`.
-
-## UI de prueba (dev)
-
-- Panel «Dev — resiliencia (§0.25)» con botones para forzar estados de UI y reintentos que interactúan con los circuitos documentados arriba.
+- `contratospageshell`
+- `components`
+- `contratos`
+- `contratospage`

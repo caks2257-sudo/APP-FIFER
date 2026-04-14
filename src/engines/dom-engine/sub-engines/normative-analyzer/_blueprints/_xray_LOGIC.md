@@ -14,3 +14,20 @@
 | MOCK | Ambas claves MOCK → `buildMockCabidaResponse` (éxito simulado) |
 | PROD | OpenAI `chat/completions` JSON; fallback Anthropic `messages` |
 | Contratos | `DomAnalisisRequest` / `DomAnalisisResponse` (`src/types/schemas.ts`) |
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
+
+- input
+- error
+- anthropic
+- openai
+- parsed
+- superficiemaximateorica
+- content
+- domanalisisrequest
+- domanalisisresponse
+- sub_engine_id
+- userprompt
+- candidate
+- catch
+- destino
+

@@ -14,3 +14,20 @@
 ## Persistencia
 
 Al aplicar: `source: bank_sync`, `status: COMPLETADO`, actualización atómica de `FinancialAccount.balance`.
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
+
+- balance
+- concept
+- accountid
+- currency
+- prisma
+- amountclp
+- externalid
+- postedat
+- savedids
+- bridgemode
+- newmovements
+- vault
+- bank
+- externalbridgeengineapi
+

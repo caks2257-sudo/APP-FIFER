@@ -1,15 +1,28 @@
-# Enrutamiento — Conexiones externas (Sub-App)
+# X-Ray ROUTING — app:desarrollador-conexiones-externas
 
 ## UBICACIÓN LÓGICA
 
 `FIFER://app/desarrollador/conexiones-externas`
 
-**targetAppOrEngine:** `desarrollador`
+## RUTEO DEL MÓDULO
 
-## Rutas
+- Tipo de módulo: `app`
+- Ruta física: `desarrollador/conexiones-externas`
+- Documentar rutas y navegación reales.
 
-| Ruta | Descripción |
-|------|-------------|
-| `/desarrollador/conexiones-externas` | UI admin: gestión Bridge MOCK/PROD |
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
 
-Sidebar: grupo SISTEMA → Conexiones externas (`src/registry/app-registry.ts`).
+- `boxerrorboundary`
+- `error`
+- `externalconnectionspanel`
+- `integrations`
+- `loading`
+- `useexternalbridge`
+- `useuserdnastore`
+- `a0f1e`
+- `components`
+- `profile`
+- `refresh`
+- `acceso`
+- `admin`
+- `conexionesexternaspage`

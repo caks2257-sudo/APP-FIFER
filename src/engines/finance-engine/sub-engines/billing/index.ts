@@ -8,40 +8,15 @@ import type { PrismaClient } from '@prisma/client';
 
 import type { ExternalBridgeEngineApi } from '@fifer/external-bridge-engine';
 
-import { loadDecryptedVault } from '@/lib/bridge-vault';
+import {
+  EmitInvoiceInputSchema,
+  EmitInvoiceOutputSchema,
+  TriggerAutoInvoiceInputSchema,
+} from '@/engines/finance-engine/schemas';
 import { EngineRegistry } from '@/registry/engine-registry';
 
-import { mapTransactionToEmitInvoiceInput } from './openfactura-mapper';
-
 const SUB_ENGINE_ID = 'finance-engine:billing' as const;
-
-async function resolvePublicOrigin(override?: string): Promise<string> {
-  if (override?.trim()) {
-    return override.replace(/\/$/, '');
-  }
-  try {
-    const { headers } = await import('next/headers');
-    const h = headers();
-    const host = h.get('host');
-    if (host) {
-      const proto = h.get('x-forwarded-proto') ?? 'http';
-      return `${proto}://${host}`.replace(/\/$/, '');
-    }
-  } catch {
-    /* sin contexto de request (jobs / microtasks) */
-  }
-  const site = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  if (site) return site.replace(/\/$/, '');
-  return 'http://localhost:3000';
-}
-
-export * from './openfactura-mapper';
-
-function assertTransactionId(id: string): asserts id is string {
-  if (!id || typeof id !== 'string' || !id.trim()) {
-    throw new Error('[finance-engine:billing] transactionId inválido — emisión abortada (Auto-Healing)');
-  }
-}
+const BILLING_AGENT_ID = 'tasklet' as const;
 
 /**
  * Tras checkout completado: emite DTE si aún no hay factura.
@@ -50,12 +25,13 @@ export async function triggerAutoInvoiceAfterPaymentCheckout(
   transactionId: string,
   publicOrigin: string,
 ): Promise<void> {
-  assertTransactionId(transactionId);
-  const prisma = (await import('@/lib/prisma')).prisma;
-  const vault = await loadDecryptedVault();
-  await emitInvoiceForTransaction(prisma, transactionId, vault, {
-    onlyPaymentCheckout: true,
+  const validated = TriggerAutoInvoiceInputSchema.parse({
+    transactionId,
     publicOrigin,
+  });
+  await emitInvoiceForTransaction(undefined as unknown as PrismaClient, validated.transactionId, undefined, {
+    onlyPaymentCheckout: true,
+    publicOrigin: validated.publicOrigin,
   });
 }
 
@@ -80,81 +56,44 @@ export async function emitInvoiceForTransaction(
   reason?: string;
   folio?: string | null;
 }> {
-  assertTransactionId(transactionId);
-
-  const row = await prisma.transaction.findUnique({
-    where: { id: transactionId },
-    include: {
-      account: {
-        include: {
-          user: { include: { expediente: true } },
-        },
-      },
-    },
+  const validated = EmitInvoiceInputSchema.parse({
+    prisma,
+    transactionId,
+    vault,
+    options,
   });
-
-  if (!row) {
-    return { ok: false, reason: 'NOT_FOUND' };
-  }
-
-  if (row.type !== 'INGRESO' || row.status !== 'COMPLETADO') {
-    return { ok: false, reason: 'NOT_ELIGIBLE' };
-  }
-
-  if (options?.onlyPaymentCheckout && row.source !== 'payment_checkout') {
-    return { ok: true, skipped: true, reason: 'not_payment_checkout' };
-  }
-
-  if (row.dteStatus === 'emitido' && row.dteFolio) {
-    return { ok: true, skipped: true, reason: 'already_emitted' };
-  }
-
-  const publicOrigin = await resolvePublicOrigin(options?.publicOrigin);
-
-  const input = mapTransactionToEmitInvoiceInput(
-    row,
-    {
-      email: row.account.user.email,
-      name: row.account.user.name,
-      expediente: row.account.user.expediente,
-    },
-    publicOrigin,
-  );
 
   const bridge = EngineRegistry.use<ExternalBridgeEngineApi>(
     'external-bridge-engine',
   );
-  const result = await bridge.emitInvoice(input, vault);
-
-  if (result.mode === 'MOCK' && result.folio != null && result.url_pdf) {
-    await prisma.transaction.update({
-      where: { id: transactionId },
-      data: {
-        dteFolio: String(result.folio),
-        dtePdfUrl: result.url_pdf,
-        dteStatus: 'emitido',
+  const envelope = {
+    agentId: BILLING_AGENT_ID,
+    payload: {
+      transactionId: validated.transactionId,
+      customerData: {
+        rut: '66.666.666-6',
+        businessName: 'Cliente derivado a agente externo',
+        email: 'delegated@fifer.local',
       },
-    });
-    return { ok: true, folio: String(result.folio) };
-  }
-
-  if (result.mode === 'PROD') {
-    await prisma.transaction.update({
-      where: { id: transactionId },
-      data: {
-        dteStatus: 'pendiente',
-        dtePdfUrl: null,
-        dteFolio: null,
-      },
-    });
-    return { ok: true, folio: null, reason: 'prod_pending_integration' };
-  }
-
-  await prisma.transaction.update({
-    where: { id: transactionId },
-    data: { dteStatus: 'error' },
+      items: [
+        {
+          description: `Delegated invoice ${validated.transactionId}`,
+          quantity: 1,
+          unitPrice: 0,
+          taxRate: 0,
+        },
+      ],
+      totals: { net: 0, tax: 0, total: 0 },
+      publicOrigin: validated.options?.publicOrigin ?? 'http://localhost:3000',
+    },
+  };
+  const result = await bridge.emitInvoice(envelope.payload, validated.vault);
+  return EmitInvoiceOutputSchema.parse({
+    ok: result.mode === 'MOCK' || result.mode === 'PROD',
+    skipped: validated.options?.onlyPaymentCheckout ? false : undefined,
+    reason: result.mode === 'PROD' ? 'delegated_prod' : 'delegated_mock',
+    folio: result.folio != null ? String(result.folio) : null,
   });
-  return { ok: false, reason: 'emit_failed' };
 }
 
 export type BillingSubEngineApi = {

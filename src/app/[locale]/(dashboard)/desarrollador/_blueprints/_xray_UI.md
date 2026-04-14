@@ -1,13 +1,32 @@
-# Plano Visual - desarrollador
+# X-Ray UI — app:desarrollador
 
-## Grid 12
-- (Definir layout de 12 columnas para esta app: spans, breakpoints y densidad.)
+## UBICACIÓN LÓGICA
 
-## Paleta
-- **Deep Navy** — fondos y contenedores principales.
-- **Electric Yellow** — acentos, bordes activos y datos destacados.
+`FIFER://APP/DESARROLLADOR`
 
-## Sala de Guerra (§16 — monitoreo de salud)
-- Pestaña **SALA DE GUERRA** en `page.tsx` (junto a «Conexiones por categoría»): componente `WarRoomPanel` (`src/components/system/WarRoomPanel.tsx`).
-- Grid **3 columnas** (Nevado Técnico): (1) motores internos con pulso por `EngineRegistry` / `system-health`, (2) latencias Bridge vía `pingAllActiveIntegrations()` en `external-bridge-engine`, (3) consola de eventos `getEnvManagerRecentEvents()` (Sub-Engine `env-manager`).
-- API agregada: `GET /api/v1/war-room` (admin); `schemaVersion` `1.0-war-room`.
+## RESUMEN DE SUPERFICIE
+
+- Tipo de módulo: `app`
+- Ruta física: `desarrollador`
+- Este documento es un artefacto compilado desde `v0_pack/starter-kit/_blueprints/`.
+
+## COMPONENTES VISIBLES
+
+- Completar desde código real del módulo.
+
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
+
+- `activetab`
+- `bridge`
+- `external`
+- `title`
+- `bridgelatencies`
+- `degraded`
+- `boxid`
+- `engines`
+- `onrefresh`
+- `record`
+- `apis`
+- `error`
+- `internal`
+- `ontelemetryrefresh`

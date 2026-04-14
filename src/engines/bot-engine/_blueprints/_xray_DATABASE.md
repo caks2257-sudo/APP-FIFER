@@ -1,14 +1,28 @@
-# Plano — Base de datos `bot-engine`
+# X-Ray DATABASE — engine:bot-engine
 
 ## UBICACIÓN LÓGICA
 
 `FIFER://engines/bot-engine`
 
-## Esquema
+## SUPERFICIE DE DATOS
 
-- Modelo Prisma **`Bot`** (`prisma/schema.prisma`): `id`, `name`, `status`, `modelId`, `avatarUrl`, `mainApp`, `sourceApp`, `subApp`, `metadata`, `ownerId`, timestamps.
-- Índices: `ownerId`, `mainApp`.
+- Tipo de módulo: `engine`
+- Ruta física: `bot-engine`
+- Registrar entidades, lecturas, escrituras y dependencias reales.
 
-## RLS
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
 
-- Acceso a datos vía Prisma con credenciales de servidor; ownership aplicado en consultas (`ownerId`).
+- `error`
+- `bot_engine_id`
+- `prisma`
+- `userid`
+- `botid`
+- `status`
+- `bot-engine`
+- `botengine`
+- `engine`
+- `where`
+- `botenginehealth`
+- `log_prefix`
+- `ownerid`
+- `pausado`

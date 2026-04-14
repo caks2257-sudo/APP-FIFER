@@ -1,11 +1,28 @@
-# Inmunidad — `dom-engine:form-generator`
+# X-Ray HEALING — engine:dom-engine-sub-engines-form-generator
 
 ## UBICACIÓN LÓGICA
 
 `FIFER://SUB_ENGINE/dom-engine/form-generator`
 
-## Resiliencia
+## RESILIENCIA
 
-- Validación Zod en la ruta API (`domExpedienteGenerateRequestSchema`); errores 422 con `issues` planos.
-- Tipos de formulario no soportados: `generateFormDraft` lanza `Error` descriptivo → 500 con mensaje en API.
-- Sin persistencia propia: no hay estado corruptible entre solicitudes.
+- Tipo de módulo: `engine`
+- Ruta física: `dom-engine/sub-engines/form-generator`
+- Documentar boundaries, retries, circuit-breakers y degradación.
+
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
+
+- `project`
+- `trim`
+- `minvuform21draft`
+- `error`
+- `comuna`
+- `minvu`
+- `destinoprincipal`
+- `direccionobra`
+- `formgeneratorprojectinput`
+- `region`
+- `sub_engine_id`
+- `draft`
+- `formgeneratorformtype`
+- `formtype`

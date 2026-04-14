@@ -1,10 +1,28 @@
-# Plano — Resiliencia `bot-engine`
+# X-Ray HEALING — engine:bot-engine
 
 ## UBICACIÓN LÓGICA
 
 `FIFER://engines/bot-engine`
 
-## Estrategia
+## RESILIENCIA
 
-- Errores de Prisma propagados a las rutas API / páginas; no hay circuit breaker interno en el motor.
-- `getHealthStatus()` devuelve `ok: true` si el módulo está montado; fallos de DB se detectan en llamadas reales.
+- Tipo de módulo: `engine`
+- Ruta física: `bot-engine`
+- Documentar boundaries, retries, circuit-breakers y degradación.
+
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
+
+- `error`
+- `bot_engine_id`
+- `prisma`
+- `userid`
+- `botid`
+- `status`
+- `bot-engine`
+- `botengine`
+- `engine`
+- `where`
+- `botenginehealth`
+- `log_prefix`
+- `ownerid`
+- `pausado`

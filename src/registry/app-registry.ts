@@ -20,6 +20,16 @@ export interface FiferAppDefinition {
   permission: FiferAppAccessTier;
   /** Agrupación visual en la Sidebar. */
   category: string;
+  /** Sub-apps que heredan de este app hub (Blueprint Maestro). */
+  subApps?: ReadonlyArray<{
+    id: string;
+    label: string;
+    href: string;
+    iconKey: SidebarIconKey;
+    permission?: FiferAppAccessTier;
+    /** Campo libre para validar herencia entre Hub y Spoke. */
+    blueprintTestField?: string;
+  }>;
 }
 
 export type SidebarIconKey =
@@ -62,6 +72,13 @@ export interface SidebarNavGroup {
 
 export type SidebarNavNode = SidebarNavLeaf | SidebarNavGroup;
 
+export type HubModuleId = 'finance-core' | 'social-media-core';
+
+const MODULE_TO_APP_ID: Record<HubModuleId, FiferAppDefinition['id']> = {
+  'finance-core': 'finanzas',
+  'social-media-core': 'redes-sociales',
+};
+
 /** Apps inscritas (manifest). Toda app visible debe existir aquí. */
 export const appRegistry: FiferAppDefinition[] = [
   {
@@ -71,6 +88,23 @@ export const appRegistry: FiferAppDefinition[] = [
     iconKey: 'FileText',
     permission: 'pro',
     category: 'finanzas',
+  },
+  {
+    id: 'redes-sociales',
+    label: 'RRSS',
+    href: '/redes-sociales',
+    iconKey: 'MessageSquare',
+    permission: 'pro',
+    category: 'marketing',
+    subApps: [
+      {
+        id: 'social-overview',
+        label: 'Resumen de RRSS',
+        href: '/redes-sociales',
+        iconKey: 'MessageSquare',
+        permission: 'pro',
+      },
+    ],
   },
   {
     id: 'inmobiliario',
@@ -111,6 +145,32 @@ export const appRegistry: FiferAppDefinition[] = [
     iconKey: 'LineChart',
     permission: 'pro',
     category: 'finanzas',
+    subApps: [
+      {
+        id: 'estado-caja',
+        label: 'Estado de Caja',
+        href: '/finanzas',
+        iconKey: 'LineChart',
+        permission: 'pro',
+        blueprintTestField: 'bp-finanzas-sync-v1',
+      },
+      {
+        id: 'contratos',
+        label: 'Control de Contratos',
+        href: '/contratos',
+        iconKey: 'FileText',
+        permission: 'pro',
+        blueprintTestField: 'bp-finanzas-sync-v1',
+      },
+      {
+        id: 'simulador-margenes',
+        label: 'Simulador de Márgenes',
+        href: '/finanzas/simulador-margenes',
+        iconKey: 'LineChart',
+        permission: 'pro',
+        blueprintTestField: 'bp-finanzas-sync-v1',
+      },
+    ],
   },
 ];
 
@@ -135,6 +195,36 @@ function resolveGroup(group: SidebarNavGroup): SidebarNavGroup {
   return {
     ...group,
     children: group.children.map(resolveLeaf),
+  };
+}
+
+function appToSidebarLeaf(app: FiferAppDefinition): SidebarNavLeaf {
+  return {
+    type: 'link',
+    label: app.label,
+    href: app.href,
+    iconKey: app.iconKey,
+    appId: app.id,
+    permission: app.permission,
+  };
+}
+
+function hubGroupFromApp(app: FiferAppDefinition): SidebarNavGroup {
+  const childrenSource =
+    app.subApps?.map((sub) => ({
+      type: 'link' as const,
+      label: sub.label,
+      href: sub.href,
+      iconKey: sub.iconKey,
+      permission: sub.permission ?? app.permission,
+    })) ?? [appToSidebarLeaf(app)];
+  return {
+    type: 'group',
+    label: app.label,
+    href: app.href,
+    iconKey: app.iconKey,
+    permission: app.permission,
+    children: childrenSource,
   };
 }
 
@@ -206,22 +296,15 @@ const sidebarNavigationSource = [
     href: '/finanzas',
     iconKey: 'LineChart',
     permission: 'public',
-    children: [
-      {
-        type: 'link',
-        label: 'Finanzas',
-        href: '/finanzas',
-        iconKey: 'LineChart',
-        appId: 'finanzas',
-      },
-      {
-        type: 'link',
-        label: 'Control de Contratos',
-        href: '/contratos',
-        iconKey: 'FileText',
-        appId: 'contratos',
-      },
-    ],
+    children: [],
+  },
+  {
+    type: 'group',
+    label: 'RRSS',
+    href: '/redes-sociales',
+    iconKey: 'MessageSquare',
+    permission: 'public',
+    children: [],
   },
   {
     type: 'link',
@@ -317,8 +400,47 @@ const sidebarNavigationSource = [
 
 export const sidebarNavigation: SidebarNavNode[] = sidebarNavigationSource.map(
   (node): SidebarNavNode =>
-    node.type === 'group' ? resolveGroup(node) : resolveLeaf(node),
+    node.type === 'group'
+      ? resolveGroup(
+          node.label === 'Finanzas'
+            ? hubGroupFromApp(appById.finanzas)
+            : node.label === 'RRSS'
+              ? hubGroupFromApp(appById['redes-sociales'])
+              : node,
+        )
+      : resolveLeaf(node),
 );
+
+export function getHubSubApps(appId: FiferAppDefinition['id']) {
+  return appById[appId]?.subApps ?? [];
+}
+
+export function getEnabledHubAppIds(
+  moduleIds: readonly string[],
+): FiferAppDefinition['id'][] {
+  const out: FiferAppDefinition['id'][] = [];
+  for (const moduleId of moduleIds) {
+    if (!(moduleId in MODULE_TO_APP_ID)) continue;
+    out.push(MODULE_TO_APP_ID[moduleId as HubModuleId]);
+  }
+  return out;
+}
+
+export function buildSidebarNavigationForContext(params?: {
+  misAppModuleIds?: readonly string[];
+}): SidebarNavNode[] {
+  if (!params?.misAppModuleIds || params.misAppModuleIds.length === 0) {
+    return sidebarNavigation;
+  }
+
+  const enabledHubIds = new Set(getEnabledHubAppIds(params.misAppModuleIds));
+  return sidebarNavigation.filter((node) => {
+    if (node.type !== 'group') return true;
+    if (node.label === 'Finanzas') return enabledHubIds.has('finanzas');
+    if (node.label === 'RRSS') return enabledHubIds.has('redes-sociales');
+    return true;
+  });
+}
 
 export function isAppEntryVisible(
   permission: FiferAppAccessTier | undefined,

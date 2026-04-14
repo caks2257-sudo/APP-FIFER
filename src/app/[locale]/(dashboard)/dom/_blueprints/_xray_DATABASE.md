@@ -1,33 +1,28 @@
-# Persistencia Nativa (Supabase & Prisma) — dom
+# X-Ray DATABASE — app:dom
 
-Ordenanza §8 — **Prohibido SQL manual** en aplicación; toda interacción vía **Prisma Client** centralizado. Documentar aquí SCHEMA (Prisma), reglas **RLS** y **MIGRATIONS**.
+## UBICACIÓN LÓGICA
 
-Mantener este plano alineado con `prisma/schema.prisma`, migraciones aplicadas y políticas desplegadas en Supabase.
+`FIFER://APP/DOM`
 
-## SCHEMA (Prisma)
+## SUPERFICIE DE DATOS
 
-### Model Name
-- _(Nombre del modelo en `schema.prisma`, p. ej. `ModuleRecord`)_
+- Tipo de módulo: `app`
+- Ruta física: `dom`
+- Registrar entidades, lecturas, escrituras y dependencias reales.
 
-### Fields
-| Field | Tipo Prisma | Notas |
-|-------|-------------|-------|
-| `id` | `String @id @default(cuid())` | PK |
-| `ownerId` | `String` | FK a usuario (RLS owner-only) |
-| _(añadir)_ | | |
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
 
-### Relations
-- _(Listar `@relation`, campos FK, `onDelete`, índices compuestos.)_
-
-## RLS (Supabase)
-
-### Supabase RLS Policy (Owner-only por defecto)
-- **Recurso:** _(tabla o vista expuesta)_
-- **SELECT:** `auth.uid() = owner_id` (ajustar nombre de columna al modelo).
-- **INSERT / UPDATE / DELETE:** mismo criterio de propiedad; restringir columnas sensibles según negocio.
-- **Servicio / backend:** operaciones elevadas solo vía Prisma con contexto de servicio, nunca desde cliente sin RLS coherente.
-
-## MIGRATIONS
-| Migración | Descripción |
-|-----------|-------------|
-| _(nombre o timestamp)_ | _(resumen del cambio)_ |
+- `normativa`
+- `error`
+- `errors`
+- `result`
+- `e293b`
+- `eab308`
+- `a3b8`
+- `f9fafb`
+- `font-semibold`
+- `usetranslations`
+- `label`
+- `factible`
+- `next-intl`
+- `perfiljson`

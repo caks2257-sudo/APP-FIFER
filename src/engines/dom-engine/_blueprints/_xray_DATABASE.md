@@ -1,7 +1,15 @@
-# Base de datos — dom-engine
+# X-Ray DATABASE — engine:dom-engine
 
 ## UBICACIÓN LÓGICA
 
 `FIFER://engines/dom-engine`
 
-**N/A** — el motor v1 no persiste expedientes en tablas propias; la API usa solo `User` (Prisma) para autenticación / sesión. Persistencia futura de expedientes DOM deberá documentarse aquí con Prisma + RLS.
+## SUPERFICIE DE DATOS
+
+- Tipo de módulo: `engine`
+- Ruta física: `dom-engine`
+- Registrar entidades, lecturas, escrituras y dependencias reales.
+
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
+
+- `sin keywords registradas`

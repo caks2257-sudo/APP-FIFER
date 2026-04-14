@@ -19,6 +19,27 @@ export type {
   UnifiedIntegrationPublicStatus,
 } from '@fifer/external-bridge-engine';
 
+/**
+ * Orquestador de llamadas a agentes externos (§14)
+ * Bridge para Tasklet, Fintoc, Make, etc.
+ */
+export async function callExternalAgent<T = any>(params: {
+  agentId: string;
+  action: string;
+  payload: any;
+}): Promise<T> {
+  console.log(`[ExternalBridge] Llamando a agente: ${params.agentId} -> ${params.action}`);
+
+  const engine = EngineRegistry.use<ExternalBridgeEngine>(ENGINE_ID);
+  // Validamos que el método call exista en el motor antes de invocarlo
+  if (engine && typeof (engine as any).call === 'function') {
+    return (engine as any).call(params);
+  }
+
+  // Fallback de seguridad en fase de desarrollo
+  return {} as T;
+}
+
 try {
   EngineRegistry.register(ENGINE_ID, new ExternalBridgeEngine());
 } catch (error) {

@@ -1,5 +1,10 @@
 # Espejo X-Ray — lógica (`system-health/index.ts`)
 
+## UBICACIÓN LÓGICA
+
+FIFER://engines/system-health
+
+
 **Archivo único de implementación:** `index.ts`. Registro: `EngineRegistry.register("system-health", new SystemHealthEngine())`.
 
 ---
@@ -61,3 +66,20 @@
 - `fetch` global del runtime del servidor para red externa e interna.
 
 No hay Zod ni Prisma en este motor.
+
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
+
+- latencyms
+- pulse
+- status
+- error
+- note
+- engines
+- trim
+- process
+- keyprobe
+- promise
+- catch
+- path
+- unknown
+- aiproviderpulse

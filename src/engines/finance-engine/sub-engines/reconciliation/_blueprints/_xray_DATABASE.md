@@ -1,11 +1,28 @@
-# Persistencia — finance-engine:reconciliation
+# X-Ray DATABASE — engine:finance-engine-sub-engines-reconciliation
 
 ## UBICACIÓN LÓGICA
 
 `FIFER://engines/finance-engine/reconciliation`
 
-**targetAppOrEngine:** `finance-engine:reconciliation`
+## SUPERFICIE DE DATOS
 
-## Modelo `Transaction`
+- Tipo de módulo: `engine`
+- Ruta física: `finance-engine/sub-engines/reconciliation`
+- Registrar entidades, lecturas, escrituras y dependencias reales.
 
-Campos añadidos para import bancario: `source`, `bankExternalId`, `bankPostedAt`. Ver `prisma/schema.prisma`.
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
+
+- `balance`
+- `concept`
+- `accountid`
+- `currency`
+- `prisma`
+- `amountclp`
+- `externalid`
+- `postedat`
+- `savedids`
+- `bridgemode`
+- `newmovements`
+- `vault`
+- `bank`
+- `externalbridgeengineapi`

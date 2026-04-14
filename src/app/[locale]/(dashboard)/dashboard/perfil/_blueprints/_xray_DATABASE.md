@@ -1,37 +1,28 @@
-# Persistencia Nativa (Supabase & Prisma) — dashboard/perfil
+# X-Ray DATABASE — app:dashboard-perfil
 
 ## UBICACIÓN LÓGICA
 
-`FIFER://APP/PERFIL`
+`FIFER://APP/DASHBOARD/PERFIL`
 
-Ordenanza §8 — **Prohibido SQL manual** en aplicación; toda interacción vía **Prisma Client** centralizado. Documentar aquí SCHEMA (Prisma), reglas **RLS** y **MIGRATIONS**.
+## SUPERFICIE DE DATOS
 
-Mantener este plano alineado con `prisma/schema.prisma`, migraciones aplicadas y políticas desplegadas en Supabase.
+- Tipo de módulo: `app`
+- Ruta física: `dashboard/perfil`
+- Registrar entidades, lecturas, escrituras y dependencias reales.
 
-## SCHEMA (Prisma)
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
 
-### Model Name
-- _(Nombre del modelo en `schema.prisma`, p. ej. `ModuleRecord`)_
-
-### Fields
-| Field | Tipo Prisma | Notas |
-|-------|-------------|-------|
-| `id` | `String @id @default(cuid())` | PK |
-| `ownerId` | `String` | FK a usuario (RLS owner-only) |
-| _(añadir)_ | | |
-
-### Relations
-- _(Listar `@relation`, campos FK, `onDelete`, índices compuestos.)_
-
-## RLS (Supabase)
-
-### Supabase RLS Policy (Owner-only por defecto)
-- **Recurso:** _(tabla o vista expuesta)_
-- **SELECT:** `auth.uid() = owner_id` (ajustar nombre de columna al modelo).
-- **INSERT / UPDATE / DELETE:** mismo criterio de propiedad; restringir columnas sensibles según negocio.
-- **Servicio / backend:** operaciones elevadas solo vía Prisma con contexto de servicio, nunca desde cliente sin RLS coherente.
-
-## MIGRATIONS
-| Migración | Descripción |
-|-----------|-------------|
-| _(nombre o timestamp)_ | _(resumen del cambio)_ |
+- `e293b`
+- `fiferisotypemark`
+- `profileexpedienteform`
+- `components`
+- `expediente`
+- `flex-col`
+- `gap-4`
+- `header`
+- `perfil`
+- `perfil-expediente-heading`
+- `a0f1e`
+- `a3b8`
+- `aria-labelledby`
+- `branding`

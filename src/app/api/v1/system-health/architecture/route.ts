@@ -4,7 +4,10 @@ import {
   type ArchitectureHealthSnapshot,
   runArchitectureProbe,
 } from '@/engines/system-health/architecture-probe';
-import { prisma } from '@/lib/prisma';
+import {
+  PrismaAuthLegacyEmailConflictError,
+  syncThenFindUser,
+} from '@/lib/prisma-auth-sync';
 import { createServerSupabaseClient } from '@/lib/supabase-ssr/server';
 
 export const dynamic = 'force-dynamic';
@@ -18,13 +21,23 @@ export async function GET() {
     data: { user: authUser },
   } = await supabase.auth.getUser();
 
-  if (!authUser?.email) {
+  if (!authUser?.email || !authUser.id) {
     return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
   }
 
-  const dbUser = await prisma.user.findUnique({
-    where: { email: authUser.email },
-  });
+  let dbUser;
+  try {
+    dbUser = await syncThenFindUser(authUser);
+  } catch (error) {
+    if (error instanceof PrismaAuthLegacyEmailConflictError) {
+      return NextResponse.json(
+        { error: 'Identidad desalineada con Supabase Auth.' },
+        { status: 409 },
+      );
+    }
+    throw error;
+  }
+
   if (!dbUser || dbUser.role?.toLowerCase() !== 'admin') {
     return NextResponse.json({ error: 'Solo administradores' }, { status: 403 });
   }

@@ -1,11 +1,32 @@
-# Plano de Datos - dashboard
+# X-Ray DATA — app:dashboard
 
-## Hook `useDashboard` (`src/hooks/useDashboard.ts`)
+## UBICACIÓN LÓGICA
 
-- **Fetch:** `GET /api/v1/dashboard`.
-- **Adaptación:** `toFiferBoxData` (`dashboardAdapter`) sobre `RawDashboardPayload`.
-- **Estado:** widgets base `DASHBOARD_REFERENCE_WIDGETS` + transporte (loading/error/locks) desde `useLayoutStore`.
+`FIFER://APP/DASHBOARD`
 
-## API
+## RESUMEN DE DATOS
 
-- **`src/app/api/v1/dashboard/route.ts`:** respuesta JSON consumida por el hub analítico (payload alineado al adaptador).
+- Tipo de módulo: `app`
+- Ruta física: `dashboard`
+- Mapear entradas, salidas y contratos reales.
+
+## FUENTES Y FLUJOS
+
+- Completar desde código real del módulo.
+
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
+
+- `apps`
+- `bots`
+- `f9fafb`
+- `flex-col`
+- `a3b8`
+- `contratos`
+- `items-center`
+- `construcci`
+- `contenido`
+- `font-bold`
+- `gesti`
+- `h-full`
+- `justify-center`
+- `perfil`

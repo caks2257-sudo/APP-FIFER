@@ -1,13 +1,28 @@
-# Healing — external-bridge-engine
+# X-Ray HEALING — engine:external-bridge-engine
 
 ## UBICACIÓN LÓGICA
 
 `FIFER://engines/external-bridge-engine`
 
-**targetAppOrEngine:** `external-bridge-engine`
+## RESILIENCIA
 
-## Estrategia
+- Tipo de módulo: `engine`
+- Ruta física: `external-bridge-engine`
+- Documentar boundaries, retries, circuit-breakers y degradación.
 
-- **MOCK automático:** sin credencial válida, no se invocan redes externas; respuestas deterministas desde `packages/.../src/mocks`.
-- **Errores de registro:** `try/catch` en `src/engines/external-bridge-engine/index.ts` al registrar en `EngineRegistry`.
-- **Cifrado:** si `FIFER_BRIDGE_MASTER_KEY` falta, POST de credenciales responde 503; GET de estado sigue operando con env únicamente.
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
+
+- `error`
+- `engine_id`
+- `fifer`
+- `case`
+- `external-bridge-engine`
+- `https`
+- `integrationid`
+- `catch`
+- `controller`
+- `externalbridgeengine`
+- `mock`
+- `performance`
+- `pinger`
+- `process`

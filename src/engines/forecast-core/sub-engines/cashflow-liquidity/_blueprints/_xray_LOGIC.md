@@ -13,3 +13,20 @@
 | Ventana | `gapDays = utcDayNumber(max) - utcDayNumber(min)`; `windowDays = max(1, gapDays + 1)` |
 | Horizonte | 30 días fijo (`HORIZON_DAYS`) |
 | Métricas | Ver campos en `cashflowLiquidityReadySchema` (`schemas.ts`) |
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
+
+- error
+- date
+- status
+- sub_engine_id
+- literal
+- balance
+- cashflowliquidityinput
+- cashflowliquidityoutput
+- log_prefix
+- math
+- meandailynet
+- tofixed
+- totalsigned
+- account
+

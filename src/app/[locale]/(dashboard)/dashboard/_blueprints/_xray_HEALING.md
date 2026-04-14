@@ -1,6 +1,28 @@
-# Plano de Resiliencia - dashboard
+# X-Ray HEALING — app:dashboard
 
-## Circuit Breaker
+## UBICACIÓN LÓGICA
 
-- Los widgets del orquestador delegan en shells y hooks de box que llaman `boxCircuitBreaker.recordFailure` ante fallos de red/parseo (patrón §0.25 Const. v6.0).
-- **Threshold:** coherente con el catálogo global de circuitos (típ. 3 fallos consecutivos antes de abrir).
+`FIFER://APP/DASHBOARD`
+
+## RESILIENCIA
+
+- Tipo de módulo: `app`
+- Ruta física: `dashboard`
+- Documentar boundaries, retries, circuit-breakers y degradación.
+
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
+
+- `apps`
+- `bots`
+- `f9fafb`
+- `flex-col`
+- `a3b8`
+- `contratos`
+- `items-center`
+- `construcci`
+- `contenido`
+- `font-bold`
+- `gesti`
+- `h-full`
+- `justify-center`
+- `perfil`

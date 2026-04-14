@@ -1,5 +1,10 @@
 # Lógica y dependencias — Sub-Engine `image-gen`
 
+## UBICACIÓN LÓGICA
+
+FIFER://engines/ai-fallback-cascade/sub-engines/image-gen
+
+
 **Estado:** Micro-Core aislado bajo `sub-engines/image-gen/`; carga por side-effect desde `ai-fallback-cascade/index.ts`.
 
 ## Proveedores externos (referencia Constitución v6.0 / Cap. 5)
@@ -29,3 +34,20 @@
 
 - `@/registry/engine-registry` — registro fractal `ai-fallback:image-gen`
 - `@/types/user-dna` — `CoreProfile` para bifurcación `tier`
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
+
+- params
+- error
+- prompt
+- trim
+- reason
+- aspectratio
+- errors
+- code
+- height
+- width
+- catch
+- imagegenparams
+- push
+- form
+

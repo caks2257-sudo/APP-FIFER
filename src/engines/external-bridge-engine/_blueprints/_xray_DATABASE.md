@@ -1,31 +1,28 @@
-# Persistencia — external-bridge-engine
+# X-Ray DATABASE — engine:external-bridge-engine
 
 ## UBICACIÓN LÓGICA
 
 `FIFER://engines/external-bridge-engine`
 
-**targetAppOrEngine:** `external-bridge-engine`
+## SUPERFICIE DE DATOS
 
-## SCHEMA (Prisma)
+- Tipo de módulo: `engine`
+- Ruta física: `external-bridge-engine`
+- Registrar entidades, lecturas, escrituras y dependencias reales.
 
-Modelo compartido `ExternalBridgeCredential` en `prisma/schema.prisma`:
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
 
-| Field | Tipo | Notas |
-|-------|------|-------|
-| `envKey` | `String @unique` | p.ej. `FLOW_API_KEY` |
-| `ciphertextB64` | `String` | payload AES-256-GCM |
-| `ivB64` | `String` | nonce 12 bytes |
-| `authTagB64` | `String` | GCM tag |
-| `updatedBy` | `String?` | email admin |
-
-Cifrado en `src/lib/bridge-credential-crypto.ts`; lectura fusionada en `src/lib/bridge-vault.ts`.
-
-## RLS
-
-Tabla de sistema; solo backend con Prisma (sin exposición directa a cliente). Políticas Supabase: restringir a rol servicio en despliegues futuros si se expone vía API SQL.
-
-## MIGRATIONS
-
-| Migración | Descripción |
-|-----------|-------------|
-| (push local) | Creación `ExternalBridgeCredential` |
+- `error`
+- `engine_id`
+- `fifer`
+- `case`
+- `external-bridge-engine`
+- `https`
+- `integrationid`
+- `catch`
+- `controller`
+- `externalbridgeengine`
+- `mock`
+- `performance`
+- `pinger`
+- `process`

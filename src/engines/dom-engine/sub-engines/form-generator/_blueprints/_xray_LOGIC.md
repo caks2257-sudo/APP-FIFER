@@ -14,3 +14,20 @@
 
 - Motor padre: `dom-engine` (registro en `src/engines/dom-engine/index.ts`).
 - Sin dependencia de Bridge para el borrador base.
+## CAPACIDADES DE NAVEGACIÓN (AODS_KEYWORDS)
+
+- project
+- trim
+- minvuform21draft
+- error
+- comuna
+- minvu
+- destinoprincipal
+- direccionobra
+- formgeneratorprojectinput
+- region
+- sub_engine_id
+- draft
+- formgeneratorformtype
+- formtype
+

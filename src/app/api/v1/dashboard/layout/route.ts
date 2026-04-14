@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
 
+import {
+  PrismaAuthLegacyEmailConflictError,
+  syncThenFindUser,
+} from '@/lib/prisma-auth-sync';
 import { prisma } from '@/lib/prisma';
 import { createServerSupabaseClient } from '@/lib/supabase-ssr/server';
 import { dashboardLayoutPersistedSchema } from '@/types/dashboard-layout-persisted';
@@ -12,7 +16,7 @@ export async function PATCH(req: Request) {
     data: { user: authUser },
   } = await supabase.auth.getUser();
 
-  if (!authUser?.email) {
+  if (!authUser?.email || !authUser.id) {
     return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
   }
 
@@ -31,16 +35,21 @@ export async function PATCH(req: Request) {
     );
   }
 
-  const dbUser = await prisma.user.findUnique({
-    where: { email: authUser.email },
-    select: { id: true },
-  });
+  let dbUser;
+  try {
+    dbUser = await syncThenFindUser(authUser, { select: { id: true } });
+  } catch (error) {
+    if (error instanceof PrismaAuthLegacyEmailConflictError) {
+      return NextResponse.json(
+        { error: 'Identidad desalineada con Supabase Auth.' },
+        { status: 409 },
+      );
+    }
+    throw error;
+  }
 
   if (!dbUser) {
-    return NextResponse.json(
-      { error: 'Usuario sin fila en Prisma; ejecute seed o sincronice identidad.' },
-      { status: 404 },
-    );
+    return NextResponse.json({ error: 'Usuario no encontrado tras sincronizar.' }, { status: 404 });
   }
 
   const layoutJson = JSON.stringify(parsed.data);
